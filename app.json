@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "SweatStake",
-    "slug": "sweaststake",
+    "name": "Podium",
+    "slug": "podium",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "sweatstake",
+    "scheme": "podium",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.sweatstake.app",
+      "bundleIdentifier": "com.podiumapp.app",
       "usesAppleSignIn": true,
       "infoPlist": {
         "NSHealthShareUsageDescription": "SweatStake needs access to your health data to automatically track your workouts, steps, and activity for competitions.",
@@ -31,7 +31,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1A1A2E"
       },
-      "package": "com.sweatstake.app"
+      "package": "com.podiumapp.app"
     },
     "plugins": [
       "expo-router",

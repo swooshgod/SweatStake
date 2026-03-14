@@ -5,12 +5,20 @@ import {
   StyleSheet,
   TouchableOpacity,
   Platform,
+  ImageBackground,
+  StatusBar,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
+
+// Dramatic gym photo — low angle, cinematic lighting, man + woman training
+const BG_IMAGE = {
+  uri: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1080&q=90&fit=crop',
+};
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -32,9 +40,7 @@ export default function WelcomeScreen() {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-      });
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
       if (error) throw error;
       router.replace('/(tabs)');
     } catch (error) {
@@ -45,180 +51,183 @@ export default function WelcomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Background decoration */}
-      <View style={styles.topDecoration}>
-        <View style={styles.circle1} />
-        <View style={styles.circle2} />
+    <ImageBackground source={BG_IMAGE} style={styles.bg} resizeMode="cover">
+      <StatusBar barStyle="light-content" />
+
+      {/* Full-height dark gradient — heavier at top and bottom, breathes in the middle */}
+      <LinearGradient
+        colors={[
+          'rgba(0,0,0,0.72)',   // top — sky / ceiling
+          'rgba(0,0,0,0.10)',   // mid — let the action photo breathe
+          'rgba(0,0,0,0.88)',   // bottom — UI sits here
+        ]}
+        locations={[0, 0.45, 1]}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* Top wordmark */}
+      <View style={styles.topBar}>
+        <View style={styles.medalBadge}>
+          <Ionicons name="medal" size={18} color={Colors.accent} />
+        </View>
+        <Text style={styles.wordmark}>PODIUM</Text>
       </View>
 
-      {/* Logo area */}
-      <View style={styles.logoContainer}>
-        <View style={styles.logoIcon}>
-          <Ionicons name="flame" size={48} color="#fff" />
+      {/* Bottom content */}
+      <View style={styles.bottom}>
+        {/* Hero copy */}
+        <View style={styles.heroText}>
+          <Text style={styles.headline}>Where Winners{'\n'}Stand.</Text>
+          <Text style={styles.subline}>
+            Create fitness competitions, track automatically{'\n'}with Apple Health, and claim the prize.
+          </Text>
         </View>
-        <Text style={styles.appName}>SweatStake</Text>
-        <Text style={styles.tagline}>
-          Compete. Track. Win.
-        </Text>
-      </View>
 
-      {/* Features */}
-      <View style={styles.features}>
-        <View style={styles.featureRow}>
-          <View style={styles.featureIcon}>
-            <Ionicons name="trophy" size={20} color={Colors.accent} />
+        {/* Feature pills */}
+        <View style={styles.pills}>
+          <View style={styles.pill}>
+            <Ionicons name="trophy" size={13} color={Colors.accent} />
+            <Text style={styles.pillText}>Real prizes</Text>
           </View>
-          <Text style={styles.featureText}>Win real prizes in fitness competitions</Text>
-        </View>
-        <View style={styles.featureRow}>
-          <View style={styles.featureIcon}>
-            <Ionicons name="heart" size={20} color={Colors.primary} />
+          <View style={styles.pill}>
+            <Ionicons name="heart" size={13} color="#FF4D4D" />
+            <Text style={styles.pillText}>Auto-tracked</Text>
           </View>
-          <Text style={styles.featureText}>Auto-track with Apple Health</Text>
-        </View>
-        <View style={styles.featureRow}>
-          <View style={styles.featureIcon}>
-            <Ionicons name="people" size={20} color={Colors.success} />
+          <View style={styles.pill}>
+            <Ionicons name="people" size={13} color="#4ADE80" />
+            <Text style={styles.pillText}>Public & private</Text>
           </View>
-          <Text style={styles.featureText}>Challenge friends or join public comps</Text>
         </View>
-      </View>
 
-      {/* Auth buttons */}
-      <View style={styles.authButtons}>
-        {Platform.OS === 'ios' && (
+        {/* Auth buttons */}
+        <View style={styles.authButtons}>
+          {Platform.OS === 'ios' && (
+            <TouchableOpacity
+              style={styles.appleButton}
+              activeOpacity={0.85}
+              onPress={handleAppleSignIn}
+              disabled={loading}
+            >
+              <Ionicons name="logo-apple" size={20} color="#fff" />
+              <Text style={styles.appleButtonText}>Sign in with Apple</Text>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
-            style={styles.appleButton}
+            style={styles.googleButton}
             activeOpacity={0.85}
-            onPress={handleAppleSignIn}
+            onPress={handleGoogleSignIn}
             disabled={loading}
           >
-            <Ionicons name="logo-apple" size={22} color="#fff" />
-            <Text style={styles.appleButtonText}>Sign in with Apple</Text>
+            <Ionicons name="logo-google" size={18} color={Colors.textPrimary} />
+            <Text style={styles.googleButtonText}>Sign in with Google</Text>
           </TouchableOpacity>
-        )}
 
-        <TouchableOpacity
-          style={styles.googleButton}
-          activeOpacity={0.85}
-          onPress={handleGoogleSignIn}
-          disabled={loading}
-        >
-          <Ionicons name="logo-google" size={20} color={Colors.textPrimary} />
-          <Text style={styles.googleButtonText}>Sign in with Google</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.skipButton}
+            onPress={() => router.replace('/(tabs)')}
+          >
+            <Text style={styles.skipText}>Browse without signing in →</Text>
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity
-          style={styles.skipButton}
-          onPress={() => router.replace('/(tabs)')}
-        >
-          <Text style={styles.skipText}>Browse without signing in</Text>
-        </TouchableOpacity>
+        <Text style={styles.legal}>
+          By continuing, you agree to our Terms & Privacy Policy
+        </Text>
       </View>
-
-      {/* Legal */}
-      <Text style={styles.legal}>
-        By signing in, you agree to our Terms of Service and Privacy Policy.
-      </Text>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  bg: {
     flex: 1,
-    backgroundColor: Colors.secondary,
-    justifyContent: 'flex-end',
-    padding: Spacing.xxl,
-    paddingBottom: 48,
+    backgroundColor: '#0a0a0a',
   },
-  topDecoration: {
+  topBar: {
     position: 'absolute',
-    top: 0,
+    top: 60,
     left: 0,
     right: 0,
-    height: 300,
-  },
-  circle1: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: Colors.primary + '15',
-    top: -40,
-    right: -40,
-  },
-  circle2: {
-    position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: Colors.accent + '10',
-    top: 80,
-    left: -30,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 48,
-  },
-  logoIcon: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing.lg,
-    ...Shadow.lg,
-  },
-  appName: {
-    fontSize: FontSize.hero,
-    fontWeight: '900',
-    color: '#fff',
-    letterSpacing: -1,
-  },
-  tagline: {
-    fontSize: FontSize.lg,
-    color: 'rgba(255,255,255,0.6)',
-    marginTop: Spacing.sm,
-    fontWeight: '500',
-  },
-  features: {
-    marginBottom: 48,
-  },
-  featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.lg,
+    justifyContent: 'center',
+    gap: 8,
   },
-  featureIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+  medalBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255,215,0,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: Spacing.md,
   },
-  featureText: {
-    fontSize: FontSize.md,
-    color: 'rgba(255,255,255,0.8)',
-    fontWeight: '500',
-    flex: 1,
+  wordmark: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: 6,
+  },
+  bottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: Spacing.xxl,
+    paddingBottom: 48,
+  },
+  heroText: {
+    marginBottom: 24,
+  },
+  headline: {
+    fontSize: 44,
+    fontWeight: '900',
+    color: '#fff',
+    lineHeight: 50,
+    letterSpacing: -1.5,
+    marginBottom: 12,
+  },
+  subline: {
+    fontSize: FontSize.sm,
+    color: 'rgba(255,255,255,0.6)',
+    lineHeight: 20,
+    fontWeight: '400',
+  },
+  pills: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 28,
+  },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  pillText: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.85)',
+    fontWeight: '600',
   },
   authButtons: {
     gap: Spacing.md,
-    marginBottom: Spacing.xxl,
+    marginBottom: Spacing.lg,
   },
   appleButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#000',
-    paddingVertical: Spacing.lg,
+    paddingVertical: 16,
     borderRadius: BorderRadius.lg,
     gap: Spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
   appleButtonText: {
     color: '#fff',
@@ -230,7 +239,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff',
-    paddingVertical: Spacing.lg,
+    paddingVertical: 16,
     borderRadius: BorderRadius.lg,
     gap: Spacing.sm,
   },
@@ -241,17 +250,16 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     alignItems: 'center',
-    paddingVertical: Spacing.md,
+    paddingVertical: 10,
   },
   skipText: {
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(255,255,255,0.45)',
     fontSize: FontSize.sm,
     fontWeight: '500',
   },
   legal: {
     textAlign: 'center',
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: FontSize.xs,
-    lineHeight: 16,
+    color: 'rgba(255,255,255,0.25)',
+    fontSize: 11,
   },
 });
