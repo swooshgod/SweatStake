@@ -172,6 +172,19 @@ export function evaluateHealthData(data: HealthKitData) {
   };
 }
 
+import type { ScoringCategory } from './types';
+
+/**
+ * Calculate weekly penalty for missed workout threshold.
+ * Returns 0 or a negative number (capped at -maxPenalty).
+ */
+export function calculateWeeklyPenalty(workoutsThisWeek: number, category: ScoringCategory): number {
+  if (!category.penalty) return 0;
+  const { threshold, penaltyPerMissed, maxPenalty } = category.penalty;
+  if (workoutsThisWeek >= threshold) return 0;
+  return -Math.min((threshold - workoutsThisWeek) * penaltyPerMissed, maxPenalty);
+}
+
 export interface UserBaseline {
   avgDailySteps: number;
   avgDailyCalories: number;

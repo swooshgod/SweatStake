@@ -72,6 +72,7 @@ export default function CreateCompetitionScreen() {
     isPublic: true,
     isPrivate: false,
     requiresWatch: false,
+    allowBeforePhoto: true,
   });
 
   const updateForm = useCallback(
@@ -135,6 +136,7 @@ export default function CreateCompetitionScreen() {
           is_public: form.isPublic,
           is_private: form.isPrivate,
           requires_watch: form.requiresWatch,
+          allow_before_photo: selectedDuration.days >= 14 ? form.allowBeforePhoto : false,
         })
         .select()
         .single();
@@ -269,6 +271,24 @@ export default function CreateCompetitionScreen() {
             );
           })}
         </View>
+
+        {/* Before Photo Toggle — only for 2+ week competitions */}
+        {selectedDuration.days >= 14 && (
+          <TouchableOpacity
+            style={styles.beforePhotoToggle}
+            activeOpacity={0.7}
+            onPress={() => updateForm('allowBeforePhoto', !form.allowBeforePhoto)}
+          >
+            <Text style={styles.beforePhotoIcon}>{'\u{1F4F8}'}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.beforePhotoLabel}>Allow before photos</Text>
+              <Text style={styles.beforePhotoSub}>Members can optionally share a starting-point photo</Text>
+            </View>
+            <View style={[styles.toggleSwitch, form.allowBeforePhoto && styles.toggleSwitchOn]}>
+              <View style={[styles.toggleKnob, form.allowBeforePhoto && styles.toggleKnobOn]} />
+            </View>
+          </TouchableOpacity>
+        )}
 
         {/* Public/Private Toggle */}
         <Text style={styles.fieldLabel}>Visibility</Text>
@@ -665,6 +685,50 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     color: Colors.textSecondary,
     lineHeight: 18,
+  },
+  beforePhotoToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    padding: Spacing.lg,
+    marginTop: Spacing.xl,
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  beforePhotoIcon: {
+    fontSize: 24,
+  },
+  beforePhotoLabel: {
+    fontSize: FontSize.md,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  beforePhotoSub: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  toggleSwitch: {
+    width: 44,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: Colors.border,
+    padding: 2,
+    justifyContent: 'center',
+  },
+  toggleSwitchOn: {
+    backgroundColor: Colors.primary,
+  },
+  toggleKnob: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#fff',
+  },
+  toggleKnobOn: {
+    alignSelf: 'flex-end',
   },
   bottomBar: {
     flexDirection: 'row',

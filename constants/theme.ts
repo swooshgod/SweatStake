@@ -83,7 +83,7 @@ export const ScoringTemplates = {
     name: 'Full Challenge',
     description: 'Workout + Steps 8k + Water 80oz + Protein',
     categories: [
-      { name: 'Workout', points: 3, auto_tracked: true },
+      { name: 'Workout', points: 3, auto_tracked: true, penalty: { threshold: 4, penaltyPerMissed: 1, maxPenalty: 3 } },
       { name: 'Steps (8,000+)', points: 2, auto_tracked: true },
       { name: 'Water (80oz)', points: 1, auto_tracked: false },
       { name: 'Protein Goal', points: 1, auto_tracked: false },

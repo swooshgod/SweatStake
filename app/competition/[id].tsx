@@ -20,6 +20,7 @@ import { checkAppleWatchPaired } from '@/lib/healthkit';
 import LeaderboardRow from '@/components/LeaderboardRow';
 import DailyChecklist from '@/components/DailyChecklist';
 import WeeklyCalendar from '@/components/WeeklyCalendar';
+import { calculateWeeklyPenalty } from '@/lib/healthkit';
 import type { DailyLogEntries, ScoringCategory, ScoringMode } from '@/lib/types';
 import { SCORING_MODES } from '@/lib/types';
 
@@ -345,6 +346,29 @@ export default function CompetitionDetailScreen() {
 
                 <WeeklyCalendar days={weekDays} />
 
+                {/* Penalty warning — Full Challenge only */}
+                {(() => {
+                  const workoutCat = categories.find(
+                    (c) => c.name === 'Workout' && c.penalty
+                  );
+                  if (!workoutCat?.penalty) return null;
+                  const dayOfWeek = new Date().getDay(); // 0=Sun
+                  // Only show warning from Thursday (4) onward
+                  if (dayOfWeek < 4 && dayOfWeek > 0) return null;
+                  // Estimate workouts this week from todayEntries (simplified: count today's workout status)
+                  const workoutsThisWeek = todayEntries.workout ? 1 : 0; // placeholder — real count from daily_logs
+                  const penalty = calculateWeeklyPenalty(workoutsThisWeek, workoutCat);
+                  if (penalty >= 0) return null;
+                  const remaining = workoutCat.penalty.threshold - workoutsThisWeek;
+                  return (
+                    <View style={styles.penaltyWarning}>
+                      <Text style={styles.penaltyWarningText}>
+                        {'\u26A0\uFE0F'} {remaining} more workout{remaining !== 1 ? 's' : ''} to avoid {penalty}pt penalty this week
+                      </Text>
+                    </View>
+                  );
+                })()}
+
                 <DailyChecklist
                   categories={categories}
                   entries={todayEntries}
@@ -641,6 +665,22 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: '600',
     color: Colors.textPrimary,
+  },
+  penaltyWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F59E0B18',
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: '#F59E0B40',
+  },
+  penaltyWarningText: {
+    fontSize: FontSize.sm,
+    fontWeight: '600',
+    color: '#F59E0B',
   },
   watchBadge: {
     flexDirection: 'row',

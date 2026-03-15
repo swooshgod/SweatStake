@@ -15,6 +15,11 @@ export interface ScoringCategory {
   name: string;
   points: number;
   auto_tracked: boolean;
+  penalty?: {
+    threshold: number;       // minimum to avoid penalty (e.g. 4 workouts/week)
+    penaltyPerMissed: number; // points lost per missed unit (e.g. -1 per workout under 4)
+    maxPenalty: number;      // cap the penalty (e.g. -3 max)
+  };
 }
 
 export interface ScoringTemplate {
@@ -122,6 +127,7 @@ export interface Competition {
   is_private: boolean;
   invite_code: string;
   requires_watch: boolean;
+  allow_before_photo: boolean;
   status: CompetitionStatus;
   winner_id: string | null;
   created_at: string;
@@ -187,4 +193,5 @@ export interface CreateCompetitionForm {
   isPublic: boolean;
   isPrivate: boolean;
   requiresWatch: boolean;
+  allowBeforePhoto: boolean;
 }

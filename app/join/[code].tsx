@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
+import * as ImagePicker from "expo-image-picker";
 import {
   Colors,
   Spacing,
@@ -38,6 +40,9 @@ export default function JoinScreen() {
   const [alreadyJoined, setAlreadyJoined] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("stripe");
   const [copied, setCopied] = useState(false);
+  const [showBeforePhoto, setShowBeforePhoto] = useState(false);
+  const [beforePhotoUri, setBeforePhotoUri] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
     fetchCompetition();
@@ -74,6 +79,77 @@ export default function JoinScreen() {
     }
     setLoading(false);
   }
+
+  const competitionDurationDays = competition
+    ? Math.ceil(
+        (new Date(competition.end_date).getTime() -
+          new Date(competition.start_date).getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
+    : 0;
+
+  const shouldOfferBeforePhoto =
+    competition?.allow_before_photo === true && competitionDurationDays >= 14;
+
+  const handlePickBeforePhoto = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+      allowsEditing: true,
+      aspect: [3, 4],
+    });
+
+    if (result.canceled || !result.assets?.[0]) return;
+    setBeforePhotoUri(result.assets[0].uri);
+  };
+
+  const handleUploadBeforePhoto = async () => {
+    if (!beforePhotoUri || !competition || !profile) return;
+
+    setUploadingPhoto(true);
+    try {
+      const ext = beforePhotoUri.split(".").pop() ?? "jpg";
+      const path = `${competition.id}/${profile.id}.${ext}`;
+      const response = await fetch(beforePhotoUri);
+      const blob = await response.blob();
+
+      const { error: uploadError } = await supabase.storage
+        .from("before-photos")
+        .upload(path, blob, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("before-photos")
+        .getPublicUrl(path);
+
+      await supabase.from("before_photos").upsert(
+        {
+          competition_id: competition.id,
+          user_id: profile.id,
+          photo_url: urlData.publicUrl,
+        },
+        { onConflict: "competition_id,user_id" }
+      );
+
+      Alert.alert("Photo saved!", "Your before photo has been uploaded.", [
+        {
+          text: "View Competition",
+          onPress: () => router.replace(`/competition/${competition.id}`),
+        },
+      ]);
+    } catch {
+      Alert.alert("Upload failed", "Could not upload your photo. Try again.");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const onJoinSuccess = () => {
+    if (shouldOfferBeforePhoto) {
+      setShowBeforePhoto(true);
+    }
+  };
 
   const copyEscrowAddress = async () => {
     await Clipboard.setStringAsync(getEscrowAddress());
@@ -136,17 +212,25 @@ export default function JoinScreen() {
 
           if (error) throw error;
 
-          Alert.alert(
-            "USDC Payment Pending",
-            `Send ${formatCents(competition.entry_fee_cents)} USDC to the escrow address on Base network. Your spot is reserved — payment will be verified on-chain.`,
-            [
-              {
-                text: "View Competition",
-                onPress: () =>
-                  router.replace(`/competition/${competition.id}`),
-              },
-            ]
-          );
+          if (shouldOfferBeforePhoto) {
+            Alert.alert(
+              "USDC Payment Pending",
+              `Send ${formatCents(competition.entry_fee_cents)} USDC to the escrow address on Base network. Your spot is reserved.`,
+              [{ text: "OK", onPress: onJoinSuccess }]
+            );
+          } else {
+            Alert.alert(
+              "USDC Payment Pending",
+              `Send ${formatCents(competition.entry_fee_cents)} USDC to the escrow address on Base network. Your spot is reserved — payment will be verified on-chain.`,
+              [
+                {
+                  text: "View Competition",
+                  onPress: () =>
+                    router.replace(`/competition/${competition.id}`),
+                },
+              ]
+            );
+          }
         } catch {
           Alert.alert(
             "Error",
@@ -170,12 +254,18 @@ export default function JoinScreen() {
 
       if (error) throw error;
 
-      Alert.alert("Welcome!", `You've joined "${competition.name}"!`, [
-        {
-          text: "Let's go!",
-          onPress: () => router.replace(`/competition/${competition.id}`),
-        },
-      ]);
+      if (shouldOfferBeforePhoto) {
+        Alert.alert("Welcome!", `You've joined "${competition.name}"!`, [
+          { text: "OK", onPress: onJoinSuccess },
+        ]);
+      } else {
+        Alert.alert("Welcome!", `You've joined "${competition.name}"!`, [
+          {
+            text: "Let's go!",
+            onPress: () => router.replace(`/competition/${competition.id}`),
+          },
+        ]);
+      }
     } catch {
       Alert.alert(
         "Error",
@@ -438,6 +528,73 @@ export default function JoinScreen() {
             </Text>
           </TouchableOpacity>
         )}
+
+        {/* ── Before photo card (post-join) ──────────────────────── */}
+        {showBeforePhoto && competition && (
+          <View style={styles.beforePhotoCard}>
+            <Text style={styles.beforePhotoTitle}>
+              {"\uD83D\uDCF8"} Add a before photo
+            </Text>
+            <Text style={styles.beforePhotoSubtitle}>
+              Optional — share your starting point. Only visible to competition
+              members.
+            </Text>
+
+            {beforePhotoUri ? (
+              <View style={styles.beforePhotoPreview}>
+                <Image
+                  source={{ uri: beforePhotoUri }}
+                  style={styles.beforePhotoImage}
+                />
+                <View style={styles.beforePhotoActions}>
+                  <TouchableOpacity
+                    style={styles.beforePhotoRetake}
+                    onPress={handlePickBeforePhoto}
+                  >
+                    <Text style={styles.beforePhotoRetakeText}>Retake</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.beforePhotoUploadBtn,
+                      uploadingPhoto && { opacity: 0.6 },
+                    ]}
+                    onPress={handleUploadBeforePhoto}
+                    disabled={uploadingPhoto}
+                  >
+                    <Text style={styles.beforePhotoUploadText}>
+                      {uploadingPhoto ? "Uploading..." : "Save Photo"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.beforePhotoPickerBtn}
+                onPress={handlePickBeforePhoto}
+              >
+                <Ionicons
+                  name="camera-outline"
+                  size={28}
+                  color={Colors.primary}
+                />
+                <Text style={styles.beforePhotoPickerText}>
+                  Choose a photo
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={styles.beforePhotoSkip}
+              onPress={() =>
+                router.replace(`/competition/${competition.id}`)
+              }
+            >
+              <Text style={styles.beforePhotoSkipText}>
+                Skip for now {"\u2192"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </ScrollView>
   );
@@ -674,6 +831,92 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: "700",
   },
+  // ── Before photo styles ──────────────────────────────────────
+  beforePhotoCard: {
+    marginTop: Spacing.xxl,
+    padding: Spacing.xl,
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  beforePhotoTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: "700",
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xs,
+  },
+  beforePhotoSubtitle: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: Spacing.lg,
+  },
+  beforePhotoPickerBtn: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.xxl,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.primary + "40",
+    borderStyle: "dashed",
+    backgroundColor: Colors.primary + "08",
+  },
+  beforePhotoPickerText: {
+    fontSize: FontSize.md,
+    fontWeight: "600",
+    color: Colors.primary,
+  },
+  beforePhotoPreview: {
+    gap: Spacing.md,
+  },
+  beforePhotoImage: {
+    width: "100%",
+    height: 260,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.surface,
+  },
+  beforePhotoActions: {
+    flexDirection: "row",
+    gap: Spacing.md,
+  },
+  beforePhotoRetake: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+  },
+  beforePhotoRetakeText: {
+    fontSize: FontSize.md,
+    fontWeight: "600",
+    color: Colors.textSecondary,
+  },
+  beforePhotoUploadBtn: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.primary,
+  },
+  beforePhotoUploadText: {
+    fontSize: FontSize.md,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  beforePhotoSkip: {
+    alignSelf: "center",
+    marginTop: Spacing.lg,
+    paddingVertical: Spacing.sm,
+  },
+  beforePhotoSkipText: {
+    fontSize: FontSize.md,
+    color: Colors.textMuted,
+    fontWeight: "600",
+  },
+
   watchBadge: {
     flexDirection: "row",
     alignItems: "center",
