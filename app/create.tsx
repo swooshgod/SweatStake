@@ -110,7 +110,7 @@ export default function CreateCompetitionScreen() {
 
   const handleSubmit = async () => {
     if (!profile) {
-      router.push('/(auth)/welcome');
+      router.push('/(auth)/welcome?modal=1');
       return;
     }
 
@@ -275,7 +275,15 @@ export default function CreateCompetitionScreen() {
         <View style={styles.toggleRow}>
           <TouchableOpacity
             style={[styles.toggleOption, !form.isPrivate && styles.toggleOptionActive]}
-            onPress={() => setForm((prev) => ({ ...prev, isPublic: true, isPrivate: false }))}
+            onPress={() => setForm((prev) => {
+              const needsReset = SCORING_MODES.find((m) => m.id === prev.scoringMode)?.privateOnly;
+              return {
+                ...prev,
+                isPublic: true,
+                isPrivate: false,
+                scoringMode: needsReset ? 'relative_improvement' : prev.scoringMode,
+              };
+            })}
           >
             <Text style={[styles.toggleText, !form.isPrivate && styles.toggleTextActive]}>
               Public

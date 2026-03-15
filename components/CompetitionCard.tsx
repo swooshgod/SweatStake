@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, BorderRadius, FontSize, Shadow, CompetitionTypes } from '@/constants/theme';
-import { formatCents } from '@/lib/stripe';
+import { formatCents, formatDollars } from '@/lib/stripe';
 import type { Competition, ScoringMode } from '@/lib/types';
 
 interface Props {
@@ -32,8 +32,8 @@ export default function CompetitionCard({ competition, variant = 'full' }: Props
   );
 
   const potDisplay = competition.prize_pool_cents > 0
-    ? formatCents(competition.prize_pool_cents)
-    : 'Free';
+    ? formatDollars(competition.prize_pool_cents)
+    : hasFee ? '$0.00' : 'Free';
 
   const participantCount = competition.participant_count ?? 0;
   const timeLabel = competition.status === 'completed' ? 'Done' : `${daysLeft}d left`;

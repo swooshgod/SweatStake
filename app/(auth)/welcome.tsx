@@ -8,6 +8,7 @@ import {
   ImageBackground,
   Image,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -38,6 +39,7 @@ export default function WelcomeScreen() {
       }
     } catch (error) {
       console.error('Apple Sign-In error:', error);
+      Alert.alert('Sign-In Failed', 'Something went wrong with Apple Sign-In. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -55,6 +57,7 @@ export default function WelcomeScreen() {
       }
     } catch (error) {
       console.error('Google Sign-In error:', error);
+      Alert.alert('Sign-In Failed', 'Something went wrong with Google Sign-In. Please try again.');
     } finally {
       setLoading(false);
     }

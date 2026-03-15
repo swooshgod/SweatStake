@@ -106,6 +106,32 @@ export const ScoringTemplates = {
       { name: 'Steps (5,000+)', points: 1, auto_tracked: true },
     ],
   },
+  calorie_burn: {
+    name: 'Calorie Burn',
+    description: 'Active calories burned, auto from Apple Watch',
+    categories: [
+      { name: 'Calories (500+)', points: 3, auto_tracked: true },
+      { name: 'Calories (300+)', points: 2, auto_tracked: true },
+      { name: 'Calories (150+)', points: 1, auto_tracked: true },
+    ],
+  },
+  weight_loss: {
+    name: 'Weight Loss',
+    description: 'Manual weigh-ins, most weight lost wins',
+    categories: [
+      { name: 'Weigh-in', points: 2, auto_tracked: false },
+      { name: 'Workout', points: 3, auto_tracked: true },
+    ],
+  },
+  improvement: {
+    name: '% Improvement',
+    description: 'Percentage improvement above your personal baseline',
+    categories: [
+      { name: 'Steps', points: 2, auto_tracked: true },
+      { name: 'Workout', points: 3, auto_tracked: true },
+      { name: 'Active Calories', points: 2, auto_tracked: true },
+    ],
+  },
   custom: {
     name: 'Custom',
     description: 'Define your own categories',

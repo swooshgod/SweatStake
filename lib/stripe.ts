@@ -18,6 +18,11 @@ export function formatCents(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
+/** Format cents as a dollar amount — always shows dollar value, never "Free". */
+export function formatDollars(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
 export function formatPrizePool(
   totalCents: number,
   serviceFeePct: number

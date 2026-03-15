@@ -83,7 +83,7 @@ export default function JoinScreen() {
 
   const handleJoin = async () => {
     if (!isAuthenticated) {
-      router.push("/(auth)/welcome");
+      router.push("/(auth)/welcome?modal=1");
       return;
     }
 
@@ -310,7 +310,7 @@ export default function JoinScreen() {
                 { color: Colors.accent, fontWeight: "700" },
               ]}
             >
-              Prize Pool: {formatCents(competition.prize_pool_cents)}
+              Prize Pool: {competition.prize_pool_cents > 0 ? formatCents(competition.prize_pool_cents) : '$0.00'}
             </Text>
           </View>
         </View>

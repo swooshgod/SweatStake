@@ -42,8 +42,8 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Your Competitions — only if authenticated and has competitions */}
-        {isAuthenticated && myComps.length > 0 && (
+        {/* Your Competitions — only if authenticated */}
+        {isAuthenticated && (myLoading || myComps.length > 0) && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Your Competitions</Text>
             {myLoading ? (
