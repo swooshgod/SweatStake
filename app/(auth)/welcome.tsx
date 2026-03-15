@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Platform,
   ImageBackground,
+  Image,
   StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -69,9 +70,11 @@ export default function WelcomeScreen() {
 
       {/* Top wordmark */}
       <View style={styles.topBar}>
-        <View style={styles.medalBadge}>
-          <Ionicons name="medal" size={18} color={Colors.accent} />
-        </View>
+        <Image
+          source={require('@/assets/logo.png')}
+          style={styles.logoImg}
+          resizeMode="contain"
+        />
         <Text style={styles.wordmark}>PODIUM</Text>
       </View>
 
@@ -156,13 +159,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  medalBadge: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(255,215,0,0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  logoImg: {
+    width: 32,
+    height: 32,
   },
   wordmark: {
     fontSize: 22,
