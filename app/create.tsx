@@ -18,34 +18,60 @@ import {
   BorderRadius,
   FontSize,
   Shadow,
-  CompetitionTypes,
   ScoringTemplates,
 } from '@/constants/theme';
 import { formatCents } from '@/lib/stripe';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
-import type { CompetitionType, ScoringCategory, CreateCompetitionForm } from '@/lib/types';
+import type { CompetitionType, CreateCompetitionForm, ScoringMode } from '@/lib/types';
+import { SCORING_MODES } from '@/lib/types';
 
-const STEPS = ['Details', 'Scoring', 'Rules', 'Review'] as const;
+const COMP_TYPES = [
+  { id: 'step_race', icon: '\u{1F3C3}', name: 'Step Race', desc: 'Most steps wins', watch: false, type: 'running' as CompetitionType, scoringMode: 'raw_steps' as ScoringMode },
+  { id: 'weight_loss', icon: '\u{2696}\u{FE0F}', name: 'Weight Loss', desc: 'Most lbs lost wins', watch: false, type: 'fitness' as CompetitionType, scoringMode: 'weight_loss' as ScoringMode },
+  { id: 'workout_streak', icon: '\u{1F4AA}', name: 'Workout Streak', desc: 'Most workouts wins', watch: true, type: 'fitness' as CompetitionType, scoringMode: 'raw_workouts' as ScoringMode },
+  { id: 'calorie_burn', icon: '\u{1F525}', name: 'Calorie Burn', desc: 'Most calories wins', watch: true, type: 'fitness' as CompetitionType, scoringMode: 'raw_calories' as ScoringMode },
+  { id: 'improvement', icon: '\u{1F4C8}', name: '% Improvement', desc: 'Biggest improvement wins', watch: false, type: 'fitness' as CompetitionType, scoringMode: 'relative_improvement' as ScoringMode },
+];
+
+const FEE_OPTIONS = [
+  { label: 'Free', cents: 0 },
+  { label: '$10', cents: 1000 },
+  { label: '$25', cents: 2500 },
+  { label: '$50', cents: 5000 },
+  { label: '$100', cents: 10000 },
+];
+
+const DURATION_OPTIONS = [
+  { label: '1 Week', days: 7 },
+  { label: '2 Weeks', days: 14 },
+  { label: '1 Month', days: 30 },
+];
 
 export default function CreateCompetitionScreen() {
   const router = useRouter();
   const { profile } = useAuth();
-  const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [customFee, setCustomFee] = useState('');
+  const [selectedType, setSelectedType] = useState(COMP_TYPES[0]);
+  const [selectedDuration, setSelectedDuration] = useState(DURATION_OPTIONS[2]);
 
   const [form, setForm] = useState<CreateCompetitionForm>({
     name: '',
     description: '',
-    type: 'fitness',
-    scoringTemplate: 'full_challenge',
-    categories: [...ScoringTemplates.full_challenge.categories],
+    type: 'running',
+    scoringTemplate: 'step_race',
+    categories: [...ScoringTemplates.step_race.categories],
+    scoringMode: 'raw_steps',
     startDate: new Date(),
-    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     maxParticipants: 20,
     entryFeeCents: 0,
     paymentType: 'stripe',
     isPublic: true,
+    isPrivate: false,
+    requiresWatch: false,
   });
 
   const updateForm = useCallback(
@@ -55,39 +81,32 @@ export default function CreateCompetitionScreen() {
     []
   );
 
-  const selectTemplate = useCallback((templateKey: string) => {
-    const template = ScoringTemplates[templateKey as keyof typeof ScoringTemplates];
-    if (template) {
-      setForm((prev) => ({
-        ...prev,
-        scoringTemplate: templateKey,
-        categories: [...template.categories],
-      }));
-    }
-  }, []);
-
-  const toggleCategory = useCallback((index: number) => {
-    setForm((prev) => {
-      const cats = [...prev.categories];
-      cats.splice(index, 1);
-      return { ...prev, categories: cats };
-    });
-  }, []);
-
-  const updateCategoryPoints = useCallback((index: number, points: number) => {
-    setForm((prev) => {
-      const cats = [...prev.categories];
-      cats[index] = { ...cats[index], points };
-      return { ...prev, categories: cats };
-    });
-  }, []);
-
-  const addCategory = useCallback(() => {
+  const selectCompType = useCallback((comp: typeof COMP_TYPES[number]) => {
+    setSelectedType(comp);
+    const scoring = ScoringTemplates[comp.id as keyof typeof ScoringTemplates];
     setForm((prev) => ({
       ...prev,
-      categories: [...prev.categories, { name: 'New Category', points: 1, auto_tracked: false }],
+      type: comp.type,
+      scoringTemplate: comp.id,
+      scoringMode: comp.scoringMode,
+      requiresWatch: comp.watch,
+      categories: scoring ? [...scoring.categories] : prev.categories,
     }));
   }, []);
+
+  const selectDuration = useCallback((dur: typeof DURATION_OPTIONS[number]) => {
+    setSelectedDuration(dur);
+    setForm((prev) => ({
+      ...prev,
+      endDate: new Date(prev.startDate.getTime() + dur.days * 24 * 60 * 60 * 1000),
+    }));
+  }, []);
+
+  const generateName = () => {
+    const month = new Date().toLocaleString('default', { month: 'long' });
+    const year = new Date().getFullYear();
+    return `${selectedType.name} \u{00B7} ${month} ${year}`;
+  };
 
   const handleSubmit = async () => {
     if (!profile) {
@@ -97,27 +116,31 @@ export default function CreateCompetitionScreen() {
 
     setSubmitting(true);
     try {
+      const finalName = form.name.trim() || generateName();
+
       const { data, error } = await supabase
         .from('competitions')
         .insert({
           creator_id: profile.id,
-          name: form.name,
+          name: finalName,
           description: form.description || null,
           type: form.type,
           scoring_template: { categories: form.categories },
+          scoring_mode: form.scoringMode,
           start_date: form.startDate.toISOString().split('T')[0],
           end_date: form.endDate.toISOString().split('T')[0],
           max_participants: form.maxParticipants,
           entry_fee_cents: form.entryFeeCents,
           payment_type: form.paymentType,
           is_public: form.isPublic,
+          is_private: form.isPrivate,
+          requires_watch: form.requiresWatch,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      // Auto-join as creator
       await supabase.from('participants').insert({
         competition_id: data.id,
         user_id: profile.id,
@@ -135,201 +158,168 @@ export default function CreateCompetitionScreen() {
     }
   };
 
-  const canAdvance =
-    step === 0
-      ? form.name.trim().length > 0
-      : step === 1
-        ? form.categories.length > 0
-        : true;
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Progress bar */}
-      <View style={styles.progressBar}>
-        {STEPS.map((label, i) => (
-          <View key={label} style={styles.progressStep}>
-            <View
-              style={[
-                styles.progressDot,
-                i <= step && styles.progressDotActive,
-                i < step && styles.progressDotComplete,
-              ]}
-            >
-              {i < step ? (
-                <Ionicons name="checkmark" size={12} color="#fff" />
-              ) : (
-                <Text
-                  style={[styles.progressDotText, i <= step && styles.progressDotTextActive]}
-                >
-                  {i + 1}
-                </Text>
-              )}
-            </View>
-            <Text style={[styles.progressLabel, i <= step && styles.progressLabelActive]}>
-              {label}
-            </Text>
-          </View>
-        ))}
-      </View>
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Step 1: Details */}
-        {step === 0 && (
-          <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Competition Details</Text>
+        {/* ─── Section 1: What kind of competition? ─── */}
+        <Text style={styles.sectionLabel}>What kind of competition?</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.typeCarousel}
+        >
+          {COMP_TYPES.map((comp) => {
+            const isSelected = selectedType.id === comp.id;
+            return (
+              <TouchableOpacity
+                key={comp.id}
+                style={[styles.typeCard, isSelected && styles.typeCardSelected]}
+                activeOpacity={0.7}
+                onPress={() => selectCompType(comp)}
+              >
+                <Text style={styles.typeCardIcon}>{comp.icon}</Text>
+                <Text style={[styles.typeCardName, isSelected && styles.typeCardNameSelected]}>
+                  {comp.name}
+                </Text>
+                <Text style={styles.typeCardDesc}>{comp.desc}</Text>
+                {comp.watch && (
+                  <Text style={styles.typeCardWatch}>{'\u{231A}'} Watch</Text>
+                )}
+                {!comp.watch && (
+                  <Text style={styles.typeCardPhone}>{'\u{1F4F1}'} iPhone OK</Text>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
 
-            <Text style={styles.inputLabel}>Name</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="e.g. March Madness Fitness"
-              placeholderTextColor={Colors.textMuted}
-              value={form.name}
-              onChangeText={(t) => updateForm('name', t)}
-              maxLength={50}
-            />
+        {/* ─── Section 2: Set the stakes ─── */}
+        <Text style={styles.sectionLabel}>Set the stakes</Text>
 
-            <Text style={styles.inputLabel}>Description (optional)</Text>
-            <TextInput
-              style={[styles.textInput, styles.textArea]}
-              placeholder="What's this competition about?"
-              placeholderTextColor={Colors.textMuted}
-              value={form.description}
-              onChangeText={(t) => updateForm('description', t)}
-              multiline
-              numberOfLines={3}
-              maxLength={200}
-            />
-
-            <Text style={styles.inputLabel}>Type</Text>
-            <View style={styles.typeGrid}>
-              {(Object.entries(CompetitionTypes) as [CompetitionType, typeof CompetitionTypes[CompetitionType]][]).map(
-                ([key, info]) => (
-                  <TouchableOpacity
-                    key={key}
-                    style={[
-                      styles.typeOption,
-                      form.type === key && { borderColor: info.color, backgroundColor: info.color + '10' },
-                    ]}
-                    onPress={() => updateForm('type', key)}
-                  >
-                    <Text style={styles.typeOptionEmoji}>{info.emoji}</Text>
-                    <Text
-                      style={[
-                        styles.typeOptionLabel,
-                        form.type === key && { color: info.color },
-                      ]}
-                    >
-                      {info.label}
-                    </Text>
-                  </TouchableOpacity>
-                )
-              )}
-            </View>
-          </View>
-        )}
-
-        {/* Step 2: Scoring */}
-        {step === 1 && (
-          <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Scoring Template</Text>
-
-            {/* Template options */}
-            {(Object.entries(ScoringTemplates) as [string, typeof ScoringTemplates[keyof typeof ScoringTemplates]][]).map(
-              ([key, tmpl]) => (
-                <TouchableOpacity
-                  key={key}
-                  style={[
-                    styles.templateOption,
-                    form.scoringTemplate === key && styles.templateOptionActive,
-                  ]}
-                  onPress={() => selectTemplate(key)}
-                >
-                  <View style={styles.templateRadio}>
-                    {form.scoringTemplate === key && <View style={styles.templateRadioInner} />}
-                  </View>
-                  <View style={styles.templateContent}>
-                    <Text style={styles.templateName}>{tmpl.name}</Text>
-                    <Text style={styles.templateDesc}>{tmpl.description}</Text>
-                  </View>
-                </TouchableOpacity>
-              )
-            )}
-
-            {/* Editable categories */}
-            <Text style={[styles.inputLabel, { marginTop: Spacing.xxl }]}>
-              Categories & Points
+        {/* Entry Fee */}
+        <Text style={styles.fieldLabel}>Entry fee</Text>
+        <View style={styles.pillRow}>
+          {FEE_OPTIONS.map((opt) => {
+            const isSelected = form.entryFeeCents === opt.cents && customFee === '';
+            return (
+              <TouchableOpacity
+                key={opt.cents}
+                style={[styles.pill, isSelected && styles.pillSelected]}
+                onPress={() => {
+                  updateForm('entryFeeCents', opt.cents);
+                  setCustomFee('');
+                }}
+              >
+                <Text style={[styles.pillText, isSelected && styles.pillTextSelected]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+          <TouchableOpacity
+            style={[styles.pill, customFee !== '' && styles.pillSelected]}
+            onPress={() => setCustomFee(customFee || '0')}
+          >
+            <Text style={[styles.pillText, customFee !== '' && styles.pillTextSelected]}>
+              Custom
             </Text>
-            {form.categories.map((cat, index) => (
-              <View key={`${cat.name}-${index}`} style={styles.categoryRow}>
-                <TextInput
-                  style={styles.categoryName}
-                  value={cat.name}
-                  onChangeText={(t) => {
-                    setForm((prev) => {
-                      const cats = [...prev.categories];
-                      cats[index] = { ...cats[index], name: t };
-                      return { ...prev, categories: cats };
-                    });
-                  }}
-                />
-                <View style={styles.categoryPointsControl}>
-                  <TouchableOpacity
-                    onPress={() => updateCategoryPoints(index, Math.max(1, cat.points - 1))}
-                    style={styles.pointsBtn}
-                  >
-                    <Ionicons name="remove" size={16} color={Colors.textSecondary} />
-                  </TouchableOpacity>
-                  <Text style={styles.categoryPoints}>{cat.points}</Text>
-                  <TouchableOpacity
-                    onPress={() => updateCategoryPoints(index, cat.points + 1)}
-                    style={styles.pointsBtn}
-                  >
-                    <Ionicons name="add" size={16} color={Colors.textSecondary} />
-                  </TouchableOpacity>
-                </View>
-                <TouchableOpacity onPress={() => toggleCategory(index)} style={styles.removeBtn}>
-                  <Ionicons name="close-circle" size={22} color={Colors.error} />
-                </TouchableOpacity>
-              </View>
-            ))}
-
-            <TouchableOpacity style={styles.addCategoryBtn} onPress={addCategory}>
-              <Ionicons name="add-circle-outline" size={20} color={Colors.primary} />
-              <Text style={styles.addCategoryText}>Add Category</Text>
-            </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
+        {customFee !== '' && (
+          <View style={styles.customFeeRow}>
+            <Text style={styles.customFeePrefix}>$</Text>
+            <TextInput
+              style={styles.customFeeInput}
+              value={customFee}
+              onChangeText={(t) => {
+                const cleaned = t.replace(/[^0-9]/g, '');
+                setCustomFee(cleaned);
+                updateForm('entryFeeCents', parseInt(cleaned || '0', 10) * 100);
+              }}
+              keyboardType="number-pad"
+              placeholder="0"
+              placeholderTextColor={Colors.textMuted}
+              autoFocus
+            />
           </View>
         )}
 
-        {/* Step 3: Rules */}
-        {step === 2 && (
-          <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Rules & Settings</Text>
-
-            <Text style={styles.inputLabel}>Duration</Text>
-            <View style={styles.dateRow}>
-              <View style={styles.dateField}>
-                <Text style={styles.dateLabel}>Start</Text>
-                <Text style={styles.dateValue}>
-                  {form.startDate.toLocaleDateString()}
+        {/* Duration */}
+        <Text style={styles.fieldLabel}>Duration</Text>
+        <View style={styles.pillRow}>
+          {DURATION_OPTIONS.map((dur) => {
+            const isSelected = selectedDuration.days === dur.days;
+            return (
+              <TouchableOpacity
+                key={dur.days}
+                style={[styles.pill, isSelected && styles.pillSelected]}
+                onPress={() => selectDuration(dur)}
+              >
+                <Text style={[styles.pillText, isSelected && styles.pillTextSelected]}>
+                  {dur.label}
                 </Text>
-              </View>
-              <Ionicons name="arrow-forward" size={20} color={Colors.textMuted} />
-              <View style={styles.dateField}>
-                <Text style={styles.dateLabel}>End</Text>
-                <Text style={styles.dateValue}>
-                  {form.endDate.toLocaleDateString()}
-                </Text>
-              </View>
-            </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-            <Text style={styles.inputLabel}>Max Participants</Text>
+        {/* Public/Private Toggle */}
+        <Text style={styles.fieldLabel}>Visibility</Text>
+        <View style={styles.toggleRow}>
+          <TouchableOpacity
+            style={[styles.toggleOption, !form.isPrivate && styles.toggleOptionActive]}
+            onPress={() => setForm((prev) => ({ ...prev, isPublic: true, isPrivate: false }))}
+          >
+            <Text style={[styles.toggleText, !form.isPrivate && styles.toggleTextActive]}>
+              Public
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleOption, form.isPrivate && styles.toggleOptionActive]}
+            onPress={() => setForm((prev) => ({ ...prev, isPublic: false, isPrivate: true }))}
+          >
+            <Text style={[styles.toggleText, form.isPrivate && styles.toggleTextActive]}>
+              Private
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Competition Name (optional) */}
+        <Text style={styles.fieldLabel}>Competition name <Text style={styles.optionalTag}>optional</Text></Text>
+        <TextInput
+          style={styles.textInput}
+          placeholder={generateName()}
+          placeholderTextColor={Colors.textMuted}
+          value={form.name}
+          onChangeText={(t) => updateForm('name', t)}
+          maxLength={50}
+        />
+
+        {/* ─── Section 3: Advanced (collapsed) ─── */}
+        <TouchableOpacity
+          style={styles.advancedToggle}
+          onPress={() => setAdvancedOpen(!advancedOpen)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.advancedToggleText}>Advanced</Text>
+          <Ionicons
+            name={advancedOpen ? 'chevron-up' : 'chevron-down'}
+            size={18}
+            color={Colors.textMuted}
+          />
+        </TouchableOpacity>
+
+        {advancedOpen && (
+          <View style={styles.advancedSection}>
+            {/* Max Participants */}
+            <Text style={styles.fieldLabel}>Max participants</Text>
             <View style={styles.counterRow}>
               <TouchableOpacity
                 style={styles.counterBtn}
@@ -346,163 +336,88 @@ export default function CreateCompetitionScreen() {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.inputLabel}>Entry Fee</Text>
-            <View style={styles.feeOptions}>
-              {[0, 500, 1000, 2000, 5000].map((cents) => (
+            {/* Scoring Mode */}
+            <Text style={styles.fieldLabel}>Scoring mode</Text>
+            {SCORING_MODES.map((mode) => {
+              const isSelected = form.scoringMode === mode.id;
+              const isLocked = mode.privateOnly && !form.isPrivate;
+              return (
                 <TouchableOpacity
-                  key={cents}
+                  key={mode.id}
                   style={[
-                    styles.feeOption,
-                    form.entryFeeCents === cents && styles.feeOptionActive,
+                    styles.scoringOption,
+                    isSelected && styles.scoringOptionSelected,
+                    isLocked && { opacity: 0.4 },
                   ]}
-                  onPress={() => updateForm('entryFeeCents', cents)}
+                  onPress={() => {
+                    if (!isLocked) updateForm('scoringMode', mode.id);
+                    else Alert.alert('Private Only', 'Switch to Private to unlock this scoring mode.');
+                  }}
                 >
-                  <Text
-                    style={[
-                      styles.feeOptionText,
-                      form.entryFeeCents === cents && styles.feeOptionTextActive,
-                    ]}
-                  >
-                    {formatCents(cents)}
+                  <Text style={[styles.scoringName, isSelected && { color: Colors.primary }]}>
+                    {mode.label}
                   </Text>
+                  <Text style={styles.scoringDesc}>{mode.description}</Text>
                 </TouchableOpacity>
-              ))}
-            </View>
+              );
+            })}
 
+            {/* Payment Method */}
             {form.entryFeeCents > 0 && (
               <>
-                <Text style={styles.inputLabel}>Payment Method</Text>
-                <View style={styles.paymentToggle}>
+                <Text style={styles.fieldLabel}>Payment method</Text>
+                <View style={styles.toggleRow}>
                   <TouchableOpacity
-                    style={[
-                      styles.paymentOption,
-                      form.paymentType === 'stripe' && styles.paymentOptionActive,
-                    ]}
+                    style={[styles.toggleOption, form.paymentType === 'stripe' && styles.toggleOptionActive]}
                     onPress={() => updateForm('paymentType', 'stripe')}
                   >
-                    <Ionicons name="card" size={18} color={form.paymentType === 'stripe' ? '#fff' : Colors.textSecondary} />
-                    <Text style={[styles.paymentOptionText, form.paymentType === 'stripe' && styles.paymentOptionTextActive]}>
-                      Stripe
-                    </Text>
+                    <Ionicons name="card" size={16} color={form.paymentType === 'stripe' ? '#fff' : Colors.textSecondary} />
+                    <Text style={[styles.toggleText, form.paymentType === 'stripe' && styles.toggleTextActive]}>Stripe</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[
-                      styles.paymentOption,
-                      form.paymentType === 'usdc' && styles.paymentOptionActive,
-                    ]}
+                    style={[styles.toggleOption, form.paymentType === 'usdc' && styles.toggleOptionActive]}
                     onPress={() => updateForm('paymentType', 'usdc')}
                   >
-                    <Ionicons name="wallet" size={18} color={form.paymentType === 'usdc' ? '#fff' : Colors.textSecondary} />
-                    <Text style={[styles.paymentOptionText, form.paymentType === 'usdc' && styles.paymentOptionTextActive]}>
-                      USDC
-                    </Text>
+                    <Ionicons name="wallet" size={16} color={form.paymentType === 'usdc' ? '#fff' : Colors.textSecondary} />
+                    <Text style={[styles.toggleText, form.paymentType === 'usdc' && styles.toggleTextActive]}>USDC</Text>
                   </TouchableOpacity>
                 </View>
               </>
             )}
 
-            <Text style={styles.inputLabel}>Visibility</Text>
-            <View style={styles.paymentToggle}>
-              <TouchableOpacity
-                style={[styles.paymentOption, form.isPublic && styles.paymentOptionActive]}
-                onPress={() => updateForm('isPublic', true)}
-              >
-                <Ionicons name="globe" size={18} color={form.isPublic ? '#fff' : Colors.textSecondary} />
-                <Text style={[styles.paymentOptionText, form.isPublic && styles.paymentOptionTextActive]}>
-                  Public
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.paymentOption, !form.isPublic && styles.paymentOptionActive]}
-                onPress={() => updateForm('isPublic', false)}
-              >
-                <Ionicons name="lock-closed" size={18} color={!form.isPublic ? '#fff' : Colors.textSecondary} />
-                <Text style={[styles.paymentOptionText, !form.isPublic && styles.paymentOptionTextActive]}>
-                  Invite Only
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {/* Step 4: Review */}
-        {step === 3 && (
-          <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Review & Launch</Text>
-
-            <View style={styles.reviewCard}>
-              <View style={styles.reviewRow}>
-                <Text style={styles.reviewLabel}>Name</Text>
-                <Text style={styles.reviewValue}>{form.name}</Text>
-              </View>
-              <View style={styles.reviewRow}>
-                <Text style={styles.reviewLabel}>Type</Text>
-                <Text style={styles.reviewValue}>
-                  {CompetitionTypes[form.type].emoji} {CompetitionTypes[form.type].label}
-                </Text>
-              </View>
-              <View style={styles.reviewRow}>
-                <Text style={styles.reviewLabel}>Duration</Text>
-                <Text style={styles.reviewValue}>
-                  {form.startDate.toLocaleDateString()} — {form.endDate.toLocaleDateString()}
-                </Text>
-              </View>
-              <View style={styles.reviewRow}>
-                <Text style={styles.reviewLabel}>Max Players</Text>
-                <Text style={styles.reviewValue}>{form.maxParticipants}</Text>
-              </View>
-              <View style={styles.reviewRow}>
-                <Text style={styles.reviewLabel}>Entry Fee</Text>
-                <Text style={styles.reviewValue}>{formatCents(form.entryFeeCents)}</Text>
-              </View>
-              <View style={styles.reviewRow}>
-                <Text style={styles.reviewLabel}>Categories</Text>
-                <Text style={styles.reviewValue}>{form.categories.length}</Text>
-              </View>
-              <View style={styles.reviewRow}>
-                <Text style={styles.reviewLabel}>Visibility</Text>
-                <Text style={styles.reviewValue}>{form.isPublic ? 'Public' : 'Invite Only'}</Text>
-              </View>
-            </View>
-
-            {form.entryFeeCents > 0 && (
-              <View style={styles.paymentNotice}>
-                <Ionicons name="information-circle" size={20} color={Colors.warning} />
-                <Text style={styles.paymentNoticeText}>
-                  You'll pay {formatCents(form.entryFeeCents)} to activate this competition.
-                  Entry fees are held in escrow until the competition ends.
-                </Text>
-              </View>
-            )}
+            {/* Description */}
+            <Text style={styles.fieldLabel}>Description <Text style={styles.optionalTag}>optional</Text></Text>
+            <TextInput
+              style={[styles.textInput, styles.textArea]}
+              placeholder="What's this competition about?"
+              placeholderTextColor={Colors.textMuted}
+              value={form.description}
+              onChangeText={(t) => updateForm('description', t)}
+              multiline
+              numberOfLines={3}
+              maxLength={200}
+            />
           </View>
         )}
       </ScrollView>
 
-      {/* Bottom navigation */}
+      {/* Bottom CTA */}
       <View style={styles.bottomBar}>
-        {step > 0 && (
-          <TouchableOpacity style={styles.backButton} onPress={() => setStep(step - 1)}>
-            <Ionicons name="arrow-back" size={20} color={Colors.textSecondary} />
-            <Text style={styles.backButtonText}>Back</Text>
-          </TouchableOpacity>
+        {form.entryFeeCents > 0 && (
+          <Text style={styles.feePreview}>
+            {formatCents(form.entryFeeCents)} entry
+          </Text>
         )}
         <TouchableOpacity
-          style={[
-            styles.nextButton,
-            !canAdvance && styles.nextButtonDisabled,
-            step === 3 && styles.launchButton,
-          ]}
-          disabled={!canAdvance || submitting}
-          onPress={() => {
-            if (step < 3) setStep(step + 1);
-            else handleSubmit();
-          }}
+          style={[styles.createButton, submitting && { opacity: 0.6 }]}
+          disabled={submitting}
+          onPress={handleSubmit}
+          activeOpacity={0.85}
         >
-          <Text style={[styles.nextButtonText, step === 3 && styles.launchButtonText]}>
-            {step === 3 ? (submitting ? 'Creating...' : 'Launch Competition') : 'Continue'}
+          <Text style={styles.createButtonText}>
+            {submitting ? 'Creating...' : 'Create Competition'}
           </Text>
-          {step < 3 && <Ionicons name="arrow-forward" size={18} color="#fff" />}
-          {step === 3 && !submitting && <Ionicons name="rocket" size={18} color="#fff" />}
+          {!submitting && <Ionicons name="arrow-forward" size={18} color="#fff" />}
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -514,69 +429,154 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  progressBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xxl,
-    paddingVertical: Spacing.lg,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-  },
-  progressStep: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  progressDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.borderLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing.xs,
-  },
-  progressDotActive: {
-    backgroundColor: Colors.primary,
-  },
-  progressDotComplete: {
-    backgroundColor: Colors.success,
-  },
-  progressDotText: {
-    fontSize: FontSize.xs,
-    fontWeight: '700',
-    color: Colors.textMuted,
-  },
-  progressDotTextActive: {
-    color: '#fff',
-  },
-  progressLabel: {
-    fontSize: FontSize.xs,
-    fontWeight: '600',
-    color: Colors.textMuted,
-  },
-  progressLabelActive: {
-    color: Colors.textPrimary,
-  },
   scrollContent: {
     padding: Spacing.lg,
     paddingBottom: 120,
   },
-  stepContent: {},
-  stepTitle: {
-    fontSize: FontSize.xxl,
+  sectionLabel: {
+    fontSize: FontSize.xl,
     fontWeight: '800',
     color: Colors.textPrimary,
-    marginBottom: Spacing.xxl,
+    marginBottom: Spacing.lg,
+    marginTop: Spacing.lg,
   },
-  inputLabel: {
+  typeCarousel: {
+    paddingRight: Spacing.lg,
+    gap: Spacing.sm,
+    paddingBottom: Spacing.sm,
+  },
+  typeCard: {
+    width: 140,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    gap: 4,
+  },
+  typeCardSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary + '12',
+  },
+  typeCardIcon: {
+    fontSize: 28,
+    marginBottom: 4,
+  },
+  typeCardName: {
+    fontSize: FontSize.md,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  typeCardNameSelected: {
+    color: Colors.primary,
+  },
+  typeCardDesc: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
+    lineHeight: 15,
+  },
+  typeCardWatch: {
+    fontSize: FontSize.xs,
+    color: Colors.warning,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  typeCardPhone: {
+    fontSize: FontSize.xs,
+    color: Colors.success,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  fieldLabel: {
     fontSize: FontSize.sm,
     fontWeight: '700',
     color: Colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: Spacing.sm,
-    marginTop: Spacing.lg,
+    marginTop: Spacing.xl,
+  },
+  optionalTag: {
+    fontWeight: '400',
+    textTransform: 'none',
+    letterSpacing: 0,
+    color: Colors.textMuted,
+  },
+  pillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  pill: {
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  pillSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary + '18',
+  },
+  pillText: {
+    fontSize: FontSize.md,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+  },
+  pillTextSelected: {
+    color: Colors.primary,
+  },
+  customFeeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.sm,
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: Spacing.lg,
+  },
+  customFeePrefix: {
+    fontSize: FontSize.xl,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+  customFeeInput: {
+    flex: 1,
+    fontSize: FontSize.xl,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    paddingVertical: Spacing.md,
+    paddingLeft: Spacing.xs,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  toggleOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  toggleOptionActive: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary,
+  },
+  toggleText: {
+    fontSize: FontSize.md,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+  },
+  toggleTextActive: {
+    color: '#fff',
   },
   textInput: {
     backgroundColor: Colors.surface,
@@ -592,152 +592,22 @@ const styles = StyleSheet.create({
     height: 80,
     textAlignVertical: 'top',
   },
-  typeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-  },
-  typeOption: {
+  advancedToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-    gap: Spacing.sm,
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.lg,
+    marginTop: Spacing.xxl,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
-  typeOptionEmoji: {
-    fontSize: FontSize.lg,
-  },
-  typeOptionLabel: {
-    fontSize: FontSize.sm,
+  advancedToggleText: {
+    fontSize: FontSize.md,
     fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  templateOption: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-    marginBottom: Spacing.sm,
-  },
-  templateOptionActive: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary + '08',
-  },
-  templateRadio: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: Colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: Spacing.md,
-    marginTop: 2,
-  },
-  templateRadioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Colors.primary,
-  },
-  templateContent: {
-    flex: 1,
-  },
-  templateName: {
-    fontSize: FontSize.md,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  templateDesc: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  categoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    marginBottom: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  categoryName: {
-    flex: 1,
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
-  },
-  categoryPointsControl: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  pointsBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.borderLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  categoryPoints: {
-    fontSize: FontSize.md,
-    fontWeight: '700',
-    color: Colors.primary,
-    minWidth: 20,
-    textAlign: 'center',
-  },
-  removeBtn: {
-    marginLeft: Spacing.sm,
-  },
-  addCategoryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: Spacing.md,
-    gap: Spacing.sm,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-    borderColor: Colors.primary + '30',
-    borderStyle: 'dashed',
-  },
-  addCategoryText: {
-    fontSize: FontSize.sm,
-    fontWeight: '600',
-    color: Colors.primary,
-  },
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  dateField: {
-    flex: 1,
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: 'center',
-  },
-  dateLabel: {
-    fontSize: FontSize.xs,
     color: Colors.textMuted,
-    marginBottom: Spacing.xs,
   },
-  dateValue: {
-    fontSize: FontSize.md,
-    fontWeight: '600',
-    color: Colors.textPrimary,
+  advancedSection: {
+    paddingBottom: Spacing.lg,
   },
   counterRow: {
     flexDirection: 'row',
@@ -754,7 +624,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.borderLight,
+    backgroundColor: Colors.surfaceLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -765,97 +635,28 @@ const styles = StyleSheet.create({
     minWidth: 50,
     textAlign: 'center',
   },
-  feeOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-  },
-  feeOption: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-  },
-  feeOptionActive: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary + '10',
-  },
-  feeOptionText: {
-    fontSize: FontSize.md,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  feeOptionTextActive: {
-    color: Colors.primary,
-  },
-  paymentToggle: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  paymentOption: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-  },
-  paymentOptionActive: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary,
-  },
-  paymentOptionText: {
-    fontSize: FontSize.md,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  paymentOptionTextActive: {
-    color: '#fff',
-  },
-  reviewCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
+  scoringOption: {
     padding: Spacing.lg,
-    ...Shadow.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    marginBottom: Spacing.sm,
   },
-  reviewRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+  scoringOptionSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary + '08',
   },
-  reviewLabel: {
+  scoringName: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
-  },
-  reviewValue: {
-    fontSize: FontSize.md,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.textPrimary,
+    marginBottom: 2,
   },
-  paymentNotice: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.sm,
-    marginTop: Spacing.lg,
-    padding: Spacing.lg,
-    backgroundColor: Colors.warning + '12',
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.warning + '30',
-  },
-  paymentNoticeText: {
-    flex: 1,
+  scoringDesc: {
     fontSize: FontSize.sm,
     color: Colors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   bottomBar: {
     flexDirection: 'row',
@@ -864,45 +665,28 @@ const styles = StyleSheet.create({
     paddingBottom: 34,
     backgroundColor: Colors.surface,
     borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
+    borderTopColor: Colors.border,
     gap: Spacing.md,
   },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-  },
-  backButtonText: {
+  feePreview: {
     fontSize: FontSize.md,
-    fontWeight: '600',
-    color: Colors.textSecondary,
+    fontWeight: '700',
+    color: Colors.primary,
   },
-  nextButton: {
+  createButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
     backgroundColor: Colors.primary,
-    paddingVertical: Spacing.md,
+    paddingVertical: Spacing.lg,
     borderRadius: BorderRadius.lg,
     ...Shadow.md,
   },
-  nextButtonDisabled: {
-    backgroundColor: Colors.textMuted,
-    opacity: 0.5,
-  },
-  nextButtonText: {
+  createButtonText: {
     color: '#fff',
     fontSize: FontSize.md,
     fontWeight: '700',
-  },
-  launchButton: {
-    backgroundColor: Colors.success,
-  },
-  launchButtonText: {
-    color: '#fff',
   },
 });

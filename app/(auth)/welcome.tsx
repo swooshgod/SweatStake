@@ -10,19 +10,20 @@ import {
   StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 
-// Attractive fit couple at the gym — faces visible, aspirational energy
 const BG_IMAGE = {
   uri: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=1080&q=90&fit=crop',
 };
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ modal?: string }>();
+  const isModal = params.modal === '1';
   const { signInWithApple } = useAuth();
   const [loading, setLoading] = React.useState(false);
 
@@ -30,7 +31,11 @@ export default function WelcomeScreen() {
     setLoading(true);
     try {
       await signInWithApple();
-      router.replace('/(tabs)');
+      if (isModal) {
+        router.back();
+      } else {
+        router.replace('/(tabs)');
+      }
     } catch (error) {
       console.error('Apple Sign-In error:', error);
     } finally {
@@ -43,7 +48,11 @@ export default function WelcomeScreen() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
       if (error) throw error;
-      router.replace('/(tabs)');
+      if (isModal) {
+        router.back();
+      } else {
+        router.replace('/(tabs)');
+      }
     } catch (error) {
       console.error('Google Sign-In error:', error);
     } finally {
@@ -51,18 +60,64 @@ export default function WelcomeScreen() {
     }
   };
 
+  // ─── Modal / bottom-sheet variant ───
+  if (isModal) {
+    return (
+      <View style={modalStyles.container}>
+        <StatusBar barStyle="light-content" />
+        <View style={modalStyles.handle} />
+        <Image
+          source={require('@/assets/logo.png')}
+          style={modalStyles.logo}
+          resizeMode="contain"
+        />
+        <Text style={modalStyles.title}>Sign in to continue</Text>
+        <Text style={modalStyles.subtitle}>
+          Create competitions, join challenges, and win prizes.
+        </Text>
+
+        <View style={modalStyles.buttons}>
+          {Platform.OS === 'ios' && (
+            <TouchableOpacity
+              style={modalStyles.appleButton}
+              activeOpacity={0.85}
+              onPress={handleAppleSignIn}
+              disabled={loading}
+            >
+              <Ionicons name="logo-apple" size={20} color="#fff" />
+              <Text style={modalStyles.appleButtonText}>Sign in with Apple</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            style={modalStyles.googleButton}
+            activeOpacity={0.85}
+            onPress={handleGoogleSignIn}
+            disabled={loading}
+          >
+            <Ionicons name="logo-google" size={18} color={Colors.background} />
+            <Text style={modalStyles.googleButtonText}>Sign in with Google</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={modalStyles.cancelButton} onPress={() => router.back()}>
+          <Text style={modalStyles.cancelText}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // ─── Full-screen welcome (first launch) ───
   return (
     <ImageBackground source={BG_IMAGE} style={styles.bg} resizeMode="cover">
       <StatusBar barStyle="light-content" />
 
-      {/* Photo breathes at top, darkens firmly from midpoint down so text always wins */}
       <LinearGradient
         colors={[
-          'rgba(0,0,0,0.40)',   // top — wordmark readable
-          'rgba(0,0,0,0.05)',   // upper quarter — photo shines
-          'rgba(0,0,0,0.50)',   // midpoint — starts darkening
-          'rgba(0,0,0,0.82)',   // text zone — words own this space
-          'rgba(0,0,0,0.97)',   // buttons — near solid
+          'rgba(0,0,0,0.40)',
+          'rgba(0,0,0,0.05)',
+          'rgba(0,0,0,0.50)',
+          'rgba(0,0,0,0.82)',
+          'rgba(0,0,0,0.97)',
         ]}
         locations={[0, 0.22, 0.48, 0.68, 1]}
         style={StyleSheet.absoluteFill}
@@ -80,15 +135,13 @@ export default function WelcomeScreen() {
 
       {/* Bottom content */}
       <View style={styles.bottom}>
-        {/* Hero copy */}
         <View style={styles.heroText}>
           <Text style={styles.headline}>Where Winners{'\n'}Stand.</Text>
           <Text style={styles.subline}>
-            Create fitness competitions, track automatically{'\n'}with Apple Health, and claim the prize.
+            Step challenges, weight loss contests, workout{'\n'}streaks & more — tracked with Apple Health.
           </Text>
         </View>
 
-        {/* Feature pills */}
         <View style={styles.pills}>
           <View style={styles.pill}>
             <Ionicons name="trophy" size={13} color={Colors.accent} />
@@ -104,7 +157,6 @@ export default function WelcomeScreen() {
           </View>
         </View>
 
-        {/* Auth buttons */}
         <View style={styles.authButtons}>
           {Platform.OS === 'ios' && (
             <TouchableOpacity
@@ -124,7 +176,7 @@ export default function WelcomeScreen() {
             onPress={handleGoogleSignIn}
             disabled={loading}
           >
-            <Ionicons name="logo-google" size={18} color={Colors.textPrimary} />
+            <Ionicons name="logo-google" size={18} color={Colors.background} />
             <Text style={styles.googleButtonText}>Sign in with Google</Text>
           </TouchableOpacity>
 
@@ -132,7 +184,7 @@ export default function WelcomeScreen() {
             style={styles.skipButton}
             onPress={() => router.replace('/(tabs)')}
           >
-            <Text style={styles.skipText}>Browse without signing in →</Text>
+            <Text style={styles.skipText}>Browse without signing in</Text>
           </TouchableOpacity>
         </View>
 
@@ -144,6 +196,86 @@ export default function WelcomeScreen() {
   );
 }
 
+// ─── Modal styles ───
+const modalStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xxl,
+    paddingTop: Spacing.lg,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.textMuted,
+    marginBottom: Spacing.xxxl,
+  },
+  logo: {
+    width: 56,
+    height: 56,
+    marginBottom: Spacing.lg,
+  },
+  title: {
+    fontSize: FontSize.xxl,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
+  },
+  subtitle: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: Spacing.xxxl,
+  },
+  buttons: {
+    width: '100%',
+    gap: Spacing.md,
+  },
+  appleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000',
+    paddingVertical: 16,
+    borderRadius: BorderRadius.lg,
+    gap: Spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  appleButtonText: {
+    color: '#fff',
+    fontSize: FontSize.md,
+    fontWeight: '700',
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    paddingVertical: 16,
+    borderRadius: BorderRadius.lg,
+    gap: Spacing.sm,
+  },
+  googleButtonText: {
+    color: Colors.background,
+    fontSize: FontSize.md,
+    fontWeight: '700',
+  },
+  cancelButton: {
+    marginTop: Spacing.xxl,
+    paddingVertical: Spacing.md,
+  },
+  cancelText: {
+    fontSize: FontSize.md,
+    color: Colors.textMuted,
+    fontWeight: '500',
+  },
+});
+
+// ─── Full-screen styles ───
 const styles = StyleSheet.create({
   bg: {
     flex: 1,
@@ -251,7 +383,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   googleButtonText: {
-    color: Colors.textPrimary,
+    color: Colors.background,
     fontSize: FontSize.md,
     fontWeight: '700',
   },

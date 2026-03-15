@@ -25,6 +25,84 @@ export type CompetitionType = 'fitness' | 'running' | 'cycling' | 'lifting' | 'c
 export type CompetitionStatus = 'open' | 'active' | 'completed' | 'cancelled';
 export type PaymentType = 'stripe' | 'usdc';
 
+export type ScoringMode =
+  | 'relative_improvement'  // % above personal 7-day baseline (public default)
+  | 'raw_steps'
+  | 'raw_miles'
+  | 'raw_calories'
+  | 'raw_workouts'
+  | 'weight_loss';          // lbs lost during competition period
+
+export interface ScoringModeConfig {
+  id: ScoringMode;
+  label: string;
+  description: string;
+  unit: string;
+  privateOnly: boolean;  // true = only available in private competitions
+  requiresManualEntry?: boolean;  // weight_loss needs manual weigh-ins
+}
+
+export const SCORING_MODES: ScoringModeConfig[] = [
+  { id: 'relative_improvement', label: '% Improvement', description: 'Compete on how much you improve above your personal baseline. Fair for all fitness levels.', unit: '%', privateOnly: false },
+  { id: 'raw_steps', label: 'Most Steps', description: 'Total steps taken during the competition.', unit: 'steps', privateOnly: true },
+  { id: 'raw_miles', label: 'Most Miles', description: 'Total distance covered during the competition.', unit: 'miles', privateOnly: true },
+  { id: 'raw_calories', label: 'Most Calories', description: 'Total active calories burned.', unit: 'cal', privateOnly: true },
+  { id: 'raw_workouts', label: 'Most Workouts', description: 'Total workout sessions completed.', unit: 'workouts', privateOnly: true },
+  { id: 'weight_loss', label: 'Weight Loss', description: 'Most weight lost during the competition. Manual weigh-ins required.', unit: 'lbs', privateOnly: true, requiresManualEntry: true },
+];
+
+export interface CompetitionTemplate {
+  id: string;
+  name: string;
+  description: string;
+  metric: string;
+  requiresWatch: boolean;
+  icon: string;
+}
+
+export const COMPETITION_TEMPLATES: CompetitionTemplate[] = [
+  {
+    id: 'step_race',
+    name: 'Step Race',
+    description: 'Compete on daily step counts tracked by your iPhone',
+    metric: 'steps',
+    requiresWatch: false,
+    icon: '👟',
+  },
+  {
+    id: 'workout_streak',
+    name: 'Workout Streak',
+    description: 'Longest consecutive workout days wins — tracked via Apple Watch',
+    metric: 'workouts',
+    requiresWatch: true,
+    icon: '🔥',
+  },
+  {
+    id: 'calorie_burn',
+    name: 'Calorie Burn',
+    description: 'Highest active calories burned — requires Apple Watch for accuracy',
+    metric: 'calories',
+    requiresWatch: true,
+    icon: '💥',
+  },
+  {
+    id: 'active_minutes',
+    name: 'Active Minutes',
+    description: 'Most exercise minutes logged — requires Apple Watch rings',
+    metric: 'activeMinutes',
+    requiresWatch: true,
+    icon: '⏱️',
+  },
+  {
+    id: 'custom',
+    name: 'Custom',
+    description: 'Define your own categories and scoring',
+    metric: 'custom',
+    requiresWatch: false,
+    icon: '⭐',
+  },
+];
+
 export interface Competition {
   id: string;
   creator_id: string;
@@ -32,6 +110,7 @@ export interface Competition {
   description: string | null;
   type: CompetitionType;
   scoring_template: ScoringTemplate;
+  scoring_mode: ScoringMode;
   start_date: string;
   end_date: string;
   max_participants: number;
@@ -40,7 +119,9 @@ export interface Competition {
   prize_pool_cents: number;
   service_fee_pct: number;
   is_public: boolean;
+  is_private: boolean;
   invite_code: string;
+  requires_watch: boolean;
   status: CompetitionStatus;
   winner_id: string | null;
   created_at: string;
@@ -97,10 +178,13 @@ export interface CreateCompetitionForm {
   type: CompetitionType;
   scoringTemplate: string;
   categories: ScoringCategory[];
+  scoringMode: ScoringMode;
   startDate: Date;
   endDate: Date;
   maxParticipants: number;
   entryFeeCents: number;
   paymentType: PaymentType;
   isPublic: boolean;
+  isPrivate: boolean;
+  requiresWatch: boolean;
 }

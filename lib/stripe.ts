@@ -1,33 +1,77 @@
 /**
- * Stripe helpers for SweatStake.
+ * Stripe helpers for Podium.
  *
- * In production, payment intents and customer creation happen server-side
- * (Supabase Edge Functions). These helpers handle the client-side flow.
+ * Client-side: publishable key, formatting, PaymentIntent confirmation.
+ * Server-side (Supabase Edge Functions): PaymentIntent creation,
+ * Connect account onboarding, and winner payouts.
  */
 
-const STRIPE_PUBLISHABLE_KEY = 'pk_test_placeholder';
+import { SERVICE_FEE_PCT } from "./payments";
 
-export { STRIPE_PUBLISHABLE_KEY };
+export const STRIPE_PUBLISHABLE_KEY =
+  "pk_live_51TAL5oKTqskC6Sks7frRhPbu38RrHUl23DVhIOkt6r70zLcrchhn8I8p4NT3wPp47Qcq8s3AIK0H85YFewFctojm003uoVaxo1";
 
-/**
- * Format cents to a display string.
- */
+// ── Formatting ──────────────────────────────────────────────────────────────
+
 export function formatCents(cents: number): string {
-  if (cents === 0) return 'Free';
+  if (cents === 0) return "Free";
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-/**
- * Format prize pool with service fee deducted.
- */
-export function formatPrizePool(totalCents: number, serviceFeePct: number): string {
+export function formatPrizePool(
+  totalCents: number,
+  serviceFeePct: number
+): string {
   const net = totalCents * (1 - serviceFeePct / 100);
   return formatCents(Math.round(net));
 }
 
-/**
- * Calculate expected prize pool based on entry fee and participant count.
- */
-export function calculatePrizePool(entryFeeCents: number, participantCount: number): number {
+export function calculatePrizePool(
+  entryFeeCents: number,
+  participantCount: number
+): number {
   return entryFeeCents * participantCount;
+}
+
+// ── Server-side helpers (call from Supabase Edge Functions) ─────────────────
+//
+// The functions below are documented here for reference but MUST run on the
+// server where the Stripe secret key is available.
+//
+// createEntryPaymentIntent(amount, competitionId, userId)
+//   → creates a PaymentIntent with metadata { competitionId, userId }
+//   → returns { clientSecret, paymentIntentId }
+//
+// createConnectAccount(email)
+//   → creates a Stripe Connect Express account for winner payouts
+//   → returns { accountId, onboardingUrl }
+//
+// payoutWinner(stripeAccountId, amount, competitionId)
+//   → transfers (amount * (1 - SERVICE_FEE_PCT)) to the winner's Connect account
+//   → Podium keeps 10% as platform fee
+//   → returns { transferId }
+
+/**
+ * Shape returned by the server-side createEntryPaymentIntent edge function.
+ */
+export interface EntryPaymentResult {
+  clientSecret: string;
+  paymentIntentId: string;
+}
+
+/**
+ * Shape returned by the server-side createConnectAccount edge function.
+ */
+export interface ConnectAccountResult {
+  accountId: string;
+  onboardingUrl: string;
+}
+
+/**
+ * Shape returned by the server-side payoutWinner edge function.
+ */
+export interface PayoutResult {
+  transferId: string;
+  winnerAmount: number;
+  fee: number;
 }

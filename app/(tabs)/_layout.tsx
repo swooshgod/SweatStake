@@ -11,7 +11,7 @@ export default function TabLayout() {
         tabBarInactiveTintColor: Colors.textMuted,
         tabBarStyle: {
           backgroundColor: Colors.surface,
-          borderTopColor: Colors.borderLight,
+          borderTopColor: Colors.border,
           paddingTop: 4,
           height: 88,
         },
@@ -20,7 +20,7 @@ export default function TabLayout() {
           fontWeight: '600',
         },
         headerStyle: {
-          backgroundColor: Colors.surface,
+          backgroundColor: Colors.background,
         },
         headerShadowVisible: false,
         headerTitleStyle: {
@@ -34,7 +34,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          headerTitle: 'SweatStake',
+          headerTitle: 'Podium',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="flame" size={size} color={color} />
           ),

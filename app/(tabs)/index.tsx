@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  FlatList,
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
@@ -43,78 +42,43 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero CTA */}
-        <TouchableOpacity
-          style={styles.createBanner}
-          activeOpacity={0.85}
-          onPress={() => {
-            if (!isAuthenticated) {
-              router.push('/(auth)/welcome');
-              return;
-            }
-            router.push('/create');
-          }}
-        >
-          <View style={styles.createBannerContent}>
-            <View style={styles.createBannerText}>
-              <Text style={styles.createBannerTitle}>Start a Competition</Text>
-              <Text style={styles.createBannerSubtitle}>
-                Challenge friends. Track progress. Win prizes.
-              </Text>
-            </View>
-            <View style={styles.createBannerIcon}>
-              <Ionicons name="add-circle" size={48} color="#fff" />
-            </View>
-          </View>
-        </TouchableOpacity>
-
-        {/* Active Competitions */}
-        {isAuthenticated && (
+        {/* Your Competitions — only if authenticated and has competitions */}
+        {isAuthenticated && myComps.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Your Competitions</Text>
             {myLoading ? (
               <ActivityIndicator color={Colors.primary} style={styles.loader} />
-            ) : myComps.length > 0 ? (
+            ) : (
               myComps.map((comp) => (
                 <CompetitionCard key={comp.id} competition={comp} />
               ))
-            ) : (
-              <View style={styles.emptyState}>
-                <Ionicons name="trophy-outline" size={48} color={Colors.textMuted} />
-                <Text style={styles.emptyText}>No active competitions</Text>
-                <Text style={styles.emptySubtext}>
-                  Create one or join a public challenge below!
-                </Text>
-              </View>
             )}
           </View>
         )}
 
-        {/* Discover */}
+        {/* Live Competitions Feed */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Discover</Text>
-            <Text style={styles.sectionBadge}>
-              {publicComps.length} open
-            </Text>
+            <Text style={styles.sectionTitle}>Live Competitions</Text>
+            {publicComps.length > 0 && (
+              <View style={styles.sectionBadgeContainer}>
+                <View style={styles.liveDot} />
+                <Text style={styles.sectionBadge}>
+                  {publicComps.length} open
+                </Text>
+              </View>
+            )}
           </View>
           {publicLoading ? (
             <ActivityIndicator color={Colors.primary} style={styles.loader} />
           ) : publicComps.length > 0 ? (
-            <FlatList
-              data={publicComps}
-              keyExtractor={(item) => item.id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.horizontalList}
-              renderItem={({ item }) => (
-                <CompetitionCard competition={item} variant="compact" />
-              )}
-            />
+            publicComps.map((comp) => (
+              <CompetitionCard key={comp.id} competition={comp} />
+            ))
           ) : (
             <View style={styles.emptyState}>
-              <Ionicons name="search-outline" size={48} color={Colors.textMuted} />
-              <Text style={styles.emptyText}>No public competitions yet</Text>
+              <Ionicons name="trophy-outline" size={48} color={Colors.textMuted} />
+              <Text style={styles.emptyText}>No live competitions yet</Text>
               <Text style={styles.emptySubtext}>
                 Be the first to create one!
               </Text>
@@ -122,6 +86,21 @@ export default function HomeScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={styles.fab}
+        activeOpacity={0.85}
+        onPress={() => {
+          if (!isAuthenticated) {
+            router.push('/(auth)/welcome');
+            return;
+          }
+          router.push('/create');
+        }}
+      >
+        <Ionicons name="add" size={28} color="#fff" />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -134,36 +113,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: Spacing.lg,
     paddingBottom: 100,
-  },
-  createBanner: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-    marginBottom: Spacing.xxl,
-    ...Shadow.lg,
-  },
-  createBannerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: Spacing.xl,
-  },
-  createBannerText: {
-    flex: 1,
-  },
-  createBannerTitle: {
-    fontSize: FontSize.xl,
-    fontWeight: '800',
-    color: '#fff',
-    marginBottom: Spacing.xs,
-  },
-  createBannerSubtitle: {
-    fontSize: FontSize.sm,
-    color: 'rgba(255,255,255,0.85)',
-    lineHeight: 18,
-  },
-  createBannerIcon: {
-    marginLeft: Spacing.lg,
-    opacity: 0.9,
   },
   section: {
     marginBottom: Spacing.xxl,
@@ -180,18 +129,26 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     marginBottom: Spacing.md,
   },
-  sectionBadge: {
-    fontSize: FontSize.xs,
-    fontWeight: '600',
-    color: Colors.success,
+  sectionBadgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: Colors.success + '15',
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.sm,
     marginBottom: Spacing.md,
   },
-  horizontalList: {
-    paddingRight: Spacing.lg,
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.success,
+  },
+  sectionBadge: {
+    fontSize: FontSize.xs,
+    fontWeight: '600',
+    color: Colors.success,
   },
   loader: {
     marginVertical: Spacing.xxl,
@@ -201,7 +158,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xxxl,
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
-    ...Shadow.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   emptyText: {
     fontSize: FontSize.md,
@@ -213,5 +171,17 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     color: Colors.textMuted,
     marginTop: Spacing.xs,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 100,
+    right: Spacing.xl,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Shadow.lg,
   },
 });

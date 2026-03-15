@@ -16,12 +16,23 @@ import { formatCents, formatPrizePool } from '@/lib/stripe';
 import { useAuth } from '@/hooks/useAuth';
 import { useCompetitionDetail } from '@/hooks/useCompetitions';
 import { supabase } from '@/lib/supabase';
+import { checkAppleWatchPaired } from '@/lib/healthkit';
 import LeaderboardRow from '@/components/LeaderboardRow';
 import DailyChecklist from '@/components/DailyChecklist';
 import WeeklyCalendar from '@/components/WeeklyCalendar';
-import type { DailyLogEntries, ScoringCategory } from '@/lib/types';
+import type { DailyLogEntries, ScoringCategory, ScoringMode } from '@/lib/types';
+import { SCORING_MODES } from '@/lib/types';
 
 type Tab = 'leaderboard' | 'progress' | 'rules';
+
+const SCORING_MODE_COLORS: Record<ScoringMode, string> = {
+  relative_improvement: '#3B82F6',
+  raw_steps: '#8B5CF6',
+  raw_miles: '#EC4899',
+  raw_calories: '#F59E0B',
+  raw_workouts: '#10B981',
+  weight_loss: '#6366F1',
+};
 
 export default function CompetitionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -54,6 +65,26 @@ export default function CompetitionDetailScreen() {
 
   const handleJoin = async () => {
     if (!profile || !competition) return;
+
+    // Check Apple Watch requirement
+    if (competition.requires_watch) {
+      const hasPaired = await checkAppleWatchPaired();
+      if (!hasPaired) {
+        if (__DEV__) {
+          Alert.alert(
+            'Apple Watch Required',
+            'This competition requires Apple Watch for accurate tracking. No Watch detected — proceeding anyway (dev mode).',
+          );
+        } else {
+          Alert.alert(
+            'Apple Watch Required',
+            'This competition requires Apple Watch for accurate tracking. Connect an Apple Watch to join.',
+            [{ text: 'OK' }],
+          );
+          return;
+        }
+      }
+    }
 
     try {
       const { error } = await supabase.from('participants').insert({
@@ -103,13 +134,34 @@ export default function CompetitionDetailScreen() {
   );
 
   const handleSyncHealthKit = useCallback(
-    (data: DailyLogEntries) => {
+    async (data: DailyLogEntries) => {
       setTodayEntries(data);
-      // Trigger save
-      if (data.workout !== undefined) handleToggleEntry('workout', data.workout);
-      if (data.steps !== undefined) handleToggleEntry('steps', data.steps);
+
+      if (!myParticipant || !competition) return;
+
+      // Calculate points from the synced data directly (avoid stale state)
+      const categories = competition.scoring_template?.categories ?? [];
+      let points = 0;
+      for (const cat of categories) {
+        const catKey = cat.name.toLowerCase().split(' ')[0];
+        const val = data[catKey];
+        if (typeof val === 'boolean' && val) points += cat.points;
+        if (typeof val === 'number' && catKey === 'steps' && val >= 8000) points += cat.points;
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      await supabase.from('daily_logs').upsert(
+        {
+          participant_id: myParticipant.id,
+          log_date: today,
+          entries: data,
+          points_earned: points,
+          auto_synced: true,
+        },
+        { onConflict: 'participant_id,log_date' }
+      );
     },
-    [handleToggleEntry]
+    [myParticipant, competition]
   );
 
   // Generate mock weekly data for display
@@ -154,6 +206,38 @@ export default function CompetitionDetailScreen() {
             <Text style={[styles.typeLabel, { color: typeInfo.color }]}>{typeInfo.label}</Text>
           </View>
           <Text style={styles.competitionName}>{competition.name}</Text>
+
+          {/* Watch requirement badge */}
+          <View style={[
+            styles.watchBadge,
+            { backgroundColor: competition.requires_watch ? '#F59E0B18' : '#22C55E18' },
+          ]}>
+            <Text style={styles.watchBadgeIcon}>
+              {competition.requires_watch ? '⌚' : '📱'}
+            </Text>
+            <Text style={[
+              styles.watchBadgeText,
+              { color: competition.requires_watch ? '#F59E0B' : '#22C55E' },
+            ]}>
+              {competition.requires_watch ? 'Requires Apple Watch' : 'iPhone Compatible'}
+            </Text>
+          </View>
+
+          {/* Scoring mode badge */}
+          {competition.scoring_mode && (
+            <View style={[
+              styles.watchBadge,
+              { backgroundColor: (SCORING_MODE_COLORS[competition.scoring_mode] ?? '#3B82F6') + '18' },
+            ]}>
+              <Text style={[
+                styles.watchBadgeText,
+                { color: SCORING_MODE_COLORS[competition.scoring_mode] ?? '#3B82F6' },
+              ]}>
+                {SCORING_MODES.find((m) => m.id === competition.scoring_mode)?.label ?? '% Improvement'}
+              </Text>
+            </View>
+          )}
+
           {competition.description && (
             <Text style={styles.description}>{competition.description}</Text>
           )}
@@ -305,6 +389,12 @@ export default function CompetitionDetailScreen() {
               <View style={styles.ruleRow}>
                 <Text style={styles.ruleLabel}>Visibility</Text>
                 <Text style={styles.ruleValue}>{competition.is_public ? 'Public' : 'Invite Only'}</Text>
+              </View>
+              <View style={styles.ruleRow}>
+                <Text style={styles.ruleLabel}>Scoring Mode</Text>
+                <Text style={styles.ruleValue}>
+                  {SCORING_MODES.find((m) => m.id === competition.scoring_mode)?.label ?? '% Improvement'}
+                </Text>
               </View>
 
               {categories.length > 0 && (
@@ -551,5 +641,22 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: '600',
     color: Colors.textPrimary,
+  },
+  watchBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+    marginBottom: Spacing.md,
+    gap: 4,
+  },
+  watchBadgeIcon: {
+    fontSize: FontSize.xs,
+  },
+  watchBadgeText: {
+    fontSize: FontSize.xs,
+    fontWeight: '600',
   },
 });
