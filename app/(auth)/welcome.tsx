@@ -15,9 +15,9 @@ import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/the
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 
-// Dramatic gym photo — low angle, cinematic lighting, man + woman training
+// Two fit people training together — outdoor run, natural light, aspirational
 const BG_IMAGE = {
-  uri: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1080&q=90&fit=crop',
+  uri: 'https://images.unsplash.com/photo-1517963879433-6ad2b056d712?w=1080&q=90&fit=crop',
 };
 
 export default function WelcomeScreen() {
@@ -54,14 +54,16 @@ export default function WelcomeScreen() {
     <ImageBackground source={BG_IMAGE} style={styles.bg} resizeMode="cover">
       <StatusBar barStyle="light-content" />
 
-      {/* Full-height dark gradient — heavier at top and bottom, breathes in the middle */}
+      {/* Subtle gradient — light touch on top, stronger only at the very bottom for UI */}
       <LinearGradient
         colors={[
-          'rgba(0,0,0,0.72)',   // top — sky / ceiling
-          'rgba(0,0,0,0.10)',   // mid — let the action photo breathe
-          'rgba(0,0,0,0.88)',   // bottom — UI sits here
+          'rgba(0,0,0,0.30)',   // top — just enough for wordmark
+          'rgba(0,0,0,0.00)',   // mid — photo shines through fully
+          'rgba(0,0,0,0.00)',   // upper-mid — clear
+          'rgba(0,0,0,0.75)',   // lower — fade in for text
+          'rgba(0,0,0,0.95)',   // bottom — solid for buttons
         ]}
-        locations={[0, 0.45, 1]}
+        locations={[0, 0.2, 0.45, 0.72, 1]}
         style={StyleSheet.absoluteFill}
       />
 
@@ -186,12 +188,18 @@ const styles = StyleSheet.create({
     lineHeight: 50,
     letterSpacing: -1.5,
     marginBottom: 12,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
   subline: {
     fontSize: FontSize.sm,
-    color: 'rgba(255,255,255,0.6)',
+    color: 'rgba(255,255,255,0.85)',
     lineHeight: 20,
-    fontWeight: '400',
+    fontWeight: '500',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   pills: {
     flexDirection: 'row',
@@ -202,16 +210,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(255,255,255,0.10)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: 'rgba(255,255,255,0.25)',
   },
   pillText: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.85)',
+    color: '#fff',
     fontWeight: '600',
   },
   authButtons: {
