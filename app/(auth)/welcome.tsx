@@ -15,9 +15,9 @@ import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/the
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 
-// Two fit people training together — outdoor run, natural light, aspirational
+// Attractive fit couple at the gym — faces visible, aspirational energy
 const BG_IMAGE = {
-  uri: 'https://images.unsplash.com/photo-1517963879433-6ad2b056d712?w=1080&q=90&fit=crop',
+  uri: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=1080&q=90&fit=crop',
 };
 
 export default function WelcomeScreen() {
