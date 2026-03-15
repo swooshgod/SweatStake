@@ -26,6 +26,8 @@ import { supabase } from '@/lib/supabase';
 import type { CompetitionType, CreateCompetitionForm, ScoringMode } from '@/lib/types';
 import { SCORING_MODES } from '@/lib/types';
 
+const MIN_PARTICIPANTS = 3; // Competition won't activate below this
+
 const COMP_TYPES = [
   { id: 'step_race', icon: '\u{1F3C3}', name: 'Step Race', desc: 'Auto-tracked steps', watch: false, type: 'running' as CompetitionType, scoringMode: 'raw_steps' as ScoringMode },
   { id: 'workout_streak', icon: '\u{1F4AA}', name: 'Workout Streak', desc: 'Auto-detected workouts', watch: true, type: 'fitness' as CompetitionType, scoringMode: 'raw_workouts' as ScoringMode },
@@ -117,6 +119,13 @@ export default function CreateCompetitionScreen() {
 
     setSubmitting(true);
     try {
+      // Validate minimum participants for paid competitions
+      if (form.entryFeeCents > 0 && form.maxParticipants < MIN_PARTICIPANTS) {
+        Alert.alert('Minimum 3 Players', 'Paid competitions need at least 3 participants to run.');
+        setSubmitting(false);
+        return;
+      }
+
       const finalName = form.name.trim() || generateName();
 
       const { data, error } = await supabase
@@ -351,7 +360,7 @@ export default function CreateCompetitionScreen() {
             <View style={styles.counterRow}>
               <TouchableOpacity
                 style={styles.counterBtn}
-                onPress={() => updateForm('maxParticipants', Math.max(2, form.maxParticipants - 5))}
+                onPress={() => updateForm('maxParticipants', Math.max(form.entryFeeCents > 0 ? MIN_PARTICIPANTS : 2, form.maxParticipants - 5))}
               >
                 <Ionicons name="remove" size={20} color={Colors.textSecondary} />
               </TouchableOpacity>
@@ -432,9 +441,18 @@ export default function CreateCompetitionScreen() {
       {/* Bottom CTA */}
       <View style={styles.bottomBar}>
         {form.entryFeeCents > 0 && (
-          <Text style={styles.feePreview}>
-            {formatCents(form.entryFeeCents)} entry
-          </Text>
+          <View>
+            <Text style={styles.feePreview}>
+              {formatCents(form.entryFeeCents)} entry · {form.maxParticipants} players max · winner gets{' '}
+              {formatCents(Math.floor(form.entryFeeCents * form.maxParticipants * 0.9))}
+            </Text>
+            <Text style={styles.feeNote}>
+              Needs {MIN_PARTICIPANTS}+ players to run · Full refund if it doesn't fill
+            </Text>
+            <Text style={styles.feeNote}>
+              Tiebreaker: best streak → earliest join date
+            </Text>
+          </View>
         )}
         <TouchableOpacity
           style={[styles.createButton, submitting && { opacity: 0.6 }]}
@@ -744,6 +762,12 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: '700',
     color: Colors.primary,
+    marginBottom: 2,
+  },
+  feeNote: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    marginTop: 1,
   },
   createButton: {
     flex: 1,
