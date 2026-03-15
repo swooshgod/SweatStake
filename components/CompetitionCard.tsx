@@ -16,7 +16,6 @@ const SCORING_MODE_BADGES: Record<ScoringMode, { emoji: string; label: string; c
   raw_miles: { emoji: '\u{1F3C3}', label: 'Most Miles', color: '#EC4899' },
   raw_calories: { emoji: '\u{1F525}', label: 'Most Calories', color: '#F59E0B' },
   raw_workouts: { emoji: '\u{1F4AA}', label: 'Most Workouts', color: '#10B981' },
-  weight_loss: { emoji: '\u{2696}\u{FE0F}', label: 'Weight Loss', color: '#6366F1' },
 };
 
 export default function CompetitionCard({ competition, variant = 'full' }: Props) {
@@ -95,6 +94,9 @@ export default function CompetitionCard({ competition, variant = 'full' }: Props
             </Text>
           </View>
         )}
+        <View style={[styles.badge, { backgroundColor: '#22C55E18' }]}>
+          <Text style={[styles.badgeText, { color: '#22C55E' }]}>{'\u2705'} Verified</Text>
+        </View>
         {hasFee && (
           <View style={[styles.badge, { backgroundColor: Colors.primary + '18' }]}>
             <Text style={[styles.badgeText, { color: Colors.primary }]}>

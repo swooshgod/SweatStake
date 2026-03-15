@@ -35,8 +35,7 @@ export type ScoringMode =
   | 'raw_steps'
   | 'raw_miles'
   | 'raw_calories'
-  | 'raw_workouts'
-  | 'weight_loss';          // lbs lost during competition period
+  | 'raw_workouts';
 
 export interface ScoringModeConfig {
   id: ScoringMode;
@@ -44,16 +43,14 @@ export interface ScoringModeConfig {
   description: string;
   unit: string;
   privateOnly: boolean;  // true = only available in private competitions
-  requiresManualEntry?: boolean;  // weight_loss needs manual weigh-ins
 }
 
 export const SCORING_MODES: ScoringModeConfig[] = [
   { id: 'relative_improvement', label: '% Improvement', description: 'Compete on how much you improve above your personal baseline. Fair for all fitness levels.', unit: '%', privateOnly: false },
   { id: 'raw_steps', label: 'Most Steps', description: 'Total steps taken during the competition.', unit: 'steps', privateOnly: true },
   { id: 'raw_miles', label: 'Most Miles', description: 'Total distance covered during the competition.', unit: 'miles', privateOnly: true },
-  { id: 'raw_calories', label: 'Most Calories', description: 'Total active calories burned.', unit: 'cal', privateOnly: true },
-  { id: 'raw_workouts', label: 'Most Workouts', description: 'Total workout sessions completed.', unit: 'workouts', privateOnly: true },
-  { id: 'weight_loss', label: 'Weight Loss', description: 'Most weight lost during the competition. Manual weigh-ins required.', unit: 'lbs', privateOnly: true, requiresManualEntry: true },
+  { id: 'raw_calories', label: 'Most Calories', description: 'Total active calories burned. Auto-tracked via Apple Watch.', unit: 'cal', privateOnly: true },
+  { id: 'raw_workouts', label: 'Most Workouts', description: 'Total workout sessions completed. Auto-detected via Apple Watch.', unit: 'workouts', privateOnly: true },
 ];
 
 export interface CompetitionTemplate {
@@ -69,7 +66,7 @@ export const COMPETITION_TEMPLATES: CompetitionTemplate[] = [
   {
     id: 'step_race',
     name: 'Step Race',
-    description: 'Compete on daily step counts tracked by your iPhone',
+    description: 'Compete on daily step counts — auto-tracked via Apple Health',
     metric: 'steps',
     requiresWatch: false,
     icon: '👟',
@@ -77,7 +74,7 @@ export const COMPETITION_TEMPLATES: CompetitionTemplate[] = [
   {
     id: 'workout_streak',
     name: 'Workout Streak',
-    description: 'Longest consecutive workout days wins — tracked via Apple Watch',
+    description: 'Most workout days wins — auto-detected via Apple Watch',
     metric: 'workouts',
     requiresWatch: true,
     icon: '🔥',
@@ -85,26 +82,18 @@ export const COMPETITION_TEMPLATES: CompetitionTemplate[] = [
   {
     id: 'calorie_burn',
     name: 'Calorie Burn',
-    description: 'Highest active calories burned — requires Apple Watch for accuracy',
+    description: 'Highest active calories burned — auto-tracked via Apple Watch',
     metric: 'calories',
     requiresWatch: true,
     icon: '💥',
   },
   {
-    id: 'active_minutes',
-    name: 'Active Minutes',
-    description: 'Most exercise minutes logged — requires Apple Watch rings',
-    metric: 'activeMinutes',
-    requiresWatch: true,
-    icon: '⏱️',
-  },
-  {
-    id: 'custom',
-    name: 'Custom',
-    description: 'Define your own categories and scoring',
-    metric: 'custom',
+    id: 'improvement',
+    name: '% Improvement',
+    description: 'Biggest improvement above your baseline — auto-tracked',
+    metric: 'improvement',
     requiresWatch: false,
-    icon: '⭐',
+    icon: '📈',
   },
 ];
 
@@ -154,8 +143,8 @@ export interface Participant {
 export interface DailyLogEntries {
   workout?: boolean;
   steps?: number;
-  water?: boolean;
-  protein?: boolean;
+  activeCalories?: number;
+  activeMinutes?: number;
   [key: string]: boolean | number | undefined;
 }
 

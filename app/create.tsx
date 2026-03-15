@@ -27,10 +27,10 @@ import type { CompetitionType, CreateCompetitionForm, ScoringMode } from '@/lib/
 import { SCORING_MODES } from '@/lib/types';
 
 const COMP_TYPES = [
-  { id: 'step_race', icon: '\u{1F3C3}', name: 'Step Race', desc: 'Most steps wins', watch: false, type: 'running' as CompetitionType, scoringMode: 'raw_steps' as ScoringMode },
-  { id: 'weight_loss', icon: '\u{2696}\u{FE0F}', name: 'Weight Loss', desc: 'Most lbs lost wins', watch: false, type: 'fitness' as CompetitionType, scoringMode: 'weight_loss' as ScoringMode },
-  { id: 'workout_streak', icon: '\u{1F4AA}', name: 'Workout Streak', desc: 'Most workouts wins', watch: true, type: 'fitness' as CompetitionType, scoringMode: 'raw_workouts' as ScoringMode },
-  { id: 'calorie_burn', icon: '\u{1F525}', name: 'Calorie Burn', desc: 'Most calories wins', watch: true, type: 'fitness' as CompetitionType, scoringMode: 'raw_calories' as ScoringMode },
+  { id: 'step_race', icon: '\u{1F3C3}', name: 'Step Race', desc: 'Auto-tracked steps', watch: false, type: 'running' as CompetitionType, scoringMode: 'raw_steps' as ScoringMode },
+  { id: 'workout_streak', icon: '\u{1F4AA}', name: 'Workout Streak', desc: 'Auto-detected workouts', watch: true, type: 'fitness' as CompetitionType, scoringMode: 'raw_workouts' as ScoringMode },
+  { id: 'calorie_burn', icon: '\u{1F525}', name: 'Calorie Burn', desc: 'Auto-tracked calories', watch: true, type: 'fitness' as CompetitionType, scoringMode: 'raw_calories' as ScoringMode },
+  { id: 'full_challenge', icon: '\u{1F3C6}', name: 'Full Challenge', desc: 'Workouts + Steps + Calories', watch: true, type: 'fitness' as CompetitionType, scoringMode: 'raw_workouts' as ScoringMode },
   { id: 'improvement', icon: '\u{1F4C8}', name: '% Improvement', desc: 'Biggest improvement wins', watch: false, type: 'fitness' as CompetitionType, scoringMode: 'relative_improvement' as ScoringMode },
 ];
 

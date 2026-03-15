@@ -32,7 +32,6 @@ const SCORING_MODE_COLORS: Record<ScoringMode, string> = {
   raw_miles: '#EC4899',
   raw_calories: '#F59E0B',
   raw_workouts: '#10B981',
-  weight_loss: '#6366F1',
 };
 
 export default function CompetitionDetailScreen() {
@@ -102,53 +101,11 @@ export default function CompetitionDetailScreen() {
     }
   };
 
-  const handleToggleEntry = useCallback(
-    async (key: string, value: boolean | number) => {
-      const updated = { ...todayEntries, [key]: value };
-      setTodayEntries(updated);
-
-      if (!myParticipant) return;
-
-      // Calculate points
-      const categories = competition?.scoring_template?.categories ?? [];
-      let points = 0;
-      for (const cat of categories) {
-        const catKey = cat.name.toLowerCase().split(' ')[0];
-        const val = updated[catKey];
-        if (typeof val === 'boolean' && val) points += cat.points;
-        if (typeof val === 'number' && catKey === 'steps' && val >= 8000) points += cat.points;
-      }
-
-      const today = new Date().toISOString().split('T')[0];
-      await supabase.from('daily_logs').upsert(
-        {
-          participant_id: myParticipant.id,
-          log_date: today,
-          entries: updated,
-          points_earned: points,
-          auto_synced: false,
-        },
-        { onConflict: 'participant_id,log_date' }
-      );
-    },
-    [todayEntries, myParticipant, competition]
-  );
-
   const handleSyncHealthKit = useCallback(
     async (data: DailyLogEntries) => {
       setTodayEntries(data);
 
       if (!myParticipant || !competition) return;
-
-      // Calculate points from the synced data directly (avoid stale state)
-      const categories = competition.scoring_template?.categories ?? [];
-      let points = 0;
-      for (const cat of categories) {
-        const catKey = cat.name.toLowerCase().split(' ')[0];
-        const val = data[catKey];
-        if (typeof val === 'boolean' && val) points += cat.points;
-        if (typeof val === 'number' && catKey === 'steps' && val >= 8000) points += cat.points;
-      }
 
       const today = new Date().toISOString().split('T')[0];
       await supabase.from('daily_logs').upsert(
@@ -156,7 +113,7 @@ export default function CompetitionDetailScreen() {
           participant_id: myParticipant.id,
           log_date: today,
           entries: data,
-          points_earned: points,
+          points_earned: 0, // points calculated server-side from auto-tracked data
           auto_synced: true,
         },
         { onConflict: 'participant_id,log_date' }
@@ -238,6 +195,13 @@ export default function CompetitionDetailScreen() {
               </Text>
             </View>
           )}
+
+          {/* Verified badge */}
+          <View style={[styles.watchBadge, { backgroundColor: '#22C55E18' }]}>
+            <Text style={[styles.watchBadgeText, { color: '#22C55E' }]}>
+              {'\u2705'} Verified by Apple Health
+            </Text>
+          </View>
 
           {competition.description && (
             <Text style={styles.description}>{competition.description}</Text>
@@ -372,7 +336,6 @@ export default function CompetitionDetailScreen() {
                 <DailyChecklist
                   categories={categories}
                   entries={todayEntries}
-                  onToggle={handleToggleEntry}
                   onSyncHealthKit={handleSyncHealthKit}
                 />
               </>
@@ -428,7 +391,7 @@ export default function CompetitionDetailScreen() {
                     <View key={cat.name} style={styles.ruleRow}>
                       <Text style={styles.ruleLabel}>{cat.name}</Text>
                       <Text style={styles.ruleValue}>
-                        {cat.points} pts {cat.auto_tracked ? '(auto)' : '(manual)'}
+                        {cat.points} pts (auto)
                       </Text>
                     </View>
                   ))}
