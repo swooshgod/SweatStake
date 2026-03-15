@@ -54,16 +54,16 @@ export default function WelcomeScreen() {
     <ImageBackground source={BG_IMAGE} style={styles.bg} resizeMode="cover">
       <StatusBar barStyle="light-content" />
 
-      {/* Subtle gradient — light touch on top, stronger only at the very bottom for UI */}
+      {/* Photo breathes at top, darkens firmly from midpoint down so text always wins */}
       <LinearGradient
         colors={[
-          'rgba(0,0,0,0.30)',   // top — just enough for wordmark
-          'rgba(0,0,0,0.00)',   // mid — photo shines through fully
-          'rgba(0,0,0,0.00)',   // upper-mid — clear
-          'rgba(0,0,0,0.75)',   // lower — fade in for text
-          'rgba(0,0,0,0.95)',   // bottom — solid for buttons
+          'rgba(0,0,0,0.40)',   // top — wordmark readable
+          'rgba(0,0,0,0.05)',   // upper quarter — photo shines
+          'rgba(0,0,0,0.50)',   // midpoint — starts darkening
+          'rgba(0,0,0,0.82)',   // text zone — words own this space
+          'rgba(0,0,0,0.97)',   // buttons — near solid
         ]}
-        locations={[0, 0.2, 0.45, 0.72, 1]}
+        locations={[0, 0.22, 0.48, 0.68, 1]}
         style={StyleSheet.absoluteFill}
       />
 
