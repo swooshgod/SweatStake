@@ -9,7 +9,7 @@ import {
   Share,
   Alert,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, FontSize, Shadow, CompetitionTypes } from '@/constants/theme';
 import { formatCents, formatPrizePool } from '@/lib/stripe';
@@ -17,6 +17,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCompetitionDetail } from '@/hooks/useCompetitions';
 import { supabase } from '@/lib/supabase';
 import { checkAppleWatchPaired } from '@/lib/healthkit';
+import { checkComplianceForPaidCompetition } from '@/lib/compliance';
+import { competitionPrizeInCredits } from '@/lib/prizes';
 import LeaderboardRow from '@/components/LeaderboardRow';
 import DailyChecklist from '@/components/DailyChecklist';
 import WeeklyCalendar from '@/components/WeeklyCalendar';
@@ -36,10 +38,12 @@ const SCORING_MODE_COLORS: Record<ScoringMode, string> = {
 
 export default function CompetitionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { profile } = useAuth();
   const { competition, participants, loading, refetch } = useCompetitionDetail(id);
   const [activeTab, setActiveTab] = useState<Tab>('leaderboard');
   const [todayEntries, setTodayEntries] = useState<DailyLogEntries>({});
+  const [joining, setJoining] = useState(false);
 
   const myParticipant = participants.find((p) => p.user_id === profile?.id);
   const typeInfo = competition ? CompetitionTypes[competition.type] ?? CompetitionTypes.custom : CompetitionTypes.custom;
@@ -56,7 +60,7 @@ export default function CompetitionDetailScreen() {
     if (!competition) return;
     try {
       await Share.share({
-        message: `Join my SweatStake competition "${competition.name}"! Use code: ${competition.invite_code}\n\nhttps://sweatstake.app/join/${competition.invite_code}`,
+        message: `Join my Podium competition "${competition.name}"! Use code: ${competition.invite_code}\n\nhttps://podiumapp.com/join/${competition.invite_code}`,
       });
     } catch (error) {
       console.error('Share error:', error);
@@ -66,27 +70,54 @@ export default function CompetitionDetailScreen() {
   const handleJoin = async () => {
     if (!profile || !competition) return;
 
-    // Check Apple Watch requirement
-    if (competition.requires_watch) {
-      const hasPaired = await checkAppleWatchPaired();
-      if (!hasPaired) {
-        if (__DEV__) {
-          Alert.alert(
-            'Apple Watch Required',
-            'This competition requires Apple Watch for accurate tracking. No Watch detected — proceeding anyway (dev mode).',
-          );
-        } else {
-          Alert.alert(
-            'Apple Watch Required',
-            'This competition requires Apple Watch for accurate tracking. Connect an Apple Watch to join.',
-            [{ text: 'OK' }],
-          );
+    setJoining(true);
+    try {
+      // 1. Compliance check (geo-blocking, age verification, skill-game)
+      if (competition.entry_fee_cents > 0) {
+        const compliance = await checkComplianceForPaidCompetition(profile.id, competition);
+
+        if (!compliance.allowed) {
+          if (compliance.requiresAgeVerification) {
+            // Send to age verification screen, return here after
+            Alert.alert(
+              'Age Verification Required',
+              'You must verify your age before joining paid competitions.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Verify Age',
+                  onPress: () => router.push('/(onboarding)/age-verify'),
+                },
+              ]
+            );
+          } else {
+            Alert.alert('Not Available', compliance.reason ?? 'Paid competitions are not available in your region.');
+          }
           return;
         }
       }
-    }
 
-    try {
+      // 2. Apple Watch requirement check
+      if (competition.requires_watch) {
+        const hasPaired = await checkAppleWatchPaired();
+        if (!hasPaired) {
+          if (__DEV__) {
+            Alert.alert(
+              'Apple Watch Required',
+              'This competition requires Apple Watch for accurate tracking. No Watch detected — proceeding anyway (dev mode).',
+            );
+          } else {
+            Alert.alert(
+              'Apple Watch Required',
+              'This competition requires Apple Watch for accurate tracking. Connect an Apple Watch to join.',
+              [{ text: 'OK' }],
+            );
+            return;
+          }
+        }
+      }
+
+      // 3. Join the competition
       const { error } = await supabase.from('participants').insert({
         competition_id: competition.id,
         user_id: profile.id,
@@ -94,10 +125,25 @@ export default function CompetitionDetailScreen() {
       });
 
       if (error) throw error;
-      Alert.alert('Joined!', `You're in "${competition.name}". Good luck!`);
+
+      // 4. Show success with credits info for paid competitions
+      if (competition.entry_fee_cents > 0) {
+        const prizeCredits = competitionPrizeInCredits(
+          Math.floor(competition.prize_pool_cents * 0.9) // 90% to winner
+        );
+        Alert.alert(
+          "You're In! 🏆",
+          `Welcome to "${competition.name}".\n\nWinner earns ${prizeCredits}.\n\nGood luck!`
+        );
+      } else {
+        Alert.alert('Joined!', `You're in "${competition.name}". Good luck!`);
+      }
+
       refetch();
     } catch (error) {
       Alert.alert('Error', 'Failed to join competition. You may already be in it.');
+    } finally {
+      setJoining(false);
     }
   };
 
@@ -113,7 +159,7 @@ export default function CompetitionDetailScreen() {
           participant_id: myParticipant.id,
           log_date: today,
           entries: data,
-          points_earned: 0, // points calculated server-side from auto-tracked data
+          points_earned: 0,
           auto_synced: true,
         },
         { onConflict: 'participant_id,log_date' }
@@ -122,10 +168,9 @@ export default function CompetitionDetailScreen() {
     [myParticipant, competition]
   );
 
-  // Generate mock weekly data for display
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
-    d.setDate(d.getDate() - d.getDay() + i + 1); // Monday start
+    d.setDate(d.getDate() - d.getDay() + i + 1);
     return {
       date: d.toISOString().split('T')[0],
       pointsEarned: 0,
@@ -153,6 +198,7 @@ export default function CompetitionDetailScreen() {
   }
 
   const categories: ScoringCategory[] = competition.scoring_template?.categories ?? [];
+  const isPaid = competition.entry_fee_cents > 0;
 
   return (
     <View style={styles.container}>
@@ -167,14 +213,14 @@ export default function CompetitionDetailScreen() {
 
           {/* Watch requirement badge */}
           <View style={[
-            styles.watchBadge,
+            styles.badge,
             { backgroundColor: competition.requires_watch ? '#F59E0B18' : '#22C55E18' },
           ]}>
-            <Text style={styles.watchBadgeIcon}>
+            <Text style={styles.badgeIcon}>
               {competition.requires_watch ? '⌚' : '📱'}
             </Text>
             <Text style={[
-              styles.watchBadgeText,
+              styles.badgeText,
               { color: competition.requires_watch ? '#F59E0B' : '#22C55E' },
             ]}>
               {competition.requires_watch ? 'Requires Apple Watch' : 'iPhone Compatible'}
@@ -184,11 +230,11 @@ export default function CompetitionDetailScreen() {
           {/* Scoring mode badge */}
           {competition.scoring_mode && (
             <View style={[
-              styles.watchBadge,
+              styles.badge,
               { backgroundColor: (SCORING_MODE_COLORS[competition.scoring_mode] ?? '#3B82F6') + '18' },
             ]}>
               <Text style={[
-                styles.watchBadgeText,
+                styles.badgeText,
                 { color: SCORING_MODE_COLORS[competition.scoring_mode] ?? '#3B82F6' },
               ]}>
                 {SCORING_MODES.find((m) => m.id === competition.scoring_mode)?.label ?? '% Improvement'}
@@ -197,11 +243,21 @@ export default function CompetitionDetailScreen() {
           )}
 
           {/* Verified badge */}
-          <View style={[styles.watchBadge, { backgroundColor: '#22C55E18' }]}>
-            <Text style={[styles.watchBadgeText, { color: '#22C55E' }]}>
-              {'\u2705'} Verified by Apple Health
+          <View style={[styles.badge, { backgroundColor: '#22C55E18' }]}>
+            <Text style={[styles.badgeText, { color: '#22C55E' }]}>
+              {'✅'} Verified by Apple Health
             </Text>
           </View>
+
+          {/* Skill-based badge for paid competitions */}
+          {isPaid && (
+            <View style={[styles.badge, { backgroundColor: '#6366F118' }]}>
+              <Ionicons name="shield-checkmark" size={12} color="#6366F1" />
+              <Text style={[styles.badgeText, { color: '#6366F1', marginLeft: 4 }]}>
+                Skill-Based Competition
+              </Text>
+            </View>
+          )}
 
           {competition.description && (
             <Text style={styles.description}>{competition.description}</Text>
@@ -210,7 +266,11 @@ export default function CompetitionDetailScreen() {
           {/* Stats bar */}
           <View style={styles.statsBar}>
             <View style={styles.statItem}>
-              <Text style={styles.statItemValue}>{formatPrizePool(competition.prize_pool_cents, competition.service_fee_pct)}</Text>
+              <Text style={styles.statItemValue}>
+                {isPaid
+                  ? competitionPrizeInCredits(Math.floor(competition.prize_pool_cents * 0.9))
+                  : 'Free'}
+              </Text>
               <Text style={styles.statItemLabel}>Prize</Text>
             </View>
             <View style={styles.statDivider} />
@@ -233,11 +293,21 @@ export default function CompetitionDetailScreen() {
           {/* Action buttons */}
           <View style={styles.actionRow}>
             {!myParticipant && competition.status === 'open' && (
-              <TouchableOpacity style={styles.joinButton} onPress={handleJoin}>
-                <Ionicons name="flash" size={18} color="#fff" />
-                <Text style={styles.joinButtonText}>
-                  Join{competition.entry_fee_cents > 0 ? ` — ${formatCents(competition.entry_fee_cents)}` : ' — Free'}
-                </Text>
+              <TouchableOpacity
+                style={[styles.joinButton, joining && { opacity: 0.6 }]}
+                onPress={handleJoin}
+                disabled={joining}
+              >
+                {joining ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="flash" size={18} color="#fff" />
+                    <Text style={styles.joinButtonText}>
+                      Join{competition.entry_fee_cents > 0 ? ` — ${formatCents(competition.entry_fee_cents)}` : ' — Free'}
+                    </Text>
+                  </>
+                )}
               </TouchableOpacity>
             )}
             <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
@@ -245,6 +315,13 @@ export default function CompetitionDetailScreen() {
               <Text style={styles.shareButtonText}>Invite</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Age/region disclaimer for paid competitions */}
+          {isPaid && !myParticipant && (
+            <Text style={styles.complianceNote}>
+              🔒 18+ only · Not available in all regions · Skill-based competition
+            </Text>
+          )}
         </View>
 
         {/* Tab bar */}
@@ -288,7 +365,6 @@ export default function CompetitionDetailScreen() {
           <View style={styles.tabContent}>
             {myParticipant ? (
               <>
-                {/* Rank + points summary */}
                 <View style={styles.progressSummary}>
                   <View style={styles.progressStat}>
                     <Text style={styles.progressStatValue}>#{myParticipant.rank ?? '—'}</Text>
@@ -310,24 +386,19 @@ export default function CompetitionDetailScreen() {
 
                 <WeeklyCalendar days={weekDays} />
 
-                {/* Penalty warning — Full Challenge only */}
                 {(() => {
-                  const workoutCat = categories.find(
-                    (c) => c.name === 'Workout' && c.penalty
-                  );
+                  const workoutCat = categories.find((c) => c.name === 'Workout' && c.penalty);
                   if (!workoutCat?.penalty) return null;
-                  const dayOfWeek = new Date().getDay(); // 0=Sun
-                  // Only show warning from Thursday (4) onward
+                  const dayOfWeek = new Date().getDay();
                   if (dayOfWeek < 4 && dayOfWeek > 0) return null;
-                  // Estimate workouts this week from todayEntries (simplified: count today's workout status)
-                  const workoutsThisWeek = todayEntries.workout ? 1 : 0; // placeholder — real count from daily_logs
+                  const workoutsThisWeek = todayEntries.workout ? 1 : 0;
                   const penalty = calculateWeeklyPenalty(workoutsThisWeek, workoutCat);
                   if (penalty >= 0) return null;
                   const remaining = workoutCat.penalty.threshold - workoutsThisWeek;
                   return (
                     <View style={styles.penaltyWarning}>
                       <Text style={styles.penaltyWarningText}>
-                        {'\u26A0\uFE0F'} {remaining} more workout{remaining !== 1 ? 's' : ''} to avoid {penalty}pt penalty this week
+                        {'⚠️'} {remaining} more workout{remaining !== 1 ? 's' : ''} to avoid {penalty}pt penalty this week
                       </Text>
                     </View>
                   );
@@ -362,12 +433,20 @@ export default function CompetitionDetailScreen() {
                 <Text style={styles.ruleValue}>{formatCents(competition.entry_fee_cents)}</Text>
               </View>
               <View style={styles.ruleRow}>
+                <Text style={styles.ruleLabel}>Prize</Text>
+                <Text style={styles.ruleValue}>
+                  {isPaid
+                    ? competitionPrizeInCredits(Math.floor(competition.prize_pool_cents * 0.9))
+                    : 'None'}
+                </Text>
+              </View>
+              <View style={styles.ruleRow}>
                 <Text style={styles.ruleLabel}>Max Players</Text>
                 <Text style={styles.ruleValue}>{competition.max_participants}</Text>
               </View>
               <View style={styles.ruleRow}>
                 <Text style={styles.ruleLabel}>Payment</Text>
-                <Text style={styles.ruleValue}>{competition.payment_type === 'stripe' ? 'Stripe' : 'USDC'}</Text>
+                <Text style={styles.ruleValue}>{competition.payment_type === 'stripe' ? 'Card / Apple Pay' : 'USDC'}</Text>
               </View>
               <View style={styles.ruleRow}>
                 <Text style={styles.ruleLabel}>Service Fee</Text>
@@ -378,10 +457,14 @@ export default function CompetitionDetailScreen() {
                 <Text style={styles.ruleValue}>{competition.is_public ? 'Public' : 'Invite Only'}</Text>
               </View>
               <View style={styles.ruleRow}>
-                <Text style={styles.ruleLabel}>Scoring Mode</Text>
+                <Text style={styles.ruleLabel}>Scoring</Text>
                 <Text style={styles.ruleValue}>
                   {SCORING_MODES.find((m) => m.id === competition.scoring_mode)?.label ?? '% Improvement'}
                 </Text>
+              </View>
+              <View style={styles.ruleRow}>
+                <Text style={styles.ruleLabel}>Competition Type</Text>
+                <Text style={[styles.ruleValue, { color: '#6366F1' }]}>Skill-Based ✓</Text>
               </View>
 
               {categories.length > 0 && (
@@ -390,9 +473,7 @@ export default function CompetitionDetailScreen() {
                   {categories.map((cat: ScoringCategory) => (
                     <View key={cat.name} style={styles.ruleRow}>
                       <Text style={styles.ruleLabel}>{cat.name}</Text>
-                      <Text style={styles.ruleValue}>
-                        {cat.points} pts (auto)
-                      </Text>
+                      <Text style={styles.ruleValue}>{cat.points} pts (auto)</Text>
                     </View>
                   ))}
                 </>
@@ -404,6 +485,12 @@ export default function CompetitionDetailScreen() {
                   {competition.invite_code}
                 </Text>
               </View>
+
+              {isPaid && (
+                <Text style={styles.skillNote}>
+                  Podium competitions are skill-based contests determined entirely by athletic effort and performance improvement as measured by Apple Health. Winners are determined by objective, verifiable fitness metrics — not chance.
+                </Text>
+              )}
             </View>
           </View>
         )}
@@ -413,253 +500,50 @@ export default function CompetitionDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  scrollContent: {
-    paddingBottom: 100,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.background,
-  },
-  errorText: {
-    fontSize: FontSize.md,
-    color: Colors.textMuted,
-    marginTop: Spacing.md,
-  },
-  header: {
-    backgroundColor: Colors.surface,
-    padding: Spacing.xl,
-    paddingTop: Spacing.md,
-    ...Shadow.sm,
-  },
-  typeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.sm,
-    marginBottom: Spacing.md,
-  },
-  typeEmoji: {
-    fontSize: FontSize.sm,
-    marginRight: Spacing.xs,
-  },
-  typeLabel: {
-    fontSize: FontSize.xs,
-    fontWeight: '600',
-  },
-  competitionName: {
-    fontSize: FontSize.xxl,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-    marginBottom: Spacing.sm,
-  },
-  description: {
-    fontSize: FontSize.md,
-    color: Colors.textSecondary,
-    lineHeight: 22,
-    marginBottom: Spacing.lg,
-  },
-  statsBar: {
-    flexDirection: 'row',
-    backgroundColor: Colors.background,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statItemValue: {
-    fontSize: FontSize.lg,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  statItemLabel: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: Colors.border,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-  },
-  joinButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.primary,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    gap: Spacing.sm,
-    ...Shadow.md,
-  },
-  joinButtonText: {
-    color: '#fff',
-    fontSize: FontSize.md,
-    fontWeight: '700',
-  },
-  shareButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xl,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1.5,
-    borderColor: Colors.primary + '40',
-    gap: Spacing.sm,
-  },
-  shareButtonText: {
-    color: Colors.primary,
-    fontSize: FontSize.md,
-    fontWeight: '700',
-  },
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surface,
-    marginTop: 1,
-    paddingHorizontal: Spacing.lg,
-    ...Shadow.sm,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  tabActive: {
-    borderBottomColor: Colors.primary,
-  },
-  tabText: {
-    fontSize: FontSize.sm,
-    fontWeight: '600',
-    color: Colors.textMuted,
-  },
-  tabTextActive: {
-    color: Colors.primary,
-  },
-  tabContent: {
-    padding: Spacing.lg,
-  },
-  leaderboardCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-    ...Shadow.md,
-  },
-  emptyTab: {
-    alignItems: 'center',
-    paddingVertical: Spacing.xxxl * 2,
-  },
-  emptyTabText: {
-    fontSize: FontSize.md,
-    color: Colors.textMuted,
-    marginTop: Spacing.md,
-  },
-  progressSummary: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    marginBottom: Spacing.xl,
-  },
-  progressStat: {
-    flex: 1,
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    alignItems: 'center',
-    ...Shadow.sm,
-  },
-  progressStatValue: {
-    fontSize: FontSize.xxl,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  progressStatLabel: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    marginTop: Spacing.xs,
-  },
-  rulesCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    ...Shadow.md,
-  },
-  rulesSubheading: {
-    fontSize: FontSize.md,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.md,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-  },
-  ruleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-  },
-  ruleRowLast: {
-    borderBottomWidth: 0,
-  },
-  ruleLabel: {
-    fontSize: FontSize.md,
-    color: Colors.textSecondary,
-  },
-  ruleValue: {
-    fontSize: FontSize.md,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  penaltyWarning: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F59E0B18',
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.lg,
-    borderWidth: 1,
-    borderColor: '#F59E0B40',
-  },
-  penaltyWarningText: {
-    fontSize: FontSize.sm,
-    fontWeight: '600',
-    color: '#F59E0B',
-  },
-  watchBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.full,
-    marginBottom: Spacing.md,
-    gap: 4,
-  },
-  watchBadgeIcon: {
-    fontSize: FontSize.xs,
-  },
-  watchBadgeText: {
-    fontSize: FontSize.xs,
-    fontWeight: '600',
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
+  scrollContent: { paddingBottom: 100 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
+  errorText: { fontSize: FontSize.md, color: Colors.textMuted, marginTop: Spacing.md },
+  header: { backgroundColor: Colors.surface, padding: Spacing.xl, paddingTop: Spacing.md, ...Shadow.sm },
+  typeBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs, borderRadius: BorderRadius.sm, marginBottom: Spacing.md },
+  typeEmoji: { fontSize: FontSize.sm, marginRight: Spacing.xs },
+  typeLabel: { fontSize: FontSize.xs, fontWeight: '600' },
+  competitionName: { fontSize: FontSize.xxl, fontWeight: '800', color: Colors.textPrimary, marginBottom: Spacing.sm },
+  description: { fontSize: FontSize.md, color: Colors.textSecondary, lineHeight: 22, marginBottom: Spacing.lg },
+  badge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.full, marginBottom: Spacing.md },
+  badgeIcon: { fontSize: FontSize.xs },
+  badgeText: { fontSize: FontSize.xs, fontWeight: '600' },
+  statsBar: { flexDirection: 'row', backgroundColor: Colors.background, borderRadius: BorderRadius.lg, paddingVertical: Spacing.md, marginBottom: Spacing.lg },
+  statItem: { flex: 1, alignItems: 'center' },
+  statItemValue: { fontSize: FontSize.sm, fontWeight: '800', color: Colors.textPrimary },
+  statItemLabel: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
+  statDivider: { width: 1, backgroundColor: Colors.border },
+  actionRow: { flexDirection: 'row', gap: Spacing.md },
+  joinButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary, paddingVertical: Spacing.md, borderRadius: BorderRadius.lg, gap: Spacing.sm, ...Shadow.md },
+  joinButtonText: { color: '#fff', fontSize: FontSize.md, fontWeight: '700' },
+  shareButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.md, paddingHorizontal: Spacing.xl, borderRadius: BorderRadius.lg, borderWidth: 1.5, borderColor: Colors.primary + '40', gap: Spacing.sm },
+  shareButtonText: { color: Colors.primary, fontSize: FontSize.md, fontWeight: '700' },
+  complianceNote: { fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.md },
+  tabBar: { flexDirection: 'row', backgroundColor: Colors.surface, marginTop: 1, paddingHorizontal: Spacing.lg, ...Shadow.sm },
+  tab: { flex: 1, paddingVertical: Spacing.md, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  tabActive: { borderBottomColor: Colors.primary },
+  tabText: { fontSize: FontSize.sm, fontWeight: '600', color: Colors.textMuted },
+  tabTextActive: { color: Colors.primary },
+  tabContent: { padding: Spacing.lg },
+  leaderboardCard: { backgroundColor: Colors.surface, borderRadius: BorderRadius.lg, overflow: 'hidden', ...Shadow.md },
+  emptyTab: { alignItems: 'center', paddingVertical: Spacing.xxxl * 2 },
+  emptyTabText: { fontSize: FontSize.md, color: Colors.textMuted, marginTop: Spacing.md },
+  progressSummary: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.xl },
+  progressStat: { flex: 1, backgroundColor: Colors.surface, borderRadius: BorderRadius.lg, padding: Spacing.lg, alignItems: 'center', ...Shadow.sm },
+  progressStatValue: { fontSize: FontSize.xxl, fontWeight: '800', color: Colors.textPrimary },
+  progressStatLabel: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: Spacing.xs },
+  rulesCard: { backgroundColor: Colors.surface, borderRadius: BorderRadius.lg, padding: Spacing.lg, ...Shadow.md },
+  rulesSubheading: { fontSize: FontSize.md, fontWeight: '700', color: Colors.textPrimary, marginTop: Spacing.lg, marginBottom: Spacing.md, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.borderLight },
+  ruleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.borderLight },
+  ruleRowLast: { borderBottomWidth: 0 },
+  ruleLabel: { fontSize: FontSize.md, color: Colors.textSecondary },
+  ruleValue: { fontSize: FontSize.md, fontWeight: '600', color: Colors.textPrimary },
+  skillNote: { fontSize: 11, color: Colors.textMuted, lineHeight: 17, marginTop: Spacing.lg, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.borderLight },
+  penaltyWarning: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F59E0B18', borderRadius: BorderRadius.lg, paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg, marginBottom: Spacing.lg, borderWidth: 1, borderColor: '#F59E0B40' },
+  penaltyWarningText: { fontSize: FontSize.sm, fontWeight: '600', color: '#F59E0B' },
 });
