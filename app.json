@@ -18,8 +18,8 @@
       "bundleIdentifier": "com.podiumapp.app",
       "usesAppleSignIn": true,
       "infoPlist": {
-        "NSHealthShareUsageDescription": "SweatStake needs access to your health data to automatically track your workouts, steps, and activity for competitions.",
-        "NSHealthUpdateUsageDescription": "SweatStake needs write access to log your competition activities."
+        "NSHealthShareUsageDescription": "Podium needs access to your health data to automatically track your workouts, steps, and activity for competitions.",
+        "NSHealthUpdateUsageDescription": "Podium needs write access to log your competition activities."
       },
       "entitlements": {
         "com.apple.developer.healthkit": true,
@@ -47,7 +47,7 @@
       [
         "@stripe/stripe-react-native",
         {
-          "merchantIdentifier": "merchant.com.sweatstake.app",
+          "merchantIdentifier": "merchant.com.podiumapp.app",
           "enableGooglePay": false
         }
       ]
