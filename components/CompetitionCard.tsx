@@ -93,18 +93,7 @@ export default function CompetitionCard({ competition, variant = 'full', viewerT
           {hasFee && <Text style={styles.potLabel}>prize</Text>}
         </View>
       </View>
-
-      {/* Badge row */}
-      <View style={styles.badgeRow}>
-        {/* Tier badge */}
-        {tierInfo && (
-          <View style={[styles.badge, { backgroundColor: tierInfo.color + '20' }]}>
-            <Text style={[styles.badgeText, { color: tierInfo.color }]}>
-              {tierInfo.emoji} {tierInfo.label}
-              {tierLock !== 'none' ? ' 🔒' : ''}
-            </Text>
-          </View>
-        )}
+      )}
 
         {/* Entry fee */}
         {hasFee && (
@@ -208,21 +197,5 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     fontWeight: '600',
     marginTop: -2,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.full,
-  },
-  badgeText: {
-    fontSize: FontSize.xs,
-    fontWeight: '600',
   },
 });
