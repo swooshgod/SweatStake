@@ -1,90 +1,158 @@
+// ─────────────────────────────────────────────
+// Podium Design System
+// Brand: Deep black + Championship Gold
+// Energy: Premium, competitive, sports-prestige
+// ─────────────────────────────────────────────
+
 export const Colors = {
-  primary: '#E8856A',
-  primaryDark: '#D4735A',
-  secondary: '#111C30',
-  accent: '#FFD700',
-  background: '#0D1520',
-  surface: '#111C30',
-  surfaceLight: '#1A2740',
-  success: '#22C55E',
-  warning: '#F59E0B',
-  error: '#EF4444',
-  textPrimary: '#FFFFFF',
-  textSecondary: '#94A3B8',
-  textMuted: '#64748B',
-  border: '#1E2D45',
-  borderLight: '#162035',
-  overlay: 'rgba(0,0,0,0.6)',
+  // Brand
+  primary:      '#F5C518',   // Championship gold — trophy, winner, prestige
+  primaryDark:  '#D4A800',   // Pressed/dark gold
+  primaryLight: '#FFD740',   // Light gold — highlights
+  primaryGlow:  'rgba(245, 197, 24, 0.18)', // Gold glow for cards/badges
+
+  // Backgrounds — deep rich black, not cold navy
+  background:   '#0A0A0A',   // True near-black
+  surface:      '#141414',   // Card surface
+  surfaceLight: '#1E1E1E',   // Elevated surface
+  surfaceHigh:  '#262626',   // Highest elevation
+
+  // Accent
+  accent:       '#F5C518',   // Same as primary (gold is the accent)
+  accentBlue:   '#3B82F6',   // For % improvement mode
+  accentGreen:  '#22C55E',   // Success / verified
+  accentPurple: '#8B5CF6',   // Lifting / raw workouts
+
+  // Status
+  success:      '#22C55E',
+  warning:      '#F59E0B',
+  error:        '#EF4444',
+
+  // Text
+  textPrimary:   '#FFFFFF',
+  textSecondary: '#A3A3A3',
+  textMuted:     '#525252',
+
+  // Borders
+  border:       '#242424',
+  borderLight:  '#1A1A1A',
+  borderGold:   'rgba(245, 197, 24, 0.25)',  // Gold border for active states
+
+  // Overlay
+  overlay:      'rgba(0, 0, 0, 0.75)',
 } as const;
 
+// ─── Gradients ───────────────────────────────
+// Use with expo-linear-gradient
+export const Gradients = {
+  // Hero gradient — welcome screen / competition headers
+  hero: ['rgba(0,0,0,0.0)', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.95)'] as string[],
+
+  // Gold shimmer — prize amounts, winner banners
+  gold: ['#F5C518', '#D4A800', '#F5C518'] as string[],
+
+  // Card overlay — competition cards with photo backgrounds
+  card: ['rgba(10,10,10,0)', 'rgba(10,10,10,0.85)'] as string[],
+
+  // Surface gradient — subtle depth on cards
+  surface: ['#1E1E1E', '#141414'] as string[],
+
+  // Winner celebration
+  winner: ['#F5C518', '#FF8C00'] as string[],
+} as const;
+
+// ─── Spacing ─────────────────────────────────
 export const Spacing = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
+  xs:   4,
+  sm:   8,
+  md:   12,
+  lg:   16,
+  xl:   20,
+  xxl:  24,
   xxxl: 32,
+  huge: 48,
 } as const;
 
+// ─── Border Radius ───────────────────────────
 export const BorderRadius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  sm:   8,
+  md:   12,
+  lg:   16,
+  xl:   24,
+  xxl:  32,
   full: 9999,
 } as const;
 
+// ─── Font Sizes ──────────────────────────────
 export const FontSize = {
-  xs: 11,
-  sm: 13,
-  md: 15,
-  lg: 17,
-  xl: 20,
-  xxl: 24,
-  xxxl: 32,
-  hero: 40,
+  xs:   11,
+  sm:   13,
+  md:   15,
+  lg:   17,
+  xl:   20,
+  xxl:  26,
+  xxxl: 34,
+  hero: 44,
 } as const;
 
+// ─── Shadows ─────────────────────────────────
 export const Shadow = {
   sm: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 2,
   },
   md: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 5,
   },
   lg: {
     shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    elevation: 10,
+  },
+  // Gold glow — use on primary buttons and prize amounts
+  gold: {
+    shadowColor: '#F5C518',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.4,
     shadowRadius: 16,
-    elevation: 6,
+    elevation: 8,
+  },
+  // Subtle gold glow — use on active competition cards
+  goldSm: {
+    shadowColor: '#F5C518',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
 } as const;
 
+// ─── Competition Types ────────────────────────
 export const CompetitionTypes = {
-  fitness: { emoji: '\u{1F4AA}', label: 'Fitness', color: '#E8856A' },
-  running: { emoji: '\u{1F3C3}', label: 'Running', color: '#3B82F6' },
-  cycling: { emoji: '\u{1F6B4}', label: 'Cycling', color: '#10B981' },
-  lifting: { emoji: '\u{1F3CB}\u{FE0F}', label: 'Lifting', color: '#8B5CF6' },
-  custom: { emoji: '\u{2B50}', label: 'Custom', color: '#F59E0B' },
+  fitness: { emoji: '💪', label: 'Fitness',  color: '#F5C518' },  // Gold
+  running: { emoji: '🏃', label: 'Running',  color: '#3B82F6' },  // Blue
+  cycling: { emoji: '🚴', label: 'Cycling',  color: '#22C55E' },  // Green
+  lifting: { emoji: '🏋️', label: 'Lifting',  color: '#8B5CF6' },  // Purple
+  custom:  { emoji: '⭐', label: 'Custom',   color: '#F59E0B' },  // Amber
 } as const;
 
+// ─── Scoring Templates ───────────────────────
 export const ScoringTemplates = {
   full_challenge: {
     name: 'Full Challenge',
     description: 'Workouts + Steps + Active Calories — all auto-tracked via Apple Watch',
     categories: [
       { name: 'Workout (45+ min)', points: 3, auto_tracked: true, penalty: { threshold: 4, penaltyPerMissed: 1, maxPenalty: 3 } },
-      { name: 'Steps (8,000+)', points: 2, auto_tracked: true },
+      { name: 'Steps (8,000+)',    points: 2, auto_tracked: true },
       { name: 'Active Calories (300+)', points: 2, auto_tracked: true },
     ],
   },
@@ -93,7 +161,7 @@ export const ScoringTemplates = {
     description: 'Workout days + active minutes, auto from Apple Watch',
     categories: [
       { name: 'Workout (any duration)', points: 3, auto_tracked: true },
-      { name: 'Active Minutes (30+)', points: 1, auto_tracked: true },
+      { name: 'Active Minutes (30+)',   points: 1, auto_tracked: true },
     ],
   },
   step_race: {
@@ -101,8 +169,8 @@ export const ScoringTemplates = {
     description: 'Steps only, auto from HealthKit',
     categories: [
       { name: 'Steps (10,000+)', points: 3, auto_tracked: true },
-      { name: 'Steps (8,000+)', points: 2, auto_tracked: true },
-      { name: 'Steps (5,000+)', points: 1, auto_tracked: true },
+      { name: 'Steps (8,000+)',  points: 2, auto_tracked: true },
+      { name: 'Steps (5,000+)',  points: 1, auto_tracked: true },
     ],
   },
   calorie_burn: {
@@ -118,7 +186,7 @@ export const ScoringTemplates = {
     name: '% Improvement',
     description: 'Percentage improvement above your personal baseline — all auto-tracked',
     categories: [
-      { name: 'Steps vs Baseline', points: 3, auto_tracked: true },
+      { name: 'Steps vs Baseline',           points: 3, auto_tracked: true },
       { name: 'Active Calories vs Baseline', points: 2, auto_tracked: true },
       { name: 'Workout Minutes vs Baseline', points: 2, auto_tracked: true },
     ],
