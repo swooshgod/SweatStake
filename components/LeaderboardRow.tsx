@@ -1,11 +1,16 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, FontSize } from '@/constants/theme';
+import { getTrustBadge } from '@/lib/trust';
+import ReportUserModal from '@/components/ReportUserModal';
 import type { Participant } from '@/lib/types';
 
 interface Props {
   participant: Participant;
   isCurrentUser?: boolean;
+  currentUserId?: string;
+  competitionId?: string;
 }
 
 const RANK_MEDALS: Record<number, string> = {
@@ -14,56 +19,113 @@ const RANK_MEDALS: Record<number, string> = {
   3: '🥉',
 };
 
-export default function LeaderboardRow({ participant, isCurrentUser }: Props) {
+export default function LeaderboardRow({
+  participant,
+  isCurrentUser,
+  currentUserId,
+  competitionId,
+}: Props) {
   const rank = participant.rank ?? 0;
   const medal = RANK_MEDALS[rank];
   const profile = participant.profile;
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+
+  // Trust badge
+  const trustScore = (profile as any)?.trust_score ?? 50;
+  const trustBadge = getTrustBadge(trustScore);
+  const isDisqualified = participant.disqualified;
 
   return (
-    <View style={[styles.row, isCurrentUser && styles.rowHighlighted]}>
-      {/* Rank */}
-      <View style={styles.rankContainer}>
-        {medal ? (
-          <Text style={styles.medal}>{medal}</Text>
-        ) : (
-          <Text style={styles.rankNumber}>{rank}</Text>
-        )}
-      </View>
+    <>
+      <View style={[
+        styles.row,
+        isCurrentUser && styles.rowHighlighted,
+        isDisqualified && styles.rowDisqualified,
+      ]}>
+        {/* Rank */}
+        <View style={styles.rankContainer}>
+          {isDisqualified ? (
+            <Text style={styles.disqualifiedIcon}>🚫</Text>
+          ) : medal ? (
+            <Text style={styles.medal}>{medal}</Text>
+          ) : (
+            <Text style={styles.rankNumber}>{rank}</Text>
+          )}
+        </View>
 
-      {/* Avatar */}
-      <View style={styles.avatarContainer}>
-        {profile?.avatar_url ? (
-          <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarPlaceholder]}>
-            <Text style={styles.avatarInitial}>
-              {(profile?.display_name ?? '?')[0].toUpperCase()}
+        {/* Avatar */}
+        <View style={styles.avatarContainer}>
+          {profile?.avatar_url ? (
+            <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+              <Text style={styles.avatarInitial}>
+                {(profile?.display_name ?? '?')[0].toUpperCase()}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Name + streak + trust */}
+        <View style={styles.nameContainer}>
+          <View style={styles.nameRow}>
+            <Text style={[styles.name, isDisqualified && styles.nameDisqualified]} numberOfLines={1}>
+              {profile?.display_name ?? 'Unknown'}
+              {isCurrentUser && <Text style={styles.youBadge}> (You)</Text>}
             </Text>
+            {/* Trust badge */}
+            <View style={[styles.trustBadge, { backgroundColor: trustBadge.bgColor }]}>
+              <Text style={styles.trustEmoji}>{trustBadge.emoji}</Text>
+            </View>
           </View>
-        )}
+          {participant.current_streak > 0 && !isDisqualified && (
+            <Text style={styles.streak}>
+              🔥 {participant.current_streak} day streak
+            </Text>
+          )}
+          {isDisqualified && (
+            <Text style={styles.disqualifiedText}>Disqualified</Text>
+          )}
+        </View>
+
+        {/* Points + report button */}
+        <View style={styles.rightSection}>
+          <View style={styles.pointsContainer}>
+            <Text style={[
+              styles.points,
+              rank === 1 && !isDisqualified && styles.pointsGold,
+              isDisqualified && styles.pointsDisqualified,
+            ]}>
+              {isDisqualified ? '—' : participant.total_points}
+            </Text>
+            {!isDisqualified && <Text style={styles.pointsLabel}>pts</Text>}
+          </View>
+
+          {/* Report button — only show for other users */}
+          {!isCurrentUser && currentUserId && competitionId && !isDisqualified && (
+            <TouchableOpacity
+              style={styles.reportBtn}
+              onPress={() => setReportModalVisible(true)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="flag-outline" size={14} color={Colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
-      {/* Name + streak */}
-      <View style={styles.nameContainer}>
-        <Text style={styles.name} numberOfLines={1}>
-          {profile?.display_name ?? 'Unknown'}
-          {isCurrentUser && <Text style={styles.youBadge}> (You)</Text>}
-        </Text>
-        {participant.current_streak > 0 && (
-          <Text style={styles.streak}>
-            🔥 {participant.current_streak} day streak
-          </Text>
-        )}
-      </View>
-
-      {/* Points */}
-      <View style={styles.pointsContainer}>
-        <Text style={[styles.points, rank === 1 && styles.pointsGold]}>
-          {participant.total_points}
-        </Text>
-        <Text style={styles.pointsLabel}>pts</Text>
-      </View>
-    </View>
+      {/* Report modal */}
+      {currentUserId && competitionId && (
+        <ReportUserModal
+          visible={reportModalVisible}
+          onClose={() => setReportModalVisible(false)}
+          reportedUserId={participant.user_id}
+          reportedDisplayName={profile?.display_name ?? 'this competitor'}
+          competitionId={competitionId}
+          currentUserId={currentUserId}
+        />
+      )}
+    </>
   );
 }
 
@@ -81,12 +143,19 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: Colors.primary,
   },
+  rowDisqualified: {
+    opacity: 0.5,
+    backgroundColor: Colors.error + '05',
+  },
   rankContainer: {
     width: 36,
     alignItems: 'center',
   },
   medal: {
     fontSize: FontSize.xl,
+  },
+  disqualifiedIcon: {
+    fontSize: FontSize.lg,
   },
   rankNumber: {
     fontSize: FontSize.md,
@@ -114,20 +183,48 @@ const styles = StyleSheet.create({
   nameContainer: {
     flex: 1,
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
   name: {
     fontSize: FontSize.md,
     fontWeight: '600',
     color: Colors.textPrimary,
+    flexShrink: 1,
+  },
+  nameDisqualified: {
+    textDecorationLine: 'line-through',
+    color: Colors.textMuted,
   },
   youBadge: {
     fontWeight: '400',
     color: Colors.primary,
     fontSize: FontSize.sm,
   },
+  trustBadge: {
+    borderRadius: BorderRadius.full,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  trustEmoji: {
+    fontSize: 10,
+  },
   streak: {
     fontSize: FontSize.xs,
     color: Colors.textSecondary,
     marginTop: 2,
+  },
+  disqualifiedText: {
+    fontSize: FontSize.xs,
+    color: Colors.error,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  rightSection: {
+    alignItems: 'flex-end',
+    gap: 4,
   },
   pointsContainer: {
     alignItems: 'flex-end',
@@ -141,8 +238,15 @@ const styles = StyleSheet.create({
   pointsGold: {
     color: Colors.accent,
   },
+  pointsDisqualified: {
+    color: Colors.textMuted,
+    fontSize: FontSize.md,
+  },
   pointsLabel: {
     fontSize: FontSize.xs,
     color: Colors.textMuted,
+  },
+  reportBtn: {
+    padding: 2,
   },
 });
