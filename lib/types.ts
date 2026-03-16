@@ -30,6 +30,9 @@ export type CompetitionType = 'fitness' | 'running' | 'cycling' | 'lifting' | 'c
 export type CompetitionStatus = 'open' | 'active' | 'completed' | 'cancelled';
 export type PaymentType = 'stripe' | 'usdc';
 
+export type TierLockMode = 'none' | 'within_one' | 'same';
+export type FitnessTier = 'beginner' | 'active' | 'athlete' | 'elite';
+
 export type ScoringMode =
   | 'relative_improvement'  // % above personal 7-day baseline (public default)
   | 'raw_steps'
@@ -119,6 +122,8 @@ export interface Competition {
   allow_before_photo: boolean;
   status: CompetitionStatus;
   winner_id: string | null;
+  creator_tier: FitnessTier | null;
+  tier_lock: TierLockMode;
   created_at: string;
   // Joined fields
   creator?: Profile;
@@ -183,4 +188,5 @@ export interface CreateCompetitionForm {
   isPrivate: boolean;
   requiresWatch: boolean;
   allowBeforePhoto: boolean;
+  tierLock: TierLockMode;
 }

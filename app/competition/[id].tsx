@@ -16,7 +16,7 @@ import { formatCents, formatPrizePool } from '@/lib/stripe';
 import { useAuth } from '@/hooks/useAuth';
 import { useCompetitionDetail } from '@/hooks/useCompetitions';
 import { supabase } from '@/lib/supabase';
-import { checkAppleWatchPaired, checkBaselineReadiness } from '@/lib/healthkit';
+import { checkAppleWatchPaired, checkBaselineReadiness, getUserBaseline, getTierFromSteps, checkTierCompatibility, FITNESS_TIERS } from '@/lib/healthkit';
 import { checkComplianceForPaidCompetition } from '@/lib/compliance';
 import { competitionPrizeInCredits } from '@/lib/prizes';
 import LeaderboardRow from '@/components/LeaderboardRow';
@@ -121,7 +121,33 @@ export default function CompetitionDetailScreen() {
         }
       }
 
-      // 3. Apple Watch requirement check
+      // 3. Tier compatibility check
+      if (competition.creator_tier && competition.tier_lock && competition.tier_lock !== 'none') {
+        const baseline = await getUserBaseline();
+        if (baseline) {
+          const joinerTier = getTierFromSteps(baseline.avgDailySteps);
+          const { allowed, warning } = checkTierCompatibility(joinerTier, competition.creator_tier, competition.tier_lock);
+          if (!allowed) {
+            Alert.alert(
+              '🔒 Tier Restricted',
+              warning ?? 'This competition is restricted to certain fitness tiers.',
+              [{ text: 'OK' }]
+            );
+            return;
+          }
+          if (warning) {
+            // Show warning but allow them to proceed
+            await new Promise<void>((resolve) => {
+              Alert.alert('Heads Up', warning, [
+                { text: 'Cancel', style: 'cancel', onPress: () => resolve() },
+                { text: 'Join Anyway', onPress: () => resolve() },
+              ]);
+            });
+          }
+        }
+      }
+
+      // 4. Apple Watch requirement check
       if (competition.requires_watch) {
         const hasPaired = await checkAppleWatchPaired();
         if (!hasPaired) {

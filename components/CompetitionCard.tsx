@@ -3,39 +3,54 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, BorderRadius, FontSize, Shadow, CompetitionTypes } from '@/constants/theme';
 import { formatCents, formatDollars } from '@/lib/stripe';
-import type { Competition, ScoringMode } from '@/lib/types';
+import { competitionPrizeInCredits } from '@/lib/prizes';
+import { FITNESS_TIERS } from '@/lib/healthkit';
+import type { Competition, ScoringMode, FitnessTier } from '@/lib/types';
 
 interface Props {
   competition: Competition;
   variant?: 'full' | 'compact';
+  viewerTier?: FitnessTier | null;
 }
 
 const SCORING_MODE_BADGES: Record<ScoringMode, { emoji: string; label: string; color: string }> = {
-  relative_improvement: { emoji: '\u{1F4C8}', label: '% Improvement', color: '#3B82F6' },
-  raw_steps: { emoji: '\u{1F463}', label: 'Most Steps', color: '#8B5CF6' },
-  raw_miles: { emoji: '\u{1F3C3}', label: 'Most Miles', color: '#EC4899' },
-  raw_calories: { emoji: '\u{1F525}', label: 'Most Calories', color: '#F59E0B' },
-  raw_workouts: { emoji: '\u{1F4AA}', label: 'Most Workouts', color: '#10B981' },
+  relative_improvement: { emoji: '📈', label: '% Improvement', color: '#3B82F6' },
+  raw_steps: { emoji: '👟', label: 'Most Steps', color: '#8B5CF6' },
+  raw_miles: { emoji: '🏃', label: 'Most Miles', color: '#EC4899' },
+  raw_calories: { emoji: '🔥', label: 'Most Calories', color: '#F59E0B' },
+  raw_workouts: { emoji: '💪', label: 'Most Workouts', color: '#10B981' },
 };
 
-export default function CompetitionCard({ competition, variant = 'full' }: Props) {
+export default function CompetitionCard({ competition, variant = 'full', viewerTier }: Props) {
   const router = useRouter();
   const typeInfo = CompetitionTypes[competition.type] ?? CompetitionTypes.custom;
   const hasFee = competition.entry_fee_cents > 0;
 
   const daysLeft = Math.max(
     0,
-    Math.ceil(
-      (new Date(competition.end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-    )
+    Math.ceil((new Date(competition.end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
   );
-
-  const potDisplay = competition.prize_pool_cents > 0
-    ? formatDollars(competition.prize_pool_cents)
-    : hasFee ? '$0.00' : 'Free';
 
   const participantCount = competition.participant_count ?? 0;
   const timeLabel = competition.status === 'completed' ? 'Done' : `${daysLeft}d left`;
+
+  // Prize display — credits for paid, free for free
+  const prizeDisplay = hasFee && competition.prize_pool_cents > 0
+    ? competitionPrizeInCredits(Math.floor(competition.prize_pool_cents * 0.9))
+    : 'Free';
+
+  // Tier mismatch warnings
+  const creatorTier = competition.creator_tier;
+  const tierInfo = creatorTier ? FITNESS_TIERS[creatorTier] : null;
+  const tierLock = competition.tier_lock ?? 'none';
+
+  let tierWarning: 'above' | 'below' | null = null;
+  if (viewerTier && creatorTier) {
+    const { getTierIndex } = require('@/lib/healthkit');
+    const diff = getTierIndex(viewerTier) - getTierIndex(creatorTier);
+    if (diff >= 2) tierWarning = 'above';
+    else if (diff <= -2) tierWarning = 'below';
+  }
 
   return (
     <TouchableOpacity
@@ -43,11 +58,24 @@ export default function CompetitionCard({ competition, variant = 'full' }: Props
         styles.card,
         variant === 'compact' && styles.cardCompact,
         hasFee && styles.cardPaid,
+        tierWarning === 'below' && styles.cardWarning,
       ]}
       activeOpacity={0.7}
       onPress={() => router.push(`/competition/${competition.id}`)}
     >
-      {/* Top row: name + type on left, pot on right */}
+      {/* Tier mismatch banner */}
+      {tierWarning === 'below' && (
+        <View style={styles.difficultyBanner}>
+          <Text style={styles.difficultyText}>⚠️ Above your fitness level</Text>
+        </View>
+      )}
+      {tierWarning === 'above' && (
+        <View style={[styles.difficultyBanner, styles.difficultyBannerEasy]}>
+          <Text style={[styles.difficultyText, { color: Colors.success }]}>✅ Below your fitness level</Text>
+        </View>
+      )}
+
+      {/* Top row */}
       <View style={styles.topRow}>
         <View style={styles.topLeft}>
           <View style={styles.nameRow}>
@@ -55,50 +83,58 @@ export default function CompetitionCard({ competition, variant = 'full' }: Props
             <Text style={styles.name} numberOfLines={1}>{competition.name}</Text>
           </View>
           <Text style={styles.meta}>
-            {participantCount} joined {'\u{00B7}'} {timeLabel}
+            {participantCount} joined · {timeLabel}
           </Text>
         </View>
         <View style={styles.potContainer}>
-          <Text style={[styles.potAmount, potDisplay === 'Free' && styles.potFree]}>
-            {potDisplay === 'Free' ? 'Free' : potDisplay}
+          <Text style={[styles.potAmount, !hasFee && styles.potFree]}>
+            {!hasFee ? 'Free' : `$${(competition.prize_pool_cents * 0.9 / 100).toFixed(0)}`}
           </Text>
-          {potDisplay !== 'Free' && (
-            <Text style={styles.potLabel}>pot</Text>
-          )}
+          {hasFee && <Text style={styles.potLabel}>prize</Text>}
         </View>
       </View>
 
-      {/* Bottom badges row */}
+      {/* Badge row */}
       <View style={styles.badgeRow}>
-        {competition.requires_watch && (
+        {/* Tier badge */}
+        {tierInfo && (
+          <View style={[styles.badge, { backgroundColor: tierInfo.color + '20' }]}>
+            <Text style={[styles.badgeText, { color: tierInfo.color }]}>
+              {tierInfo.emoji} {tierInfo.label}
+              {tierLock !== 'none' ? ' 🔒' : ''}
+            </Text>
+          </View>
+        )}
+
+        {/* Watch/iPhone */}
+        {competition.requires_watch ? (
           <View style={[styles.badge, { backgroundColor: '#F59E0B18' }]}>
-            <Text style={[styles.badgeText, { color: '#F59E0B' }]}>{'\u{231A}'} Watch</Text>
+            <Text style={[styles.badgeText, { color: '#F59E0B' }]}>⌚ Watch</Text>
           </View>
-        )}
-        {!competition.requires_watch && (
+        ) : (
           <View style={[styles.badge, { backgroundColor: '#22C55E18' }]}>
-            <Text style={[styles.badgeText, { color: '#22C55E' }]}>{'\u{1F4F1}'} iPhone</Text>
+            <Text style={[styles.badgeText, { color: '#22C55E' }]}>📱 iPhone</Text>
           </View>
         )}
+
+        {/* Scoring mode */}
         {competition.scoring_mode && (
-          <View style={[
-            styles.badge,
-            { backgroundColor: (SCORING_MODE_BADGES[competition.scoring_mode]?.color ?? '#3B82F6') + '18' },
-          ]}>
-            <Text style={[
-              styles.badgeText,
-              { color: SCORING_MODE_BADGES[competition.scoring_mode]?.color ?? '#3B82F6' },
-            ]}>
+          <View style={[styles.badge, { backgroundColor: (SCORING_MODE_BADGES[competition.scoring_mode]?.color ?? '#3B82F6') + '18' }]}>
+            <Text style={[styles.badgeText, { color: SCORING_MODE_BADGES[competition.scoring_mode]?.color ?? '#3B82F6' }]}>
               {SCORING_MODE_BADGES[competition.scoring_mode]?.emoji}{' '}
               {SCORING_MODE_BADGES[competition.scoring_mode]?.label ?? '% Improvement'}
             </Text>
           </View>
         )}
+
+        {/* Verified */}
         <View style={[styles.badge, { backgroundColor: '#22C55E18' }]}>
-          <Text style={[styles.badgeText, { color: '#22C55E' }]}>{'\u2705'} Verified</Text>
+          <Text style={[styles.badgeText, { color: '#22C55E' }]}>✅ Verified</Text>
         </View>
+
+        {/* Entry fee */}
         {hasFee && (
-          <View style={[styles.badge, { backgroundColor: Colors.primary + '18' }]}>
+          <View style={[styles.badge, { backgroundColor: Colors.primaryGlow }]}>
             <Text style={[styles.badgeText, { color: Colors.primary }]}>
               {formatCents(competition.entry_fee_cents)} entry
             </Text>
@@ -117,6 +153,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     borderWidth: 1,
     borderColor: Colors.border,
+    overflow: 'hidden',
     ...Shadow.md,
   },
   cardCompact: {
@@ -127,6 +164,28 @@ const styles = StyleSheet.create({
   },
   cardPaid: {
     borderColor: Colors.primary + '40',
+  },
+  cardWarning: {
+    borderColor: '#F59E0B40',
+  },
+  difficultyBanner: {
+    backgroundColor: '#F59E0B18',
+    marginHorizontal: -Spacing.lg,
+    marginTop: -Spacing.lg,
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F59E0B30',
+  },
+  difficultyBannerEasy: {
+    backgroundColor: '#22C55E18',
+    borderBottomColor: '#22C55E30',
+  },
+  difficultyText: {
+    fontSize: FontSize.xs,
+    fontWeight: '700',
+    color: '#F59E0B',
   },
   topRow: {
     flexDirection: 'row',
@@ -163,7 +222,7 @@ const styles = StyleSheet.create({
   },
   potAmount: {
     fontSize: FontSize.xxl,
-    fontWeight: '800',
+    fontWeight: '900',
     color: Colors.primary,
   },
   potFree: {

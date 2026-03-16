@@ -566,6 +566,141 @@ export async function getUserBaseline(): Promise<UserBaseline | null> {
 }
 
 // ---------------------------------------------------------------------------
+// Fitness tier system
+// ---------------------------------------------------------------------------
+
+export type FitnessTier = 'beginner' | 'active' | 'athlete' | 'elite';
+
+export interface TierInfo {
+  tier: FitnessTier;
+  label: string;
+  emoji: string;
+  color: string;
+  minSteps: number;
+  maxSteps: number;
+  description: string;
+}
+
+export const FITNESS_TIERS: Record<FitnessTier, TierInfo> = {
+  beginner: {
+    tier: 'beginner',
+    label: 'Beginner',
+    emoji: '🟢',
+    color: '#22C55E',
+    minSteps: 0,
+    maxSteps: 2999,
+    description: 'Under 3,000 steps/day avg',
+  },
+  active: {
+    tier: 'active',
+    label: 'Active',
+    emoji: '🔵',
+    color: '#3B82F6',
+    minSteps: 3000,
+    maxSteps: 6999,
+    description: '3,000–7,000 steps/day avg',
+  },
+  athlete: {
+    tier: 'athlete',
+    label: 'Athlete',
+    emoji: '🟡',
+    color: '#F5C518',
+    minSteps: 7000,
+    maxSteps: 11999,
+    description: '7,000–12,000 steps/day avg',
+  },
+  elite: {
+    tier: 'elite',
+    label: 'Elite',
+    emoji: '🔴',
+    color: '#EF4444',
+    minSteps: 12000,
+    maxSteps: Infinity,
+    description: '12,000+ steps/day avg',
+  },
+};
+
+const TIER_ORDER: FitnessTier[] = ['beginner', 'active', 'athlete', 'elite'];
+
+/**
+ * Calculate fitness tier from average daily steps.
+ */
+export function getTierFromSteps(avgDailySteps: number): FitnessTier {
+  if (avgDailySteps >= 12000) return 'elite';
+  if (avgDailySteps >= 7000) return 'athlete';
+  if (avgDailySteps >= 3000) return 'active';
+  return 'beginner';
+}
+
+/**
+ * Get tier index (0=beginner, 3=elite).
+ */
+export function getTierIndex(tier: FitnessTier): number {
+  return TIER_ORDER.indexOf(tier);
+}
+
+/**
+ * Check if a joiner's tier is compatible with a competition's tier lock.
+ * Returns { allowed, warning } — warning is shown even when allowed.
+ */
+export function checkTierCompatibility(
+  joinerTier: FitnessTier,
+  creatorTier: FitnessTier,
+  tierLock: TierLockMode
+): { allowed: boolean; warning: string | null } {
+  const joinerIdx = getTierIndex(joinerTier);
+  const creatorIdx = getTierIndex(creatorTier);
+  const diff = joinerIdx - creatorIdx;
+
+  if (tierLock === 'none') {
+    // No lock — just warn if there's a big gap
+    if (diff >= 2) {
+      return {
+        allowed: true,
+        warning: `You're ${FITNESS_TIERS[joinerTier].emoji} ${FITNESS_TIERS[joinerTier].label} joining a ${FITNESS_TIERS[creatorTier].emoji} ${FITNESS_TIERS[creatorTier].label} lobby. You may have a significant advantage.`,
+      };
+    }
+    if (diff <= -2) {
+      return {
+        allowed: true,
+        warning: `⚠️ This lobby is above your fitness level. You're ${FITNESS_TIERS[joinerTier].emoji} ${FITNESS_TIERS[joinerTier].label} — the creator is ${FITNESS_TIERS[creatorTier].emoji} ${FITNESS_TIERS[creatorTier].label}. You may be outmatched.`,
+      };
+    }
+    return { allowed: true, warning: null };
+  }
+
+  if (tierLock === 'same') {
+    if (joinerTier !== creatorTier) {
+      return {
+        allowed: false,
+        warning: `This competition is locked to ${FITNESS_TIERS[creatorTier].emoji} ${FITNESS_TIERS[creatorTier].label} only. Your tier is ${FITNESS_TIERS[joinerTier].emoji} ${FITNESS_TIERS[joinerTier].label}.`,
+      };
+    }
+    return { allowed: true, warning: null };
+  }
+
+  if (tierLock === 'within_one') {
+    if (Math.abs(diff) > 1) {
+      return {
+        allowed: false,
+        warning: `This competition allows tiers within one level of ${FITNESS_TIERS[creatorTier].emoji} ${FITNESS_TIERS[creatorTier].label}. Your tier is ${FITNESS_TIERS[joinerTier].emoji} ${FITNESS_TIERS[joinerTier].label}.`,
+      };
+    }
+    return { allowed: true, warning: null };
+  }
+
+  return { allowed: true, warning: null };
+}
+
+export type TierLockMode = 'none' | 'within_one' | 'same';
+
+export const TIER_LOCK_OPTIONS: Array<{ id: TierLockMode; label: string; description: string }> = [
+  { id: 'none', label: 'Open to all', description: 'Anyone can join regardless of fitness level' },
+  { id: 'within_one', label: 'Similar levels only', description: 'Only competitors within one tier of you (e.g. Active can join with Beginner or Athlete)' },
+  { id: 'same', label: 'Same tier only', description: 'Only competitors at exactly your fitness level' },
+];
+
+// ---------------------------------------------------------------------------
 // Baseline readiness check
 // ---------------------------------------------------------------------------
 

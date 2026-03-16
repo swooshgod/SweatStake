@@ -23,8 +23,9 @@ import {
 import { formatCents } from '@/lib/stripe';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
-import type { CompetitionType, CreateCompetitionForm, ScoringMode } from '@/lib/types';
+import type { CompetitionType, CreateCompetitionForm, ScoringMode, TierLockMode } from '@/lib/types';
 import { SCORING_MODES } from '@/lib/types';
+import { TIER_LOCK_OPTIONS, FITNESS_TIERS, getTierFromSteps, getUserBaseline } from '@/lib/healthkit';
 
 const MIN_PARTICIPANTS = 3; // Competition won't activate below this
 
@@ -55,6 +56,18 @@ export default function CreateCompetitionScreen() {
   const { profile } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [creatorTier, setCreatorTier] = useState<string | null>(null);
+  const [tierLock, setTierLock] = useState<TierLockMode>('none');
+
+  // Calculate creator's fitness tier on mount
+  React.useEffect(() => {
+    getUserBaseline().then((baseline) => {
+      if (baseline) {
+        const tier = getTierFromSteps(baseline.avgDailySteps);
+        setCreatorTier(tier);
+      }
+    });
+  }, []);
   const [customFee, setCustomFee] = useState('');
   const [selectedType, setSelectedType] = useState(COMP_TYPES[0]);
   const [selectedDuration, setSelectedDuration] = useState(DURATION_OPTIONS[2]);
@@ -146,6 +159,8 @@ export default function CreateCompetitionScreen() {
           is_private: form.isPrivate,
           requires_watch: form.requiresWatch,
           allow_before_photo: selectedDuration.days >= 14 ? form.allowBeforePhoto : false,
+          creator_tier: creatorTier,
+          tier_lock: tierLock,
         })
         .select()
         .single();
@@ -421,6 +436,31 @@ export default function CreateCompetitionScreen() {
                 </View>
               </>
             )}
+
+            {/* Tier Lock */}
+            <Text style={styles.fieldLabel}>Fitness tier restriction</Text>
+            {creatorTier && (
+              <View style={styles.tierInfo}>
+                <Text style={styles.tierInfoText}>
+                  Your tier: {FITNESS_TIERS[creatorTier as keyof typeof FITNESS_TIERS]?.emoji} {FITNESS_TIERS[creatorTier as keyof typeof FITNESS_TIERS]?.label} ({FITNESS_TIERS[creatorTier as keyof typeof FITNESS_TIERS]?.description})
+                </Text>
+              </View>
+            )}
+            {TIER_LOCK_OPTIONS.map((opt) => {
+              const isSelected = tierLock === opt.id;
+              return (
+                <TouchableOpacity
+                  key={opt.id}
+                  style={[styles.scoringOption, isSelected && styles.scoringOptionSelected]}
+                  onPress={() => setTierLock(opt.id)}
+                >
+                  <Text style={[styles.scoringName, isSelected && { color: Colors.primary }]}>
+                    {opt.id === 'none' ? '🌐' : opt.id === 'within_one' ? '🎯' : '🔒'} {opt.label}
+                  </Text>
+                  <Text style={styles.scoringDesc}>{opt.description}</Text>
+                </TouchableOpacity>
+              );
+            })}
 
             {/* Description */}
             <Text style={styles.fieldLabel}>Description <Text style={styles.optionalTag}>optional</Text></Text>
@@ -768,6 +808,19 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     color: Colors.textMuted,
     marginTop: 1,
+  },
+  tierInfo: {
+    backgroundColor: Colors.primaryGlow,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.borderGold,
+  },
+  tierInfoText: {
+    fontSize: FontSize.sm,
+    color: Colors.primary,
+    fontWeight: '600',
   },
   createButton: {
     flex: 1,
