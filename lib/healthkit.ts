@@ -705,7 +705,7 @@ export const FITNESS_TIERS: Record<FitnessTier, TierInfo> = {
     color: '#22C55E',
     minSteps: 0,
     maxSteps: 2999,
-    description: 'Under 3,000 steps/day avg',
+    description: 'Building a fitness habit',
   },
   active: {
     tier: 'active',
@@ -714,7 +714,7 @@ export const FITNESS_TIERS: Record<FitnessTier, TierInfo> = {
     color: '#3B82F6',
     minSteps: 3000,
     maxSteps: 6999,
-    description: '3,000–7,000 steps/day avg',
+    description: 'Regularly moving',
   },
   athlete: {
     tier: 'athlete',
@@ -723,7 +723,7 @@ export const FITNESS_TIERS: Record<FitnessTier, TierInfo> = {
     color: '#F5C518',
     minSteps: 7000,
     maxSteps: 11999,
-    description: '7,000–12,000 steps/day avg',
+    description: 'Seriously active',
   },
   elite: {
     tier: 'elite',
@@ -732,9 +732,69 @@ export const FITNESS_TIERS: Record<FitnessTier, TierInfo> = {
     color: '#EF4444',
     minSteps: 12000,
     maxSteps: Infinity,
-    description: '12,000+ steps/day avg',
+    description: 'Peak performance',
   },
 };
+
+// ---------------------------------------------------------------------------
+// Composite fitness score calculation
+// ---------------------------------------------------------------------------
+
+export interface CompositeFitnessScore {
+  score: number;           // 0–100
+  tier: FitnessTier;
+  breakdown: {
+    stepsScore: number;    // 0–40 points
+    activeMinScore: number;// 0–35 points
+    workoutScore: number;  // 0–25 points
+  };
+  avgDailySteps: number;
+  avgActiveMinutes: number;
+  avgWorkoutDaysPerWeek: number;
+}
+
+/**
+ * Calculate a composite fitness score (0–100) from a user's baseline.
+ * Weighted: Steps 40% + Active Minutes 35% + Workout Frequency 25%
+ *
+ * This prevents gaming via step-only metrics and accommodates
+ * cyclists, weightlifters, yogis, and runners equally.
+ */
+export function calculateCompositeFitnessScore(baseline: UserBaseline): CompositeFitnessScore {
+  // Steps score (0–40): max at 15,000+ steps/day
+  const stepsScore = Math.min(40, Math.round((baseline.avgDailySteps / 15000) * 40));
+
+  // Active minutes score (0–35): max at 60+ min/day
+  const activeMinScore = Math.min(35, Math.round((baseline.avgDailyWorkoutMinutes / 60) * 35));
+
+  // Workout frequency score (0–25): inferred from workout minutes
+  // 5+ days/week of 30+ min workouts = max score
+  const estimatedDaysPerWeek = Math.min(7, baseline.avgDailyWorkoutMinutes >= 30 ? 5 : Math.floor(baseline.avgDailyWorkoutMinutes / 15));
+  const workoutScore = Math.min(25, Math.round((estimatedDaysPerWeek / 5) * 25));
+
+  const score = stepsScore + activeMinScore + workoutScore;
+
+  // Tier thresholds based on composite score
+  let tier: FitnessTier;
+  if (score >= 70) tier = 'elite';
+  else if (score >= 45) tier = 'athlete';
+  else if (score >= 22) tier = 'active';
+  else tier = 'beginner';
+
+  return {
+    score,
+    tier,
+    breakdown: { stepsScore, activeMinScore, workoutScore },
+    avgDailySteps: baseline.avgDailySteps,
+    avgActiveMinutes: baseline.avgDailyWorkoutMinutes,
+    avgWorkoutDaysPerWeek: estimatedDaysPerWeek,
+  };
+}
+
+/**
+ * Get fitness tier from a composite score (legacy: steps-only fallback).
+ * Prefer calculateCompositeFitnessScore() when full baseline is available.
+ */
 
 const TIER_ORDER: FitnessTier[] = ['beginner', 'active', 'athlete', 'elite'];
 
