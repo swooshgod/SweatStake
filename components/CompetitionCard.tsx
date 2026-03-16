@@ -106,32 +106,6 @@ export default function CompetitionCard({ competition, variant = 'full', viewerT
           </View>
         )}
 
-        {/* Watch/iPhone */}
-        {competition.requires_watch ? (
-          <View style={[styles.badge, { backgroundColor: '#F59E0B18' }]}>
-            <Text style={[styles.badgeText, { color: '#F59E0B' }]}>⌚ Watch</Text>
-          </View>
-        ) : (
-          <View style={[styles.badge, { backgroundColor: '#22C55E18' }]}>
-            <Text style={[styles.badgeText, { color: '#22C55E' }]}>📱 iPhone</Text>
-          </View>
-        )}
-
-        {/* Scoring mode */}
-        {competition.scoring_mode && (
-          <View style={[styles.badge, { backgroundColor: (SCORING_MODE_BADGES[competition.scoring_mode]?.color ?? '#3B82F6') + '18' }]}>
-            <Text style={[styles.badgeText, { color: SCORING_MODE_BADGES[competition.scoring_mode]?.color ?? '#3B82F6' }]}>
-              {SCORING_MODE_BADGES[competition.scoring_mode]?.emoji}{' '}
-              {SCORING_MODE_BADGES[competition.scoring_mode]?.label ?? '% Improvement'}
-            </Text>
-          </View>
-        )}
-
-        {/* Verified */}
-        <View style={[styles.badge, { backgroundColor: '#22C55E18' }]}>
-          <Text style={[styles.badgeText, { color: '#22C55E' }]}>✅ Verified</Text>
-        </View>
-
         {/* Entry fee */}
         {hasFee && (
           <View style={[styles.badge, { backgroundColor: Colors.primaryGlow }]}>
