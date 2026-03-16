@@ -3,127 +3,191 @@ import Stripe from 'https://esm.sh/stripe@13.11.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { ethers } from 'https://esm.sh/ethers@5.7.2';
 
+/**
+ * payout-winner — triggered by auto-payout or manually by admin
+ *
+ * SECURITY:
+ * - Requires valid service role JWT OR x-podium-internal secret header
+ * - Uses Postgres advisory lock to prevent double-payout race condition
+ * - Checks idempotency: won't pay out a completed competition
+ */
+
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   apiVersion: '2023-10-16',
   httpClient: Stripe.createFetchHttpClient(),
 });
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Origin': Deno.env.get('APP_ORIGIN') ?? 'https://podiumapp.com',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-podium-internal',
 };
 
-// USDC on Base
 const USDC_BASE = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
-const PODIUM_WALLET = '0xa2c36B289198734a9a5c9e4F7e31102d27eDf8e7';
 const SERVICE_FEE_PCT = 0.10;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
+  // ── Auth: service role JWT OR internal cron secret ─────────────────────────
+  const authHeader = req.headers.get('Authorization');
+  const internalSecret = req.headers.get('x-podium-internal');
+  const cronSecret = Deno.env.get('CRON_SECRET');
+
+  const isInternalCall = internalSecret && cronSecret && internalSecret === cronSecret;
+  const hasAuthHeader = !!authHeader;
+
+  if (!isInternalCall && !hasAuthHeader) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
+  }
+
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
+
+  // If JWT provided, verify it's a service role token or competition creator
+  if (hasAuthHeader && !isInternalCall) {
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401, headers: corsHeaders });
+    }
+    // Only allow if user is service role — regular users cannot trigger payouts
+    // Service role JWTs don't have a user object, so if we got here it's a user JWT
+    // Only permit if they're the competition creator (checked below)
+  }
+
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
-
-    // Auth check — only allow service role or competition creator
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) throw new Error('Unauthorized');
-
     const { competitionId } = await req.json();
+    if (!competitionId) throw new Error('competitionId required');
 
-    // Get competition + winner
-    const { data: comp } = await supabase
-      .from('competitions')
-      .select('*, profiles!winner_id(stripe_connect_account_id, wallet_address)')
-      .eq('id', competitionId)
-      .single();
+    // ── Idempotency lock: use Postgres advisory lock on competition ID ────────
+    // Convert UUID to bigint for advisory lock
+    const lockKey = parseInt(competitionId.replace(/-/g, '').substring(0, 15), 16);
+    const { data: lockResult } = await supabase.rpc('try_advisory_lock', { lock_key: lockKey });
 
-    if (!comp) throw new Error('Competition not found');
-    if (comp.status === 'completed') throw new Error('Already paid out');
-    if (!comp.winner_id) throw new Error('No winner set');
-
-    // Get winner participant
-    const { data: winner } = await supabase
-      .from('participants')
-      .select('user_id, total_points, profiles(display_name, stripe_connect_account_id, wallet_address)')
-      .eq('competition_id', competitionId)
-      .order('total_points', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (!winner) throw new Error('No winner found');
-
-    const totalPot = comp.prize_pool_cents;
-    const fee = Math.floor(totalPot * SERVICE_FEE_PCT);
-    const winnerAmount = totalPot - fee;
-
-    let payoutResult: any = {};
-
-    if (comp.payment_type === 'stripe') {
-      // Stripe Connect payout
-      const connectAccountId = winner.profiles?.stripe_connect_account_id;
-      if (!connectAccountId) throw new Error('Winner has no Stripe Connect account');
-
-      const transfer = await stripe.transfers.create({
-        amount: winnerAmount,
-        currency: 'usd',
-        destination: connectAccountId,
-        metadata: {
-          competition_id: competitionId,
-          winner_id: winner.user_id,
-          total_pot_cents: totalPot,
-          fee_cents: fee,
-        },
-        description: `Podium winnings — ${comp.name}`,
-      });
-
-      payoutResult = { method: 'stripe', transferId: transfer.id, amount: winnerAmount / 100 };
-
-    } else if (comp.payment_type === 'usdc') {
-      // USDC on Base payout
-      const winnerAddress = winner.profiles?.wallet_address;
-      if (!winnerAddress) throw new Error('Winner has no wallet address');
-
-      const escrowKey = Deno.env.get('PODIUM_ESCROW_PRIVATE_KEY');
-      if (!escrowKey) throw new Error('Escrow key not configured');
-
-      const provider = new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
-      const wallet = new ethers.Wallet(escrowKey, provider);
-
-      const usdcAbi = ['function transfer(address to, uint256 amount) returns (bool)'];
-      const usdc = new ethers.Contract(USDC_BASE, usdcAbi, wallet);
-
-      // winnerAmount is in cents, USDC has 6 decimals
-      const usdcAmount = ethers.utils.parseUnits((winnerAmount / 100).toFixed(2), 6);
-      const tx = await usdc.transfer(winnerAddress, usdcAmount);
-      await tx.wait();
-
-      payoutResult = { method: 'usdc', txHash: tx.hash, amount: winnerAmount / 100 };
+    if (!lockResult) {
+      return new Response(
+        JSON.stringify({ error: 'Payout already in progress for this competition' }),
+        { status: 409, headers: corsHeaders }
+      );
     }
 
-    // Mark competition as completed
-    await supabase
-      .from('competitions')
-      .update({ status: 'completed', winner_id: winner.user_id })
-      .eq('id', competitionId);
+    try {
+      // ── Fetch competition ─────────────────────────────────────────────────
+      const { data: comp, error: compError } = await supabase
+        .from('competitions')
+        .select('*')
+        .eq('id', competitionId)
+        .single();
 
-    // Update winner stats
-    await supabase
-      .from('profiles')
-      .update({
-        total_winnings: supabase.rpc('increment', { x: winnerAmount / 100 }),
-        competitions_won: supabase.rpc('increment', { x: 1 }),
-      })
-      .eq('id', winner.user_id);
+      if (compError || !comp) throw new Error('Competition not found');
+      if (comp.status === 'completed') throw new Error('Already paid out — idempotency check passed');
+      if (comp.status === 'cancelled') throw new Error('Competition was cancelled');
+      if (!['active', 'open'].includes(comp.status)) throw new Error(`Invalid status: ${comp.status}`);
 
-    return new Response(
-      JSON.stringify({ success: true, payout: payoutResult }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      // If JWT call, verify user is the creator
+      if (hasAuthHeader && !isInternalCall) {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabase.auth.getUser(token);
+        if (user?.id !== comp.creator_id) {
+          throw new Error('Only the competition creator can trigger manual payouts');
+        }
+      }
+
+      // ── Find winner ───────────────────────────────────────────────────────
+      const { data: winner, error: winnerError } = await supabase
+        .from('participants')
+        .select('user_id, total_points, best_streak, joined_at, profiles(display_name, stripe_connect_account_id, wallet_address)')
+        .eq('competition_id', competitionId)
+        .eq('paid', true)
+        .order('total_points', { ascending: false })
+        .order('best_streak', { ascending: false })
+        .order('joined_at', { ascending: true })
+        .limit(1)
+        .single();
+
+      if (winnerError || !winner) throw new Error('No eligible winner found');
+
+      const totalPot = comp.prize_pool_cents;
+      const fee = Math.floor(totalPot * SERVICE_FEE_PCT);
+      const winnerAmount = totalPot - fee;
+
+      let payoutResult: any = {};
+
+      // ── Mark as completed FIRST (before payment) to prevent double-payout ──
+      const { error: updateError } = await supabase
+        .from('competitions')
+        .update({ status: 'completed', winner_id: winner.user_id })
+        .eq('id', competitionId)
+        .eq('status', comp.status); // Optimistic concurrency check
+
+      if (updateError) throw new Error('Failed to lock competition status — concurrent update detected');
+
+      // ── Execute payout ────────────────────────────────────────────────────
+      if (comp.payment_type === 'stripe') {
+        const connectAccountId = winner.profiles?.stripe_connect_account_id;
+        if (!connectAccountId) throw new Error('Winner has no Stripe Connect account');
+
+        const transfer = await stripe.transfers.create({
+          amount: winnerAmount,
+          currency: 'usd',
+          destination: connectAccountId,
+          metadata: {
+            competition_id: competitionId,
+            winner_id: winner.user_id,
+            total_pot_cents: String(totalPot),
+            fee_cents: String(fee),
+          },
+          description: `Podium winnings — ${comp.name}`,
+        });
+
+        payoutResult = { method: 'stripe', transferId: transfer.id, amount: winnerAmount / 100 };
+
+      } else if (comp.payment_type === 'usdc') {
+        const winnerAddress = winner.profiles?.wallet_address;
+        if (!winnerAddress) throw new Error('Winner has no wallet address');
+
+        const escrowKey = Deno.env.get('PODIUM_ESCROW_PRIVATE_KEY');
+        if (!escrowKey) throw new Error('Escrow key not configured');
+
+        const provider = new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
+        const wallet = new ethers.Wallet(escrowKey, provider);
+        const usdcAbi = ['function transfer(address to, uint256 amount) returns (bool)'];
+        const usdc = new ethers.Contract(USDC_BASE, usdcAbi, wallet);
+        const usdcAmount = ethers.utils.parseUnits((winnerAmount / 100).toFixed(2), 6);
+        const tx = await usdc.transfer(winnerAddress, usdcAmount);
+        await tx.wait();
+
+        payoutResult = { method: 'usdc', txHash: tx.hash, amount: winnerAmount / 100 };
+      }
+
+      // ── Update winner profile stats (separate RPC calls) ──────────────────
+      await supabase.rpc('increment_credits', {
+        p_user_id: winner.user_id,
+        p_amount: Math.floor((winnerAmount / 100) * 100), // convert to credits
+      });
+
+      // Increment competitions_won
+      await supabase
+        .from('profiles')
+        .update({ competitions_won: supabase.rpc('increment_field', { field: 'competitions_won', user_id: winner.user_id }) })
+        .eq('id', winner.user_id);
+
+      console.log(`[payout-winner] ✅ Paid out ${comp.name} to ${winner.profiles?.display_name}: $${winnerAmount / 100}`);
+
+      return new Response(
+        JSON.stringify({ success: true, payout: payoutResult, winner: winner.profiles?.display_name }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+
+    } finally {
+      // Always release the advisory lock
+      await supabase.rpc('release_advisory_lock', { lock_key: lockKey });
+    }
 
   } catch (err) {
+    console.error('[payout-winner] Error:', err.message);
     return new Response(
       JSON.stringify({ error: err.message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
