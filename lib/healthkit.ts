@@ -425,25 +425,86 @@ export function calculateWeightLossPct(startingWeightLbs: number, currentWeightL
   return Math.round((lost / startingWeightLbs) * 100 * 10) / 10;
 }
 
+// Max realistic weekly weight loss = 2% of body weight
+// Anything above 3% in 7 days is physically impossible / suspicious
+const MAX_WEEKLY_LOSS_PCT = 3.0;
+
+export interface WeighInResult {
+  success: boolean;
+  error?: string;
+  flagged?: boolean;
+  flagReason?: string;
+}
+
 /**
- * Log a weigh-in to Supabase for a weight loss competition.
+ * Validate a weigh-in for anomalies.
+ * Returns flagged=true if the loss is physically suspicious.
+ */
+export function validateWeighIn(
+  previousWeightLbs: number,
+  newWeightLbs: number,
+  daysSinceLast: number
+): { valid: boolean; flagged: boolean; reason?: string } {
+  if (newWeightLbs <= 0) return { valid: false, flagged: false, reason: 'Invalid weight.' };
+  if (newWeightLbs > previousWeightLbs) return { valid: true, flagged: false }; // gained weight, fine
+
+  const lostLbs = previousWeightLbs - newWeightLbs;
+  const lostPct = (lostLbs / previousWeightLbs) * 100;
+  const weeklyEquivalent = (lostPct / daysSinceLast) * 7;
+
+  if (weeklyEquivalent > MAX_WEEKLY_LOSS_PCT) {
+    return {
+      valid: true, // don't hard block, but flag for review
+      flagged: true,
+      reason: `${lostPct.toFixed(1)}% lost in ${daysSinceLast} day(s) exceeds the physically possible rate of ${MAX_WEEKLY_LOSS_PCT}% per week.`,
+    };
+  }
+
+  return { valid: true, flagged: false };
+}
+
+/**
+ * Log a verified weigh-in to Supabase.
+ * Requires a photo proof URL (from storage upload).
+ * Runs anomaly detection and flags suspicious entries.
  */
 export async function logWeighIn(
   participantId: string,
   weightLbs: number,
-  isStartingWeight: boolean
-): Promise<boolean> {
+  isStartingWeight: boolean,
+  photoProofUrl: string,
+  previousWeightLbs?: number,
+  daysSinceLast?: number
+): Promise<WeighInResult> {
+  // Anomaly check (skip for starting weight)
+  let flagged = false;
+  let flagReason: string | undefined;
+
+  if (!isStartingWeight && previousWeightLbs && daysSinceLast) {
+    const check = validateWeighIn(previousWeightLbs, weightLbs, daysSinceLast);
+    if (!check.valid) return { success: false, error: check.reason };
+    if (check.flagged) {
+      flagged = true;
+      flagReason = check.reason;
+    }
+  }
+
   const { error } = await supabase.from('weigh_ins').insert({
     participant_id: participantId,
     weight_lbs: weightLbs,
     is_starting_weight: isStartingWeight,
+    photo_proof_url: photoProofUrl,
+    flagged,
+    flag_reason: flagReason ?? null,
     logged_at: new Date().toISOString(),
   });
+
   if (error) {
     console.warn('[WeighIn] Failed to log:', error.message);
-    return false;
+    return { success: false, error: 'Failed to save weigh-in. Please try again.' };
   }
-  return true;
+
+  return { success: true, flagged, flagReason };
 }
 
 /**
