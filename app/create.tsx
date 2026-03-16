@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: Spacing.lg,
-    paddingBottom: 120,
+    paddingBottom: 180,
   },
   sectionLabel: {
     fontSize: FontSize.xl,
@@ -790,8 +790,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   bottomBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
     padding: Spacing.lg,
     paddingBottom: 34,
     backgroundColor: Colors.surface,
@@ -800,7 +799,7 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   feePreview: {
-    fontSize: FontSize.md,
+    fontSize: FontSize.sm,
     fontWeight: '700',
     color: Colors.primary,
     marginBottom: 2,
@@ -824,7 +823,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   createButton: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

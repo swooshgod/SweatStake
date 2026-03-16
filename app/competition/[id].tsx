@@ -261,54 +261,6 @@ export default function CompetitionDetailScreen() {
           </View>
           <Text style={styles.competitionName}>{competition.name}</Text>
 
-          {/* Watch requirement badge */}
-          <View style={[
-            styles.badge,
-            { backgroundColor: competition.requires_watch ? '#F59E0B18' : '#22C55E18' },
-          ]}>
-            <Text style={styles.badgeIcon}>
-              {competition.requires_watch ? '⌚' : '📱'}
-            </Text>
-            <Text style={[
-              styles.badgeText,
-              { color: competition.requires_watch ? '#F59E0B' : '#22C55E' },
-            ]}>
-              {competition.requires_watch ? 'Requires Apple Watch' : 'iPhone Compatible'}
-            </Text>
-          </View>
-
-          {/* Scoring mode badge */}
-          {competition.scoring_mode && (
-            <View style={[
-              styles.badge,
-              { backgroundColor: (SCORING_MODE_COLORS[competition.scoring_mode] ?? '#3B82F6') + '18' },
-            ]}>
-              <Text style={[
-                styles.badgeText,
-                { color: SCORING_MODE_COLORS[competition.scoring_mode] ?? '#3B82F6' },
-              ]}>
-                {SCORING_MODES.find((m) => m.id === competition.scoring_mode)?.label ?? '% Improvement'}
-              </Text>
-            </View>
-          )}
-
-          {/* Verified badge */}
-          <View style={[styles.badge, { backgroundColor: '#22C55E18' }]}>
-            <Text style={[styles.badgeText, { color: '#22C55E' }]}>
-              {'✅'} Verified by Apple Health
-            </Text>
-          </View>
-
-          {/* Skill-based badge for paid competitions */}
-          {isPaid && (
-            <View style={[styles.badge, { backgroundColor: '#6366F118' }]}>
-              <Ionicons name="shield-checkmark" size={12} color="#6366F1" />
-              <Text style={[styles.badgeText, { color: '#6366F1', marginLeft: 4 }]}>
-                Skill-Based Competition
-              </Text>
-            </View>
-          )}
-
           {competition.description && (
             <Text style={styles.description}>{competition.description}</Text>
           )}
