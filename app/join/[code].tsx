@@ -26,7 +26,7 @@ import { formatCents } from "@/lib/stripe";
 import { getEscrowAddress } from "@/lib/usdc";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
-import { checkAppleWatchPaired } from "@/lib/healthkit";
+import { checkAppleWatchPaired, checkBaselineReadiness } from "@/lib/healthkit";
 import { checkComplianceForPaidCompetition } from "@/lib/compliance";
 import { competitionPrizeInCredits } from "@/lib/prizes";
 import { validatePromoCode, recordPromoRedemption, formatDiscount } from "@/lib/promos";
@@ -173,6 +173,26 @@ export default function JoinScreen() {
           } else {
             Alert.alert("Not Available", compliance.reason ?? "Paid competitions are not available in your region.");
           }
+          return;
+        }
+      }
+
+      // Baseline readiness check for % Improvement competitions
+      if (competition.scoring_mode === 'relative_improvement') {
+        const baseline = await checkBaselineReadiness();
+        if (!baseline.canJoinImprovementCompetition && baseline.message) {
+          const isPaid = effectiveEntryCents > 0;
+          Alert.alert(
+            '📊 Not Enough Activity Data',
+            baseline.message,
+            [
+              { text: 'Got it', style: 'cancel' },
+              ...(!isPaid ? [{ text: 'Join Anyway', onPress: async () => {
+                await supabase.from('participants').insert({ competition_id: competition.id, user_id: profile.id, paid: true });
+                router.replace(`/competition/${competition.id}`);
+              }}] : []),
+            ]
+          );
           return;
         }
       }

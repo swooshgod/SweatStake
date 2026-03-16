@@ -565,6 +565,90 @@ export async function getUserBaseline(): Promise<UserBaseline | null> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Baseline readiness check
+// ---------------------------------------------------------------------------
+
+export interface BaselineReadiness {
+  ready: boolean;
+  daysOfData: number;
+  message?: string;
+  canJoinImprovementCompetition: boolean;
+}
+
+/**
+ * Check if the user has enough Apple Health history to participate
+ * in a % Improvement competition fairly.
+ *
+ * Requires at least 3 days of step data in the last 7 days.
+ * Shows a friendly warning if not enough data exists yet.
+ */
+export async function checkBaselineReadiness(): Promise<BaselineReadiness> {
+  if (Platform.OS !== 'ios') {
+    return {
+      ready: false,
+      daysOfData: 0,
+      canJoinImprovementCompetition: false,
+      message: 'Apple Health is only available on iPhone.',
+    };
+  }
+
+  try {
+    const AppleHealthKit = require('react-native-health').default;
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const dailySteps = await new Promise<number[]>((resolve) => {
+      AppleHealthKit.getDailyStepCountSamples(
+        { startDate: sevenDaysAgo.toISOString(), endDate: new Date().toISOString(), period: 1 },
+        (err: string, results: Array<{ value: number; startDate?: string; sourceId?: string }>) => {
+          if (err || !results) { resolve([]); return; }
+          // Only count days with trusted sources
+          const trusted = results.filter((r) => isSourceTrusted(r.sourceId));
+          // Group by day
+          const byDay: Record<string, number> = {};
+          trusted.forEach((r) => {
+            const day = (r.startDate ?? '').split('T')[0];
+            if (day) byDay[day] = (byDay[day] ?? 0) + r.value;
+          });
+          // Only count days with meaningful activity (>500 steps)
+          const activeDays = Object.values(byDay).filter((v) => v > 500);
+          resolve(activeDays);
+        }
+      );
+    });
+
+    const daysOfData = dailySteps.length;
+    const ready = daysOfData >= 3;
+
+    if (!ready) {
+      const daysNeeded = 3 - daysOfData;
+      return {
+        ready: false,
+        daysOfData,
+        canJoinImprovementCompetition: false,
+        message: daysOfData === 0
+          ? `Your iPhone needs at least 3 days of step data to join a % Improvement competition fairly. Make sure Apple Health is tracking your steps and try again in a few days.`
+          : `You have ${daysOfData} day${daysOfData === 1 ? '' : 's'} of activity data. We need at least 3 days to calculate your personal baseline fairly. Check back in ${daysNeeded} day${daysNeeded === 1 ? '' : 's'}!`,
+      };
+    }
+
+    return {
+      ready: true,
+      daysOfData,
+      canJoinImprovementCompetition: true,
+    };
+  } catch (error) {
+    console.warn('[Baseline] Check failed:', error);
+    // Fail open — don't block users if HealthKit is unavailable
+    return {
+      ready: true,
+      daysOfData: 0,
+      canJoinImprovementCompetition: true,
+      message: 'Could not verify activity history — proceeding anyway.',
+    };
+  }
+}
+
 /**
  * Calculate percentage improvement above baseline.
  */

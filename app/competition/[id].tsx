@@ -16,7 +16,7 @@ import { formatCents, formatPrizePool } from '@/lib/stripe';
 import { useAuth } from '@/hooks/useAuth';
 import { useCompetitionDetail } from '@/hooks/useCompetitions';
 import { supabase } from '@/lib/supabase';
-import { checkAppleWatchPaired } from '@/lib/healthkit';
+import { checkAppleWatchPaired, checkBaselineReadiness } from '@/lib/healthkit';
 import { checkComplianceForPaidCompetition } from '@/lib/compliance';
 import { competitionPrizeInCredits } from '@/lib/prizes';
 import LeaderboardRow from '@/components/LeaderboardRow';
@@ -97,7 +97,31 @@ export default function CompetitionDetailScreen() {
         }
       }
 
-      // 2. Apple Watch requirement check
+      // 2. Baseline readiness check for % Improvement competitions
+      if (competition.scoring_mode === 'relative_improvement') {
+        const baseline = await checkBaselineReadiness();
+        if (!baseline.canJoinImprovementCompetition && baseline.message) {
+          Alert.alert(
+            '📊 Not Enough Activity Data',
+            baseline.message + '\n\nYou can still join free competitions or private competitions with raw scoring.',
+            [
+              { text: 'Got it', style: 'cancel' },
+              ...(competition.entry_fee_cents === 0 ? [{ text: 'Join Anyway', onPress: async () => {
+                // Allow joining free improvement competitions even without baseline
+                const { error } = await supabase.from('participants').insert({
+                  competition_id: competition.id,
+                  user_id: profile.id,
+                  paid: true,
+                });
+                if (!error) { Alert.alert('Joined!', 'Good luck! Your baseline will be calculated from your first week of data.'); refetch(); }
+              }}] : []),
+            ]
+          );
+          return;
+        }
+      }
+
+      // 3. Apple Watch requirement check
       if (competition.requires_watch) {
         const hasPaired = await checkAppleWatchPaired();
         if (!hasPaired) {
