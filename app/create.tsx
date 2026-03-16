@@ -30,11 +30,12 @@ import { TIER_LOCK_OPTIONS, FITNESS_TIERS, getTierFromSteps, getUserBaseline } f
 const MIN_PARTICIPANTS = 3; // Competition won't activate below this
 
 const COMP_TYPES = [
-  { id: 'step_race', icon: '\u{1F3C3}', name: 'Step Race', desc: 'Auto-tracked steps', watch: false, type: 'running' as CompetitionType, scoringMode: 'raw_steps' as ScoringMode },
-  { id: 'workout_streak', icon: '\u{1F4AA}', name: 'Workout Streak', desc: 'Auto-detected workouts', watch: true, type: 'fitness' as CompetitionType, scoringMode: 'raw_workouts' as ScoringMode },
-  { id: 'calorie_burn', icon: '\u{1F525}', name: 'Calorie Burn', desc: 'Auto-tracked calories', watch: true, type: 'fitness' as CompetitionType, scoringMode: 'raw_calories' as ScoringMode },
-  { id: 'full_challenge', icon: '\u{1F3C6}', name: 'Full Challenge', desc: 'Workouts + Steps + Calories', watch: true, type: 'fitness' as CompetitionType, scoringMode: 'raw_workouts' as ScoringMode },
-  { id: 'improvement', icon: '\u{1F4C8}', name: '% Improvement', desc: 'Biggest improvement wins', watch: false, type: 'fitness' as CompetitionType, scoringMode: 'relative_improvement' as ScoringMode },
+  { id: 'step_race',      icon: '🏃', name: 'Step Race',       desc: 'Most steps wins — auto-tracked',          watch: false, type: 'running' as CompetitionType, scoringMode: 'raw_steps' as ScoringMode },
+  { id: 'improvement',   icon: '📈', name: '% Improvement',   desc: 'Biggest improvement above your baseline', watch: false, type: 'fitness' as CompetitionType, scoringMode: 'relative_improvement' as ScoringMode },
+  { id: 'weight_loss',   icon: '⚖️', name: 'Weight Loss %',   desc: 'Most % body weight lost — manual weigh-ins', watch: false, type: 'fitness' as CompetitionType, scoringMode: 'raw_weight_loss_pct' as ScoringMode },
+  { id: 'distance',      icon: '🗺️', name: 'Distance Race',   desc: 'Most miles/km — auto-tracked via GPS',    watch: false, type: 'running' as CompetitionType, scoringMode: 'raw_miles' as ScoringMode },
+  { id: 'active_minutes',icon: '🧘', name: 'Active Minutes',  desc: 'Most minutes of any exercise',            watch: false, type: 'fitness' as CompetitionType, scoringMode: 'raw_active_minutes' as ScoringMode },
+  { id: 'full_challenge', icon: '🏆', name: 'Full Challenge',  desc: 'Steps + Distance + Active Minutes',       watch: false, type: 'fitness' as CompetitionType, scoringMode: 'raw_steps' as ScoringMode },
 ];
 
 const FEE_OPTIONS = [

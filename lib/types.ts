@@ -34,11 +34,13 @@ export type TierLockMode = 'none' | 'within_one' | 'same';
 export type FitnessTier = 'beginner' | 'active' | 'athlete' | 'elite';
 
 export type ScoringMode =
-  | 'relative_improvement'  // % above personal 7-day baseline (public default)
-  | 'raw_steps'
-  | 'raw_miles'
-  | 'raw_calories'
-  | 'raw_workouts';
+  | 'relative_improvement'    // % above personal 7-day baseline
+  | 'raw_steps'               // total steps
+  | 'raw_miles'               // total miles/distance
+  | 'raw_active_minutes'      // total active minutes
+  | 'raw_weight_loss_pct'     // % body weight lost (manual weigh-ins)
+  | 'raw_calories'            // legacy — kept for existing competitions
+  | 'raw_workouts';           // legacy — kept for existing competitions
 
 export interface ScoringModeConfig {
   id: ScoringMode;
@@ -49,11 +51,13 @@ export interface ScoringModeConfig {
 }
 
 export const SCORING_MODES: ScoringModeConfig[] = [
-  { id: 'relative_improvement', label: '% Improvement', description: 'Compete on how much you improve above your personal baseline. Fair for all fitness levels.', unit: '%', privateOnly: false },
-  { id: 'raw_steps', label: 'Most Steps', description: 'Total steps taken during the competition.', unit: 'steps', privateOnly: true },
-  { id: 'raw_miles', label: 'Most Miles', description: 'Total distance covered during the competition.', unit: 'miles', privateOnly: true },
-  { id: 'raw_calories', label: 'Most Calories', description: 'Total active calories burned. Auto-tracked via Apple Watch.', unit: 'cal', privateOnly: true },
-  { id: 'raw_workouts', label: 'Most Workouts', description: 'Total workout sessions completed. Auto-detected via Apple Watch.', unit: 'workouts', privateOnly: true },
+  { id: 'relative_improvement',  label: '% Improvement',    description: 'Compete on how much you improve above your personal baseline. Fair for all fitness levels.', unit: '%',       privateOnly: false },
+  { id: 'raw_steps',             label: 'Most Steps',       description: 'Total steps taken during the competition. Auto-tracked via iPhone or Apple Watch.',           unit: 'steps',   privateOnly: true },
+  { id: 'raw_miles',             label: 'Most Miles',       description: 'Total distance covered running, walking, or cycling. Auto-tracked via GPS.',                  unit: 'miles',   privateOnly: true },
+  { id: 'raw_active_minutes',    label: 'Active Minutes',   description: 'Total minutes of any exercise — running, yoga, swimming, anything. Auto-tracked.',            unit: 'min',     privateOnly: true },
+  { id: 'raw_weight_loss_pct',   label: 'Weight Loss %',   description: 'Most % of body weight lost. Manual weigh-ins. Fair across all body sizes.',                   unit: '%',       privateOnly: false },
+  { id: 'raw_calories',          label: 'Most Calories',   description: 'Legacy: total active calories. Not recommended for public competitions.',                      unit: 'cal',     privateOnly: true },
+  { id: 'raw_workouts',          label: 'Most Workouts',   description: 'Legacy: total workout sessions. Not recommended for public competitions.',                     unit: 'workouts',privateOnly: true },
 ];
 
 export interface CompetitionTemplate {

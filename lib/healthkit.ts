@@ -106,6 +106,7 @@ interface HealthKitData {
   workouts: number;
   activeCalories: number;
   activeMinutes: number;
+  distanceMiles: number;
 }
 
 interface HealthKitSample {
@@ -332,11 +333,24 @@ export async function getTodayHealthData(requireHeartRate = false): Promise<Heal
       })(),
     ]);
 
+    // Also fetch distance (walking + running)
+    const distanceMeters = await new Promise<number>((resolve) => {
+      AppleHealthKit.getDistanceWalkingRunning(
+        options,
+        (err: string, results: HealthKitSample[]) => {
+          if (err || !results) { resolve(0); return; }
+          const trusted = results.filter((r) => isSourceTrusted(r.sourceId));
+          resolve(trusted.reduce((sum, r) => sum + (r.value ?? 0), 0));
+        }
+      );
+    });
+
     return {
       steps: Math.round(steps),
       workouts: workoutResults.count,
       activeCalories: Math.round(calories),
       activeMinutes: Math.round(workoutResults.totalMinutes),
+      distanceMiles: Math.round((distanceMeters / 1609.34) * 100) / 100,
     };
   } catch (error) {
     console.warn('Failed to fetch HealthKit data:', error);
@@ -389,6 +403,47 @@ async function getDeviceInfo(): Promise<DeviceInfo | null> {
   } catch {
     return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Weight Loss % competition helpers
+// ---------------------------------------------------------------------------
+
+export interface WeighIn {
+  weightLbs: number;
+  loggedAt: string;
+  isStartingWeight: boolean;
+}
+
+/**
+ * Calculate weight loss percentage between starting and current weight.
+ * Uses % of body weight so it's fair across all body sizes.
+ */
+export function calculateWeightLossPct(startingWeightLbs: number, currentWeightLbs: number): number {
+  if (startingWeightLbs <= 0) return 0;
+  const lost = startingWeightLbs - currentWeightLbs;
+  return Math.round((lost / startingWeightLbs) * 100 * 10) / 10;
+}
+
+/**
+ * Log a weigh-in to Supabase for a weight loss competition.
+ */
+export async function logWeighIn(
+  participantId: string,
+  weightLbs: number,
+  isStartingWeight: boolean
+): Promise<boolean> {
+  const { error } = await supabase.from('weigh_ins').insert({
+    participant_id: participantId,
+    weight_lbs: weightLbs,
+    is_starting_weight: isStartingWeight,
+    logged_at: new Date().toISOString(),
+  });
+  if (error) {
+    console.warn('[WeighIn] Failed to log:', error.message);
+    return false;
+  }
+  return true;
 }
 
 /**

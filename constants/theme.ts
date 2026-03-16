@@ -147,48 +147,56 @@ export const CompetitionTypes = {
 
 // ─── Scoring Templates ───────────────────────
 export const ScoringTemplates = {
-  full_challenge: {
-    name: 'Full Challenge',
-    description: 'Workouts + Steps + Active Calories — all auto-tracked via Apple Watch',
-    categories: [
-      { name: 'Workout (45+ min)', points: 3, auto_tracked: true, penalty: { threshold: 4, penaltyPerMissed: 1, maxPenalty: 3 } },
-      { name: 'Steps (8,000+)',    points: 2, auto_tracked: true },
-      { name: 'Active Calories (300+)', points: 2, auto_tracked: true },
-    ],
-  },
-  workout_streak: {
-    name: 'Workout Streak',
-    description: 'Workout days + active minutes, auto from Apple Watch',
-    categories: [
-      { name: 'Workout (any duration)', points: 3, auto_tracked: true },
-      { name: 'Active Minutes (30+)',   points: 1, auto_tracked: true },
-    ],
-  },
   step_race: {
     name: 'Step Race',
-    description: 'Steps only, auto from HealthKit',
+    description: 'Most steps wins — auto-tracked via iPhone or Apple Watch',
     categories: [
       { name: 'Steps (10,000+)', points: 3, auto_tracked: true },
       { name: 'Steps (8,000+)',  points: 2, auto_tracked: true },
       { name: 'Steps (5,000+)',  points: 1, auto_tracked: true },
     ],
   },
-  calorie_burn: {
-    name: 'Calorie Burn',
-    description: 'Active calories burned, auto from Apple Watch',
-    categories: [
-      { name: 'Active Calories (500+)', points: 3, auto_tracked: true },
-      { name: 'Active Calories (300+)', points: 2, auto_tracked: true },
-      { name: 'Active Calories (150+)', points: 1, auto_tracked: true },
-    ],
-  },
   improvement: {
     name: '% Improvement',
-    description: 'Percentage improvement above your personal baseline — all auto-tracked',
+    description: 'Biggest improvement above your personal 7-day baseline',
     categories: [
       { name: 'Steps vs Baseline',           points: 3, auto_tracked: true },
-      { name: 'Active Calories vs Baseline', points: 2, auto_tracked: true },
-      { name: 'Workout Minutes vs Baseline', points: 2, auto_tracked: true },
+      { name: 'Distance vs Baseline',        points: 2, auto_tracked: true },
+      { name: 'Active Minutes vs Baseline',  points: 2, auto_tracked: true },
+    ],
+  },
+  weight_loss: {
+    name: 'Weight Loss %',
+    description: 'Most % of body weight lost. Manual weigh-ins. Fair for all body types.',
+    categories: [
+      { name: 'Weekly weigh-in', points: 1, auto_tracked: false },
+    ],
+  },
+  distance: {
+    name: 'Distance Race',
+    description: 'Most miles/km covered — running, walking, cycling. Auto-tracked via GPS.',
+    categories: [
+      { name: 'Distance (5+ miles)', points: 3, auto_tracked: true },
+      { name: 'Distance (3+ miles)', points: 2, auto_tracked: true },
+      { name: 'Distance (1+ mile)',  points: 1, auto_tracked: true },
+    ],
+  },
+  active_minutes: {
+    name: 'Active Minutes',
+    description: 'Most minutes of any exercise — running, yoga, swimming, anything.',
+    categories: [
+      { name: 'Active Minutes (60+)', points: 3, auto_tracked: true },
+      { name: 'Active Minutes (30+)', points: 2, auto_tracked: true },
+      { name: 'Active Minutes (15+)', points: 1, auto_tracked: true },
+    ],
+  },
+  full_challenge: {
+    name: 'Full Challenge',
+    description: 'Steps + Distance + Active Minutes — all auto-tracked',
+    categories: [
+      { name: 'Steps (8,000+)',       points: 2, auto_tracked: true },
+      { name: 'Distance (2+ miles)',  points: 2, auto_tracked: true },
+      { name: 'Active Min (30+)',     points: 2, auto_tracked: true },
     ],
   },
   custom: {
