@@ -7,10 +7,10 @@
 // Light mode colors (default)
 export const LightColors = {
   // Brand
-  primary:      '#FF5A1F',   // Electric orange
-  primaryDark:  '#E04D15',
-  primaryLight: '#FF7A45',
-  primaryGlow:  'rgba(255, 90, 31, 0.12)',
+  primary:      '#0D88F5',   // Electric orange
+  primaryDark:  '#0A6FCC',
+  primaryLight: '#3DA0F7',
+  primaryGlow:  'rgba(13, 136, 245, 0.12)',
 
   // Backgrounds — warm off-white, feels premium not clinical
   background:   '#F8F7F4',
@@ -19,7 +19,7 @@ export const LightColors = {
   surfaceHigh:  '#ECEAE4',
 
   // Accent
-  accent:       '#FF5A1F',
+  accent:       '#0D88F5',
   accentBlue:   '#2563EB',
   accentGreen:  '#16A34A',
   accentPurple: '#7C3AED',
@@ -38,7 +38,7 @@ export const LightColors = {
   // Borders
   border:       '#E5E2DC',
   borderLight:  '#F0EDE8',
-  borderAccent: 'rgba(255, 90, 31, 0.25)',
+  borderAccent: 'rgba(13, 136, 245, 0.25)',
   borderGold:   'rgba(255, 90, 31, 0.30)',
 
   // Overlay
@@ -50,10 +50,10 @@ export const LightColors = {
 // Dark mode colors
 export const DarkColors = {
   // Brand
-  primary:      '#FF5A1F',
-  primaryDark:  '#E04D15',
-  primaryLight: '#FF7A45',
-  primaryGlow:  'rgba(255, 90, 31, 0.15)',
+  primary:      '#0D88F5',
+  primaryDark:  '#0A6FCC',
+  primaryLight: '#3DA0F7',
+  primaryGlow:  'rgba(13, 136, 245, 0.15)',
 
   // Backgrounds — deep rich black
   background:   '#0A0A0A',
@@ -62,7 +62,7 @@ export const DarkColors = {
   surfaceHigh:  '#262626',
 
   // Accent
-  accent:       '#FF5A1F',
+  accent:       '#0D88F5',
   accentBlue:   '#3B82F6',
   accentGreen:  '#22C55E',
   accentPurple: '#8B5CF6',
@@ -81,7 +81,7 @@ export const DarkColors = {
   // Borders
   border:       '#242424',
   borderLight:  '#1A1A1A',
-  borderAccent: 'rgba(255, 90, 31, 0.25)',
+  borderAccent: 'rgba(13, 136, 245, 0.25)',
   borderGold:   'rgba(255, 90, 31, 0.35)',
 
   // Overlay
@@ -96,10 +96,10 @@ export const Colors = LightColors;
 // ─── Gradients ───────────────────────────────
 export const Gradients = {
   hero: ['rgba(0,0,0,0.0)', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.95)'] as string[],
-  gold: ['#FF5A1F', '#E04D15', '#FF7A45'] as string[],
+  gold: ['#0D88F5', '#0A6FCC', '#3DA0F7'] as string[],
   card: ['rgba(10,10,10,0)', 'rgba(10,10,10,0.85)'] as string[],
   surface: ['#1E1E1E', '#141414'] as string[],
-  winner: ['#FF5A1F', '#FF8C00'] as string[],
+  winner: ['#0D88F5', '#FF8C00'] as string[],
 } as const;
 
 // ─── Spacing ─────────────────────────────────
@@ -160,14 +160,14 @@ export const Shadow = {
     elevation: 10,
   },
   gold: {
-    shadowColor: '#FF5A1F',
+    shadowColor: '#0D88F5',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 16,
     elevation: 8,
   },
   goldSm: {
-    shadowColor: '#FF5A1F',
+    shadowColor: '#0D88F5',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -199,14 +199,14 @@ export const ShadowLight = {
     elevation: 6,
   },
   gold: {
-    shadowColor: '#FF5A1F',
+    shadowColor: '#0D88F5',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 4,
   },
   goldSm: {
-    shadowColor: '#FF5A1F',
+    shadowColor: '#0D88F5',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
@@ -216,7 +216,7 @@ export const ShadowLight = {
 
 // ─── Competition Types ────────────────────────
 export const CompetitionTypes = {
-  fitness: { emoji: '💪', label: 'Fitness',  color: '#FF5A1F' },
+  fitness: { emoji: '💪', label: 'Fitness',  color: '#0D88F5' },
   running: { emoji: '🏃', label: 'Running',  color: '#3B82F6' },
   cycling: { emoji: '🚴', label: 'Cycling',  color: '#22C55E' },
   lifting: { emoji: '🏋️', label: 'Lifting',  color: '#8B5CF6' },
