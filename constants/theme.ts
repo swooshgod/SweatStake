@@ -57,7 +57,7 @@ export const DarkColors = {
 
   // Backgrounds — deep navy-black
   background:   '#060914',
-  surface:      '#0D1428',
+  surface:      '#0F1A2E',
   surfaceLight: '#162040',
   surfaceHigh:  '#1E2A4A',
 
@@ -75,12 +75,12 @@ export const DarkColors = {
 
   // Text
   textPrimary:   '#F0F4FF',
-  textSecondary: '#8A9BC4',
+  textSecondary: '#B0B8D4',
   textMuted:     '#4A5780',
 
   // Borders
   border:       '#1E2A4A',
-  borderLight:  '#162040',
+  borderLight:  '#1A2540',
   borderAccent: 'rgba(0, 87, 255, 0.25)',
   borderGold:   'rgba(201, 168, 76, 0.35)',
 

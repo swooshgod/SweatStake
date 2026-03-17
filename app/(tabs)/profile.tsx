@@ -17,6 +17,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { isHealthKitAvailable, requestHealthKitPermissions } from '@/lib/healthkit';
 import { formatCents } from '@/lib/stripe';
 import { getCreditsBalance, getCreditsDisplay } from '@/lib/prizes';
+import * as ImagePicker from 'expo-image-picker';
 import { getProStatus, getProBadge, type ProStatus } from '@/lib/subscription';
 
 export default function ProfileScreen() {
@@ -24,6 +25,7 @@ export default function ProfileScreen() {
   const { Colors, Shadow } = useTheme();
   const { profile, isAuthenticated, signOut } = useAuth();
   const [creditsBalance, setCreditsBalance] = useState<number>(0);
+  const [localAvatarUri, setLocalAvatarUri] = useState<string | null>(null);
   const [proStatus, setProStatus] = useState<ProStatus>({ isPro: false, expiresAt: null, daysRemaining: null });
 
   useEffect(() => {
@@ -114,6 +116,38 @@ export default function ProfileScreen() {
     },
   };
 
+  const handlePickAvatar = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please allow photo access to update your profile picture.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      const uri = result.assets[0].uri;
+      setLocalAvatarUri(uri);
+      // Upload to Supabase storage
+      try {
+        const ext = uri.split('.').pop() ?? 'jpg';
+        const path = `avatars/${profile?.id}.${ext}`;
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        const { error: uploadError } = await supabase.storage.from('avatars').upload(path, blob, { upsert: true });
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+          await supabase.from('profiles').update({ avatar_url: urlData.publicUrl }).eq('id', profile!.id);
+        }
+      } catch (e) {
+        console.warn('Avatar upload failed:', e);
+      }
+    }
+  };
+
   if (!isAuthenticated || !profile) {
     return (
       <View style={[styles.centered, dynamicStyles.centered]}>
@@ -146,7 +180,7 @@ export default function ProfileScreen() {
   const credits = getCreditsDisplay(creditsBalance);
   const winRate = profile.competitions_entered > 0
     ? Math.round((profile.competitions_won / profile.competitions_entered) * 100)
-    : 0;
+    : null;
 
   return (
     <ScrollView
@@ -156,19 +190,24 @@ export default function ProfileScreen() {
     >
       {/* ─── Profile Header ─── */}
       <View style={styles.profileHeader}>
-        {profile.avatar_url ? (
-          <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
-        ) : (
-          <LinearGradient
-            colors={[Colors.primaryLight, Colors.primaryDark]}
-            style={[styles.avatar, styles.avatarGradient]}
-          >
-            <Text style={styles.avatarInitial}>
-              {(profile.display_name ?? profile.username ?? 'U')[0].toUpperCase()}
-            </Text>
-          </LinearGradient>
-        )}
-        <Text style={[styles.displayName, dynamicStyles.displayName]}>{profile.display_name ?? profile.username ?? 'Competitor'}</Text>
+        <TouchableOpacity onPress={handlePickAvatar} activeOpacity={0.8}>
+          {profile.avatar_url || localAvatarUri ? (
+            <Image source={{ uri: localAvatarUri ?? profile.avatar_url! }} style={styles.avatar} />
+          ) : (
+            <LinearGradient
+              colors={[Colors.primaryLight ?? '#338AFF', Colors.primaryDark ?? '#0040CC']}
+              style={[styles.avatar, styles.avatarGradient]}
+            >
+              <Text style={styles.avatarInitial}>
+                {(profile.display_name ?? profile.username ?? 'U')[0].toUpperCase()}
+              </Text>
+            </LinearGradient>
+          )}
+          <View style={styles.avatarEditBadge}>
+            <Ionicons name="camera" size={12} color="#fff" />
+          </View>
+        </TouchableOpacity>
+        <Text style={[styles.displayName, dynamicStyles.displayName]}>{profile.display_name ?? profile.username ?? 'Champion'}</Text>
         {profile.username && (
           <Text style={[styles.username, dynamicStyles.username]}>@{profile.username}</Text>
         )}
@@ -177,24 +216,24 @@ export default function ProfileScreen() {
 
       {/* ─── Pro Banner ─── */}
       {proStatus.isPro ? (
-        <View style={styles.proBanner}>
+        <View style={[styles.proBanner, { backgroundColor: Colors.primaryGlow, borderColor: Colors.borderGold }]}>
           <View style={styles.proBannerLeft}>
-            <Text style={styles.proBannerBadge}>⭐ PODIUM PRO</Text>
-            <Text style={styles.proBannerSub}>
+            <Text style={[styles.proBannerBadge, { color: Colors.primary }]}>⭐ PODIUM PRO</Text>
+            <Text style={[styles.proBannerSub, { color: Colors.textSecondary }]}>
               {proStatus.daysRemaining !== null ? `${proStatus.daysRemaining} days remaining` : 'Active'}
             </Text>
           </View>
-          <Text style={styles.proBannerFee}>0% fees</Text>
+          <Text style={[styles.proBannerFee, { color: Colors.success }]}>0% fees</Text>
         </View>
       ) : (
         <TouchableOpacity
-          style={styles.proUpgradeBanner}
+          style={[styles.proUpgradeBanner, { backgroundColor: Colors.surface, borderColor: Colors.border }]}
           onPress={() => router.push('/pro-upgrade')}
           activeOpacity={0.85}
         >
           <View>
-            <Text style={styles.proUpgradeTitle}>⭐ Upgrade to Pro</Text>
-            <Text style={styles.proUpgradeSub}>Keep 100% of your winnings · $9.99/mo</Text>
+            <Text style={[styles.proUpgradeTitle, { color: Colors.textPrimary }]}>⭐ Upgrade to Pro</Text>
+            <Text style={[styles.proUpgradeSub, { color: Colors.textSecondary }]}>Keep 100% of your winnings · $9.99/mo</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
         </TouchableOpacity>
@@ -235,7 +274,7 @@ export default function ProfileScreen() {
         </View>
         <View style={[styles.statCard, dynamicStyles.statCard]}>
           <Text style={[styles.statValue, { color: Colors.success }]}>
-            {winRate}%
+            {winRate !== null ? `${winRate}%` : '—'}
           </Text>
           <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Win Rate</Text>
         </View>
@@ -426,6 +465,19 @@ const styles = StyleSheet.create({
     borderRadius: 44,
     marginBottom: Spacing.md,
   },
+  avatarEditBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.background,
+  },
   avatarGradient: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -443,6 +495,48 @@ const styles = StyleSheet.create({
   username: {
     fontSize: FontSize.sm,
     marginTop: Spacing.xs,
+  },
+  proBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    marginBottom: Spacing.xl,
+  },
+  proBannerLeft: {
+    flex: 1,
+  },
+  proBannerBadge: {
+    fontSize: FontSize.sm,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  proBannerSub: {
+    fontSize: FontSize.xs,
+    marginTop: 2,
+  },
+  proBannerFee: {
+    fontSize: FontSize.md,
+    fontWeight: '800',
+  },
+  proUpgradeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    marginBottom: Spacing.xl,
+  },
+  proUpgradeTitle: {
+    fontSize: FontSize.md,
+    fontWeight: '700',
+  },
+  proUpgradeSub: {
+    fontSize: FontSize.xs,
+    marginTop: 2,
   },
   creditsBanner: {
     marginBottom: Spacing.xl,

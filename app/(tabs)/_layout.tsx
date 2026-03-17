@@ -61,7 +61,7 @@ export default function TabLayout() {
           headerTitle: () => <TabHeader />,
           title: 'Compete',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="flame" size={size} color={color} />
+            <Ionicons name="trophy" size={size} color={color} />
           ),
         }}
       />

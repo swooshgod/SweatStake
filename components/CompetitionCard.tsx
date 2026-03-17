@@ -122,6 +122,7 @@ export default function CompetitionCard({ competition, variant = 'full', viewerT
     card: {
       backgroundColor: Colors.surface,
       borderColor: Colors.border,
+      borderLeftColor: Colors.primary,
       ...Shadow.md,
     },
     cardPaid: {
@@ -193,7 +194,7 @@ export default function CompetitionCard({ competition, variant = 'full', viewerT
             <Animated.Text
               style={[
                 styles.potAmount,
-                { color: Colors.primary },
+                { color: Colors.success },
                 !hasFee && [styles.potFree, { color: Colors.success }],
                 hasFee && { opacity: prizeOpacity },
               ]}
@@ -225,6 +226,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
+    borderLeftWidth: 3,
     overflow: 'hidden',
   },
   cardCompact: {
@@ -276,7 +278,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontWeight: '800',
     flex: 1,
   },
   meta: {
