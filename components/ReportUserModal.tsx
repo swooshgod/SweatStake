@@ -61,6 +61,7 @@ export default function ReportUserModal({
   const [error, setError] = useState<string | null>(null);
   const { Colors, Shadow } = useTheme();
 
+  const { Colors } = useTheme();
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
