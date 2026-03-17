@@ -31,6 +31,7 @@ import { competitionPrizeInCredits } from "@/lib/prizes";
 import { validatePromoCode, recordPromoRedemption, formatDiscount } from "@/lib/promos";
 import type { Competition } from "@/lib/types";
 import type { PaymentMethod } from "@/lib/payments";
+import { useStripe } from "@stripe/stripe-react-native";
 
 export default function JoinScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
@@ -47,6 +48,9 @@ export default function JoinScreen() {
   const [showBeforePhoto, setShowBeforePhoto] = useState(false);
   const [beforePhotoUri, setBeforePhotoUri] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  // Stripe PaymentSheet
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   // Promo code state
   const [promoInput, setPromoInput] = useState("");
@@ -261,16 +265,63 @@ export default function JoinScreen() {
         }
       }
 
-      // Insert participant
-      const { error } = await supabase.from("participants").insert({
-        competition_id: competition.id,
-        user_id: profile.id,
-        paid: effectiveEntryCents === 0,
-      });
-      if (error) throw error;
+      // Record promo redemption if applied (do before payment so we dont lose it)
+      const promoToRecord = promoApplied && promoInput && promoDiscount > 0;
 
-      // Record promo redemption if applied
-      if (promoApplied && promoInput && promoDiscount > 0) {
+      if (effectiveEntryCents > 0 && paymentMethod === "stripe") {
+        // Stripe PaymentSheet flow
+        const session = await supabase.auth.getSession();
+        const token = session.data.session?.access_token;
+        if (!token) throw new Error("Not authenticated");
+
+        const res = await fetch(
+          `https://fdrrpdqemiqclyuvqxgs.supabase.co/functions/v1/create-payment-intent`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ competitionId: competition.id }),
+          }
+        );
+        const piData = await res.json();
+        if (!res.ok || !piData.clientSecret) throw new Error(piData.error || "Failed to create payment");
+
+        const { error: initError } = await initPaymentSheet({
+          paymentIntentClientSecret: piData.clientSecret,
+          merchantDisplayName: "Podium",
+          applePay: { merchantCountryCode: "US" },
+          googlePay: { merchantCountryCode: "US", testEnv: __DEV__ },
+          style: "automatic",
+        });
+        if (initError) throw new Error(initError.message);
+
+        const { error: presentError } = await presentPaymentSheet();
+        if (presentError) {
+          if (presentError.code === "Canceled") return;
+          throw new Error(presentError.message);
+        }
+
+        // Payment succeeded — insert participant (webhook also does this as backup)
+        const { error } = await supabase.from("participants").insert({
+          competition_id: competition.id,
+          user_id: profile.id,
+          paid: true,
+          payment_intent_id: piData.paymentIntentId,
+        });
+        if (error && !error.message.includes("duplicate")) throw error;
+      } else {
+        // Free entry or USDC
+        const { error } = await supabase.from("participants").insert({
+          competition_id: competition.id,
+          user_id: profile.id,
+          paid: effectiveEntryCents === 0,
+        });
+        if (error) throw error;
+      }
+
+      if (promoToRecord) {
         await recordPromoRedemption(promoInput, profile.id, competition.id, promoDiscount);
       }
 

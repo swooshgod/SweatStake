@@ -4,6 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
+import { StripeProvider } from '@stripe/stripe-react-native';
+import { STRIPE_PUBLISHABLE_KEY } from '@/lib/stripe';
 import { initRevenueCat } from '@/lib/subscription';
 
 const FIRST_LAUNCH_KEY = 'podium_first_launch_seen';
@@ -71,7 +73,9 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <RootNavigator />
+      <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
+        <RootNavigator />
+      </StripeProvider>
     </ThemeProvider>
   );
 }
