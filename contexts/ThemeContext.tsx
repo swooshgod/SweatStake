@@ -19,7 +19,7 @@ const ThemeContext = createContext<ThemeContextType>({
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useColorScheme();
-  const [isDark, setIsDark] = useState(systemScheme === 'dark');
+  const [isDark, setIsDark] = useState(false); // Default light mode
 
   useEffect(() => {
     AsyncStorage.getItem('podium_theme').then((saved) => {
