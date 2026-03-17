@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   wordmark: {
     fontSize: 16,
     fontWeight: '900',
-    color: Colors.primary,
+    color: '#22C55E',
     letterSpacing: 8,
   },
   heroContainer: {
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   heroLine2: {
     fontSize: FontSize.xxxl,
     fontWeight: '900',
-    color: Colors.primary,
+    color: '#22C55E',
     letterSpacing: -1,
     lineHeight: 40,
     marginBottom: Spacing.md,
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   prizeAmount: {
     fontSize: FontSize.xxxl,
     fontWeight: '900',
-    color: Colors.primary,
+    color: '#22C55E',
   },
   statsRow: {
     flexDirection: 'row',
