@@ -15,6 +15,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMyCompetitions, usePublicCompetitions } from '@/hooks/useCompetitions';
 import CompetitionCard from '@/components/CompetitionCard';
 
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const { profile, isAuthenticated } = useAuth();
@@ -42,6 +49,12 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
+        {isAuthenticated && profile?.display_name && (
+          <Text style={styles.greeting}>
+            {getGreeting()}, {profile.display_name}
+          </Text>
+        )}
+
         {/* Your Competitions — only if authenticated */}
         {isAuthenticated && (myLoading || myComps.length > 0) && (
           <View style={styles.section}>
@@ -109,6 +122,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  greeting: {
+    fontSize: FontSize.lg,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginBottom: Spacing.lg,
   },
   scrollContent: {
     padding: Spacing.lg,
