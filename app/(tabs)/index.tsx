@@ -33,8 +33,7 @@ export default function HomeScreen() {
 
   const [refreshing, setRefreshing] = React.useState(false);
 
-  // Animated header gradient bar
-  const headerAnim = useRef(new Animated.Value(0)).current;
+  // Animated entrance
   const greetingFade = useRef(new Animated.Value(0)).current;
   const greetingSlide = useRef(new Animated.Value(16)).current;
   const sectionFade = useRef(new Animated.Value(0)).current;
@@ -42,11 +41,6 @@ export default function HomeScreen() {
 
   useEffect(() => {
     Animated.sequence([
-      Animated.timing(headerAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
       Animated.parallel([
         Animated.timing(greetingFade, {
           toValue: 1,
@@ -80,6 +74,82 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
+  const hasActiveComps = myComps.length > 0;
+
+  // Reusable section renderers
+  const renderMyCompetitions = () => (
+    <Animated.View
+      style={[
+        styles.section,
+        {
+          opacity: sectionFade,
+          transform: [{ translateY: sectionSlide }],
+        },
+      ]}
+    >
+      <Text style={[styles.sectionTitle, { color: Colors.textPrimary }]}>Your Active Competitions</Text>
+      {myLoading ? (
+        <ActivityIndicator color={Colors.primary} style={styles.loader} />
+      ) : (
+        myComps.map((comp, i) => (
+          <CompetitionCard key={comp.id} competition={comp} index={i} />
+        ))
+      )}
+    </Animated.View>
+  );
+
+  const renderLiveCompetitions = () => (
+    <Animated.View
+      style={[
+        styles.section,
+        {
+          opacity: sectionFade,
+          transform: [{ translateY: sectionSlide }],
+        },
+      ]}
+    >
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionTitle, { color: Colors.textPrimary }]}>Live Competitions</Text>
+        {publicComps.length > 0 && (
+          <View style={[styles.sectionBadgeContainer, { backgroundColor: Colors.success + '15' }]}>
+            <View style={[styles.liveDot, { backgroundColor: Colors.success }]} />
+            <Text style={[styles.sectionBadge, { color: Colors.success }]}>
+              {publicComps.length} open
+            </Text>
+          </View>
+        )}
+      </View>
+      {publicLoading ? (
+        <ActivityIndicator color={Colors.primary} style={styles.loader} />
+      ) : publicComps.length > 0 ? (
+        publicComps.map((comp, i) => (
+          <CompetitionCard key={comp.id} competition={comp} index={i} />
+        ))
+      ) : (
+        <View style={[styles.emptyState, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+          <Ionicons name="trophy-outline" size={48} color={Colors.primary} />
+          <Text style={[styles.emptyText, { color: Colors.textPrimary }]}>No live competitions yet</Text>
+          <Text style={[styles.emptySubtext, { color: Colors.textSecondary }]}>
+            Create a challenge and invite your friends!
+          </Text>
+          <TouchableOpacity
+            style={[styles.emptyButton, { backgroundColor: Colors.primary }]}
+            onPress={() => {
+              if (!isAuthenticated) {
+                router.push('/(auth)/welcome');
+                return;
+              }
+              router.push('/create');
+            }}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.emptyButtonText}>Create Competition</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </Animated.View>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: Colors.background }]}>
       <ScrollView
@@ -93,17 +163,6 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Animated gradient header accent */}
-        <Animated.View
-          style={[
-            styles.headerAccent,
-            {
-              backgroundColor: Colors.primaryGlow,
-              opacity: headerAnim,
-            },
-          ]}
-        />
-
         {isAuthenticated && profile?.display_name && (
           <Animated.View
             style={{
@@ -120,78 +179,23 @@ export default function HomeScreen() {
           </Animated.View>
         )}
 
-        {/* Your Competitions — only if authenticated */}
-        {isAuthenticated && (myLoading || myComps.length > 0) && (
-          <Animated.View
-            style={[
-              styles.section,
-              {
-                opacity: sectionFade,
-                transform: [{ translateY: sectionSlide }],
-              },
-            ]}
-          >
-            <Text style={[styles.sectionTitle, { color: Colors.textPrimary }]}>Your Competitions</Text>
-            {myLoading ? (
-              <ActivityIndicator color={Colors.primary} style={styles.loader} />
-            ) : (
-              myComps.map((comp, i) => (
-                <CompetitionCard key={comp.id} competition={comp} index={i} />
-              ))
-            )}
-          </Animated.View>
+        {/* Conditional ordering: active comps first if user has them, otherwise live first */}
+        {isAuthenticated && hasActiveComps ? (
+          <>
+            {renderMyCompetitions()}
+            {renderLiveCompetitions()}
+          </>
+        ) : isAuthenticated && myLoading ? (
+          <>
+            {renderMyCompetitions()}
+            {renderLiveCompetitions()}
+          </>
+        ) : (
+          <>
+            {renderLiveCompetitions()}
+            {isAuthenticated && (myLoading || myComps.length > 0) && renderMyCompetitions()}
+          </>
         )}
-
-        {/* Live Competitions Feed */}
-        <Animated.View
-          style={[
-            styles.section,
-            {
-              opacity: sectionFade,
-              transform: [{ translateY: sectionSlide }],
-            },
-          ]}
-        >
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: Colors.textPrimary }]}>Live Competitions</Text>
-            {publicComps.length > 0 && (
-              <View style={[styles.sectionBadgeContainer, { backgroundColor: Colors.success + '15' }]}>
-                <View style={[styles.liveDot, { backgroundColor: Colors.success }]} />
-                <Text style={[styles.sectionBadge, { color: Colors.success }]}>
-                  {publicComps.length} open
-                </Text>
-              </View>
-            )}
-          </View>
-          {publicLoading ? (
-            <ActivityIndicator color={Colors.primary} style={styles.loader} />
-          ) : publicComps.length > 0 ? (
-            publicComps.map((comp, i) => (
-              <CompetitionCard key={comp.id} competition={comp} index={i} />
-            ))
-          ) : (
-            <View style={[styles.emptyState, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
-              <Ionicons name="trophy-outline" size={48} color={Colors.primary} />
-              <Text style={[styles.emptyText, { color: Colors.textPrimary }]}>No live competitions yet</Text>
-              <Text style={[styles.emptySubtext, { color: Colors.textSecondary }]}>
-                Create a challenge and invite your friends!
-              </Text>
-              <TouchableOpacity
-                style={[styles.emptyButton, { backgroundColor: Colors.primary }]}
-                onPress={() => {
-                  if (!isAuthenticated) {
-                    router.push('/(auth)/welcome');
-                    return;
-                  }
-                  router.push('/create');
-                }}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.emptyButtonText}>Create Competition</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </Animated.View>
       </ScrollView>
 
       {/* Floating Action Button */}
@@ -206,7 +210,7 @@ export default function HomeScreen() {
           router.push('/create');
         }}
       >
-        <Ionicons name="add" size={28} color={Colors.surface} />
+        <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
     </View>
   );
@@ -215,14 +219,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  headerAccent: {
-    height: 120,
-    marginHorizontal: -Spacing.lg,
-    marginTop: -Spacing.lg,
-    marginBottom: Spacing.lg,
-    borderBottomLeftRadius: BorderRadius.xxl,
-    borderBottomRightRadius: BorderRadius.xxl,
   },
   greeting: {
     fontSize: FontSize.xxxl,

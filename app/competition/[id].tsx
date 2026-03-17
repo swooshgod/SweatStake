@@ -44,12 +44,22 @@ export default function CompetitionDetailScreen() {
   const router = useRouter();
   const { profile } = useAuth();
   const { Colors, Shadow } = useTheme();
-  const { competition, participants, loading, refetch } = useCompetitionDetail(id);
+  const { competition, participants, loading, refetch } = useCompetitionDetail(id ?? '');
   const [activeTab, setActiveTab] = useState<Tab>('leaderboard');
   const [todayEntries, setTodayEntries] = useState<DailyLogEntries>({});
   const [joining, setJoining] = useState(false);
 
-  const myParticipant = participants.find((p) => p.user_id === profile?.id);
+  // Guard: if id is missing, show not-found
+  if (!id) {
+    return (
+      <View style={[styles.centered, { backgroundColor: Colors.background }]}>
+        <Ionicons name="alert-circle-outline" size={48} color={Colors.textMuted} />
+        <Text style={[styles.errorText, { color: Colors.textMuted }]}>Competition not found</Text>
+      </View>
+    );
+  }
+
+  const myParticipant = participants?.find((p) => p.user_id === profile?.id) ?? null;
   const typeInfo = competition ? CompetitionTypes[competition.type] ?? CompetitionTypes.custom : CompetitionTypes.custom;
 
   const daysLeft = competition

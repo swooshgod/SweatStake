@@ -6,20 +6,20 @@
 
 // Light mode colors (default)
 export const LightColors = {
-  // Brand
-  primary:      '#0057FF',   // Vivid electric blue
-  primaryDark:  '#0040CC',
-  primaryLight: '#338AFF',
-  primaryGlow:  'rgba(0, 87, 255, 0.15)',
+  // Brand — Podium Orange
+  primary:      '#FF5A1F',
+  primaryDark:  '#E04A15',
+  primaryLight: '#FF7A47',
+  primaryGlow:  'rgba(255, 90, 31, 0.12)',
 
-  // Backgrounds — very slight blue tint, feels premium
-  background:   '#F5F7FF',
+  // Backgrounds — clean off-white
+  background:   '#F8F8F8',
   surface:      '#FFFFFF',
-  surfaceLight: '#EEF2FF',
-  surfaceHigh:  '#E0E6F8',
+  surfaceLight: '#F2F2F0',
+  surfaceHigh:  '#E8E8E5',
 
   // Accent
-  accent:       '#0057FF',
+  accent:       '#FF5A1F',
   accentBlue:   '#338AFF',
   accentGreen:  '#00C853',
   accentPurple: '#7C3AED',
@@ -31,38 +31,38 @@ export const LightColors = {
   error:        '#FF1744',
 
   // Text
-  textPrimary:   '#050D2E',
-  textSecondary: '#4A5580',
-  textMuted:     '#8E9ABF',
+  textPrimary:   '#111111',
+  textSecondary: '#555555',
+  textMuted:     '#999999',
 
   // Borders
-  border:       '#D0D8F0',
-  borderLight:  '#E0E6F8',
-  borderAccent: 'rgba(0, 87, 255, 0.25)',
+  border:       '#E0E0E0',
+  borderLight:  '#EEEEEE',
+  borderAccent: 'rgba(255, 90, 31, 0.25)',
   borderGold:   'rgba(201, 168, 76, 0.30)',
 
   // Overlay
   overlay:      'rgba(0, 0, 0, 0.5)',
   tabBar:       '#FFFFFF',
-  tabBarBorder: '#D0D8F0',
+  tabBarBorder: '#E0E0E0',
 } as const;
 
 // Dark mode colors
 export const DarkColors = {
-  // Brand
-  primary:      '#0057FF',
-  primaryDark:  '#0040CC',
-  primaryLight: '#338AFF',
-  primaryGlow:  'rgba(0, 87, 255, 0.15)',
+  // Brand — Podium Orange
+  primary:      '#FF5A1F',
+  primaryDark:  '#E04A15',
+  primaryLight: '#FF7A47',
+  primaryGlow:  'rgba(255, 90, 31, 0.15)',
 
-  // Backgrounds — deep navy-black
-  background:   '#060914',
-  surface:      '#0F1A2E',
-  surfaceLight: '#162040',
-  surfaceHigh:  '#1E2A4A',
+  // Backgrounds — true dark
+  background:   '#111111',
+  surface:      '#1E1E1E',
+  surfaceLight: '#2A2A2A',
+  surfaceHigh:  '#333333',
 
   // Accent
-  accent:       '#0057FF',
+  accent:       '#FF5A1F',
   accentBlue:   '#338AFF',
   accentGreen:  '#00C853',
   accentPurple: '#8B5CF6',
@@ -74,20 +74,20 @@ export const DarkColors = {
   error:        '#FF1744',
 
   // Text
-  textPrimary:   '#F0F4FF',
-  textSecondary: '#B0B8D4',
-  textMuted:     '#4A5780',
+  textPrimary:   '#F5F5F5',
+  textSecondary: '#AAAAAA',
+  textMuted:     '#666666',
 
   // Borders
-  border:       '#1E2A4A',
-  borderLight:  '#1A2540',
-  borderAccent: 'rgba(0, 87, 255, 0.25)',
+  border:       '#333333',
+  borderLight:  '#2A2A2A',
+  borderAccent: 'rgba(255, 90, 31, 0.25)',
   borderGold:   'rgba(201, 168, 76, 0.35)',
 
   // Overlay
   overlay:      'rgba(0, 0, 0, 0.75)',
-  tabBar:       '#0F1A2E',
-  tabBarBorder: '#1A2540',
+  tabBar:       '#1E1E1E',
+  tabBarBorder: '#2A2A2A',
 } as const;
 
 // Default export — will be switched by ThemeContext
@@ -96,10 +96,10 @@ export const Colors = LightColors;
 // ─── Gradients ───────────────────────────────
 export const Gradients = {
   hero: ['rgba(0,0,0,0.0)', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.95)'] as string[],
-  gold: ['#0057FF', '#0040CC', '#338AFF'] as string[],
-  card: ['rgba(6,9,20,0)', 'rgba(6,9,20,0.85)'] as string[],
-  surface: ['#162040', '#0D1428'] as string[],
-  winner: ['#0057FF', '#C9A84C'] as string[],
+  gold: ['#FF5A1F', '#E04A15', '#FF7A47'] as string[],
+  card: ['rgba(17,17,17,0)', 'rgba(17,17,17,0.85)'] as string[],
+  surface: ['#2A2A2A', '#1E1E1E'] as string[],
+  winner: ['#FF5A1F', '#C9A84C'] as string[],
 } as const;
 
 // ─── Spacing ─────────────────────────────────
@@ -160,14 +160,14 @@ export const Shadow = {
     elevation: 10,
   },
   gold: {
-    shadowColor: '#0057FF',
+    shadowColor: '#FF5A1F',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 16,
     elevation: 8,
   },
   goldSm: {
-    shadowColor: '#0057FF',
+    shadowColor: '#FF5A1F',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -199,14 +199,14 @@ export const ShadowLight = {
     elevation: 6,
   },
   gold: {
-    shadowColor: '#0057FF',
+    shadowColor: '#FF5A1F',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 4,
   },
   goldSm: {
-    shadowColor: '#0057FF',
+    shadowColor: '#FF5A1F',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
@@ -216,8 +216,8 @@ export const ShadowLight = {
 
 // ─── Competition Types ────────────────────────
 export const CompetitionTypes = {
-  fitness: { emoji: '💪', label: 'Fitness',  color: '#0057FF' },
-  running: { emoji: '🏃', label: 'Running',  color: '#338AFF' },
+  fitness: { emoji: '💪', label: 'Fitness',  color: '#FF5A1F' },
+  running: { emoji: '🏃', label: 'Running',  color: '#FF7A47' },
   cycling: { emoji: '🚴', label: 'Cycling',  color: '#00C853' },
   lifting: { emoji: '🏋️', label: 'Lifting',  color: '#8B5CF6' },
   custom:  { emoji: '⭐', label: 'Custom',   color: '#C9A84C' },

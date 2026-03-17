@@ -18,7 +18,8 @@ import { isHealthKitAvailable, requestHealthKitPermissions } from '@/lib/healthk
 import { formatCents } from '@/lib/stripe';
 import { getCreditsBalance, getCreditsDisplay } from '@/lib/prizes';
 import * as ImagePicker from 'expo-image-picker';
-import { getProStatus, getProBadge, type ProStatus } from '@/lib/subscription';
+import { getProStatus, type ProStatus } from '@/lib/subscription';
+import { supabase } from '@/lib/supabase';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -30,8 +31,8 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     if (profile?.id) {
-      getCreditsBalance(profile.id).then(setCreditsBalance);
-      getProStatus(profile.id).then(setProStatus);
+      getCreditsBalance(profile.id).then(setCreditsBalance).catch(() => {});
+      getProStatus(profile.id).then(setProStatus).catch(() => {});
     }
   }, [profile?.id]);
 
@@ -178,9 +179,9 @@ export default function ProfileScreen() {
   };
 
   const credits = getCreditsDisplay(creditsBalance);
-  const winRate = profile.competitions_entered > 0
-    ? Math.round((profile.competitions_won / profile.competitions_entered) * 100)
-    : null;
+  const entered = profile.competitions_entered ?? 0;
+  const won = profile.competitions_won ?? 0;
+  const winRate = entered > 0 ? Math.round((won / entered) * 100) : null;
 
   return (
     <ScrollView
@@ -263,12 +264,12 @@ export default function ProfileScreen() {
       {/* ─── Stats Row ─── */}
       <View style={styles.statsRow}>
         <View style={[styles.statCard, dynamicStyles.statCard]}>
-          <Text style={[styles.statValue, dynamicStyles.statValue]}>{profile.competitions_entered}</Text>
+          <Text style={[styles.statValue, dynamicStyles.statValue]}>{entered}</Text>
           <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Competed</Text>
         </View>
         <View style={[styles.statCard, dynamicStyles.statCard, dynamicStyles.statCardGold]}>
           <Text style={[styles.statValue, { color: Colors.accentGold }]}>
-            {profile.competitions_won}
+            {won}
           </Text>
           <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Won 🏆</Text>
         </View>
@@ -281,7 +282,7 @@ export default function ProfileScreen() {
       </View>
 
       {/* ─── Total Earnings ─── */}
-      {profile.total_winnings > 0 && (
+      {(profile.total_winnings ?? 0) > 0 && (
         <View style={[styles.earningsCard, dynamicStyles.earningsCard]}>
           <View>
             <Text style={[styles.earningsLabel, dynamicStyles.earningsLabel]}>Total Earnings</Text>
@@ -472,11 +473,11 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: Colors.primary,
+    backgroundColor: '#FF5A1F',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: Colors.background,
+    borderColor: '#F8F8F8',
   },
   avatarGradient: {
     justifyContent: 'center',
