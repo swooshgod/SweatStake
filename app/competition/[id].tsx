@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Spacing, BorderRadius, FontSize, CompetitionTypes } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { formatCents, formatPrizePool } from '@/lib/stripe';
+import { useStripe } from '@stripe/stripe-react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { useCompetitionDetail } from '@/hooks/useCompetitions';
 import { supabase } from '@/lib/supabase';
@@ -44,6 +45,7 @@ export default function CompetitionDetailScreen() {
   const router = useRouter();
   const { profile } = useAuth();
   const { Colors, Shadow } = useTheme();
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const { competition, participants, loading, refetch } = useCompetitionDetail(id ?? '');
   const [activeTab, setActiveTab] = useState<Tab>('leaderboard');
   const [todayEntries, setTodayEntries] = useState<DailyLogEntries>({});
@@ -181,11 +183,34 @@ export default function CompetitionDetailScreen() {
         }
       }
 
-      // 3. Join the competition
+      // 3. Stripe PaymentSheet for paid competitions
+      if (competition.entry_fee_cents > 0) {
+        const { data: intentData, error: intentError } = await supabase.functions.invoke('create-payment-intent', {
+          body: { amount: competition.entry_fee_cents, competitionId: competition.id, userId: profile.id }
+        });
+        if (intentError || !intentData?.clientSecret) {
+          Alert.alert('Payment Error', 'Could not set up payment. Please try again.');
+          return;
+        }
+        const { error: initError } = await initPaymentSheet({
+          paymentIntentClientSecret: intentData.clientSecret,
+          merchantDisplayName: 'Podium',
+          applePay: { merchantCountryCode: 'US' },
+          style: 'alwaysDark',
+        });
+        if (initError) { Alert.alert('Payment Error', initError.message); return; }
+        const { error: paymentError } = await presentPaymentSheet();
+        if (paymentError) {
+          if (paymentError.code !== 'Canceled') Alert.alert('Payment Failed', paymentError.message);
+          return;
+        }
+      }
+
+      // 4. Join the competition (payment confirmed above for paid, free is always true)
       const { error } = await supabase.from('participants').insert({
         competition_id: competition.id,
         user_id: profile.id,
-        paid: competition.entry_fee_cents === 0,
+        paid: true,
       });
 
       if (error) throw error;
