@@ -2,13 +2,14 @@ import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { Colors } from '@/constants/theme';
+import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootNavigator() {
+  const { Colors, isDark } = useTheme();
+
   useEffect(() => {
-    // Hide splash screen after a short delay to allow fonts/assets to load
     const timer = setTimeout(() => {
       SplashScreen.hideAsync();
     }, 500);
@@ -17,7 +18,7 @@ export default function RootLayout() {
 
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: Colors.surface },
@@ -52,5 +53,13 @@ export default function RootLayout() {
         />
       </Stack>
     </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootNavigator />
+    </ThemeProvider>
   );
 }

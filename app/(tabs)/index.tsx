@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSize } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useMyCompetitions, usePublicCompetitions } from '@/hooks/useCompetitions';
 import CompetitionCard from '@/components/CompetitionCard';
@@ -24,11 +26,53 @@ function getGreeting(): string {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { Colors, Shadow } = useTheme();
   const { profile, isAuthenticated } = useAuth();
   const { competitions: myComps, loading: myLoading, refetch: refetchMy } = useMyCompetitions(profile?.id);
   const { competitions: publicComps, loading: publicLoading, refetch: refetchPublic } = usePublicCompetitions();
 
   const [refreshing, setRefreshing] = React.useState(false);
+
+  // Animated header gradient bar
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const greetingFade = useRef(new Animated.Value(0)).current;
+  const greetingSlide = useRef(new Animated.Value(16)).current;
+  const sectionFade = useRef(new Animated.Value(0)).current;
+  const sectionSlide = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(headerAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.parallel([
+        Animated.timing(greetingFade, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(greetingSlide, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(sectionFade, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(sectionSlide, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -37,7 +81,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: Colors.background }]}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
@@ -49,34 +93,71 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
+        {/* Animated gradient header accent */}
+        <Animated.View
+          style={[
+            styles.headerAccent,
+            {
+              backgroundColor: Colors.primaryGlow,
+              opacity: headerAnim,
+            },
+          ]}
+        />
+
         {isAuthenticated && profile?.display_name && (
-          <Text style={styles.greeting}>
-            {getGreeting()}, {profile.display_name}
-          </Text>
+          <Animated.View
+            style={{
+              opacity: greetingFade,
+              transform: [{ translateY: greetingSlide }],
+            }}
+          >
+            <Text style={[styles.greeting, { color: Colors.textPrimary }]}>
+              {getGreeting()},
+            </Text>
+            <Text style={[styles.greetingName, { color: Colors.primary }]}>
+              {profile.display_name}
+            </Text>
+          </Animated.View>
         )}
 
         {/* Your Competitions — only if authenticated */}
         {isAuthenticated && (myLoading || myComps.length > 0) && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Your Competitions</Text>
+          <Animated.View
+            style={[
+              styles.section,
+              {
+                opacity: sectionFade,
+                transform: [{ translateY: sectionSlide }],
+              },
+            ]}
+          >
+            <Text style={[styles.sectionTitle, { color: Colors.textPrimary }]}>Your Competitions</Text>
             {myLoading ? (
               <ActivityIndicator color={Colors.primary} style={styles.loader} />
             ) : (
-              myComps.map((comp) => (
-                <CompetitionCard key={comp.id} competition={comp} />
+              myComps.map((comp, i) => (
+                <CompetitionCard key={comp.id} competition={comp} index={i} />
               ))
             )}
-          </View>
+          </Animated.View>
         )}
 
         {/* Live Competitions Feed */}
-        <View style={styles.section}>
+        <Animated.View
+          style={[
+            styles.section,
+            {
+              opacity: sectionFade,
+              transform: [{ translateY: sectionSlide }],
+            },
+          ]}
+        >
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Live Competitions</Text>
+            <Text style={[styles.sectionTitle, { color: Colors.textPrimary }]}>Live Competitions</Text>
             {publicComps.length > 0 && (
-              <View style={styles.sectionBadgeContainer}>
-                <View style={styles.liveDot} />
-                <Text style={styles.sectionBadge}>
+              <View style={[styles.sectionBadgeContainer, { backgroundColor: Colors.success + '15' }]}>
+                <View style={[styles.liveDot, { backgroundColor: Colors.success }]} />
+                <Text style={[styles.sectionBadge, { color: Colors.success }]}>
                   {publicComps.length} open
                 </Text>
               </View>
@@ -85,24 +166,24 @@ export default function HomeScreen() {
           {publicLoading ? (
             <ActivityIndicator color={Colors.primary} style={styles.loader} />
           ) : publicComps.length > 0 ? (
-            publicComps.map((comp) => (
-              <CompetitionCard key={comp.id} competition={comp} />
+            publicComps.map((comp, i) => (
+              <CompetitionCard key={comp.id} competition={comp} index={i} />
             ))
           ) : (
-            <View style={styles.emptyState}>
+            <View style={[styles.emptyState, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
               <Ionicons name="trophy-outline" size={48} color={Colors.textMuted} />
-              <Text style={styles.emptyText}>No live competitions yet</Text>
-              <Text style={styles.emptySubtext}>
+              <Text style={[styles.emptyText, { color: Colors.textSecondary }]}>No live competitions yet</Text>
+              <Text style={[styles.emptySubtext, { color: Colors.textMuted }]}>
                 Be the first to create one!
               </Text>
             </View>
           )}
-        </View>
+        </Animated.View>
       </ScrollView>
 
       {/* Floating Action Button */}
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, { backgroundColor: Colors.primary }, Shadow.lg]}
         activeOpacity={0.85}
         onPress={() => {
           if (!isAuthenticated) {
@@ -121,13 +202,24 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+  },
+  headerAccent: {
+    height: 120,
+    marginHorizontal: -Spacing.lg,
+    marginTop: -Spacing.lg,
+    marginBottom: Spacing.lg,
+    borderBottomLeftRadius: BorderRadius.xxl,
+    borderBottomRightRadius: BorderRadius.xxl,
   },
   greeting: {
-    fontSize: FontSize.lg,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginBottom: Spacing.lg,
+    fontSize: FontSize.xxxl,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  greetingName: {
+    fontSize: FontSize.xxxl,
+    fontWeight: '900',
+    marginBottom: Spacing.xxl,
   },
   scrollContent: {
     padding: Spacing.lg,
@@ -145,14 +237,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FontSize.lg,
     fontWeight: '800',
-    color: Colors.textPrimary,
     marginBottom: Spacing.md,
   },
   sectionBadgeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: Colors.success + '15',
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.sm,
@@ -162,12 +252,10 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: Colors.success,
   },
   sectionBadge: {
     fontSize: FontSize.xs,
     fontWeight: '600',
-    color: Colors.success,
   },
   loader: {
     marginVertical: Spacing.xxl,
@@ -175,20 +263,16 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     paddingVertical: Spacing.xxxl,
-    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   emptyText: {
     fontSize: FontSize.md,
     fontWeight: '600',
-    color: Colors.textSecondary,
     marginTop: Spacing.md,
   },
   emptySubtext: {
     fontSize: FontSize.sm,
-    color: Colors.textMuted,
     marginTop: Spacing.xs,
   },
   fab: {
@@ -198,9 +282,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    ...Shadow.lg,
   },
 });

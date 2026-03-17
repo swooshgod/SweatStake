@@ -1,27 +1,71 @@
 // ─────────────────────────────────────────────
-// Podium Design System
-// Brand: Deep black + Championship Gold
-// Energy: Premium, competitive, sports-prestige
+// Podium Design System — Dual Mode
+// Light (default, daytime) + Dark (night)
+// Energy: Premium, competitive, athletic
 // ─────────────────────────────────────────────
 
-export const Colors = {
+// Light mode colors (default)
+export const LightColors = {
   // Brand
-  primary:      '#F5C518',   // Championship gold — trophy, winner, prestige
-  primaryDark:  '#D4A800',   // Pressed/dark gold
-  primaryLight: '#FFD740',   // Light gold — highlights
-  primaryGlow:  'rgba(245, 197, 24, 0.18)', // Gold glow for cards/badges
+  primary:      '#FF5A1F',   // Electric orange
+  primaryDark:  '#E04D15',
+  primaryLight: '#FF7A45',
+  primaryGlow:  'rgba(255, 90, 31, 0.12)',
 
-  // Backgrounds — deep rich black, not cold navy
-  background:   '#0A0A0A',   // True near-black
-  surface:      '#141414',   // Card surface
-  surfaceLight: '#1E1E1E',   // Elevated surface
-  surfaceHigh:  '#262626',   // Highest elevation
+  // Backgrounds — warm off-white, feels premium not clinical
+  background:   '#F8F7F4',
+  surface:      '#FFFFFF',
+  surfaceLight: '#F2F0EC',
+  surfaceHigh:  '#ECEAE4',
 
   // Accent
-  accent:       '#F5C518',   // Same as primary (gold is the accent)
-  accentBlue:   '#3B82F6',   // For % improvement mode
-  accentGreen:  '#22C55E',   // Success / verified
-  accentPurple: '#8B5CF6',   // Lifting / raw workouts
+  accent:       '#FF5A1F',
+  accentBlue:   '#2563EB',
+  accentGreen:  '#16A34A',
+  accentPurple: '#7C3AED',
+  accentGold:   '#D97706',
+
+  // Status
+  success:      '#16A34A',
+  warning:      '#D97706',
+  error:        '#DC2626',
+
+  // Text
+  textPrimary:   '#0F0F0F',
+  textSecondary: '#4B4B4B',
+  textMuted:     '#9CA3AF',
+
+  // Borders
+  border:       '#E5E2DC',
+  borderLight:  '#F0EDE8',
+  borderAccent: 'rgba(255, 90, 31, 0.25)',
+
+  // Overlay
+  overlay:      'rgba(0, 0, 0, 0.5)',
+  tabBar:       '#FFFFFF',
+  tabBarBorder: '#E5E2DC',
+} as const;
+
+// Dark mode colors
+export const DarkColors = {
+  // Brand
+  primary:      '#FF5A1F',
+  primaryDark:  '#E04D15',
+  primaryLight: '#FF7A45',
+  primaryGlow:  'rgba(255, 90, 31, 0.15)',
+
+  // Backgrounds — deep rich black
+  background:   '#0A0A0A',
+  surface:      '#141414',
+  surfaceLight: '#1E1E1E',
+  surfaceHigh:  '#262626',
+
+  // Accent
+  accent:       '#FF5A1F',
+  accentBlue:   '#3B82F6',
+  accentGreen:  '#22C55E',
+  accentPurple: '#8B5CF6',
+  accentGold:   '#F5C518',
 
   // Status
   success:      '#22C55E',
@@ -36,29 +80,24 @@ export const Colors = {
   // Borders
   border:       '#242424',
   borderLight:  '#1A1A1A',
-  borderGold:   'rgba(245, 197, 24, 0.25)',  // Gold border for active states
+  borderAccent: 'rgba(255, 90, 31, 0.25)',
 
   // Overlay
   overlay:      'rgba(0, 0, 0, 0.75)',
+  tabBar:       '#141414',
+  tabBarBorder: '#242424',
 } as const;
 
+// Default export — will be switched by ThemeContext
+export const Colors = LightColors;
+
 // ─── Gradients ───────────────────────────────
-// Use with expo-linear-gradient
 export const Gradients = {
-  // Hero gradient — welcome screen / competition headers
   hero: ['rgba(0,0,0,0.0)', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.95)'] as string[],
-
-  // Gold shimmer — prize amounts, winner banners
-  gold: ['#F5C518', '#D4A800', '#F5C518'] as string[],
-
-  // Card overlay — competition cards with photo backgrounds
+  gold: ['#FF5A1F', '#E04D15', '#FF7A45'] as string[],
   card: ['rgba(10,10,10,0)', 'rgba(10,10,10,0.85)'] as string[],
-
-  // Surface gradient — subtle depth on cards
   surface: ['#1E1E1E', '#141414'] as string[],
-
-  // Winner celebration
-  winner: ['#F5C518', '#FF8C00'] as string[],
+  winner: ['#FF5A1F', '#FF8C00'] as string[],
 } as const;
 
 // ─── Spacing ─────────────────────────────────
@@ -95,7 +134,7 @@ export const FontSize = {
   hero: 44,
 } as const;
 
-// ─── Shadows ─────────────────────────────────
+// ─── Shadows (Dark mode) ─────────────────────
 export const Shadow = {
   sm: {
     shadowColor: '#000',
@@ -118,17 +157,15 @@ export const Shadow = {
     shadowRadius: 24,
     elevation: 10,
   },
-  // Gold glow — use on primary buttons and prize amounts
   gold: {
-    shadowColor: '#F5C518',
+    shadowColor: '#FF5A1F',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 16,
     elevation: 8,
   },
-  // Subtle gold glow — use on active competition cards
   goldSm: {
-    shadowColor: '#F5C518',
+    shadowColor: '#FF5A1F',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -136,13 +173,52 @@ export const Shadow = {
   },
 } as const;
 
+// ─── Shadows (Light mode) ────────────────────
+export const ShadowLight = {
+  sm: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  md: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  lg: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  gold: {
+    shadowColor: '#FF5A1F',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  goldSm: {
+    shadowColor: '#FF5A1F',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+} as const;
+
 // ─── Competition Types ────────────────────────
 export const CompetitionTypes = {
-  fitness: { emoji: '💪', label: 'Fitness',  color: '#F5C518' },  // Gold
-  running: { emoji: '🏃', label: 'Running',  color: '#3B82F6' },  // Blue
-  cycling: { emoji: '🚴', label: 'Cycling',  color: '#22C55E' },  // Green
-  lifting: { emoji: '🏋️', label: 'Lifting',  color: '#8B5CF6' },  // Purple
-  custom:  { emoji: '⭐', label: 'Custom',   color: '#F59E0B' },  // Amber
+  fitness: { emoji: '💪', label: 'Fitness',  color: '#FF5A1F' },
+  running: { emoji: '🏃', label: 'Running',  color: '#3B82F6' },
+  cycling: { emoji: '🚴', label: 'Cycling',  color: '#22C55E' },
+  lifting: { emoji: '🏋️', label: 'Lifting',  color: '#8B5CF6' },
+  custom:  { emoji: '⭐', label: 'Custom',   color: '#F59E0B' },
 } as const;
 
 // ─── Scoring Templates ───────────────────────
