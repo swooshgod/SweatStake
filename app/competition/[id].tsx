@@ -330,10 +330,10 @@ export default function CompetitionDetailScreen() {
             <View style={styles.statItem}>
               <Text style={[styles.statItemValue, { color: isPaid ? Colors.accentGold : Colors.textPrimary }]}>
                 {isPaid
-                  ? competitionPrizeInCredits(Math.floor(competition.prize_pool_cents * 0.9))
+                  ? `$${Math.floor((competition.entry_fee_cents * (competition.max_participants ?? 1)) / 100)}`
                   : 'Free'}
               </Text>
-              <Text style={[styles.statItemLabel, { color: Colors.textMuted }]}>Prize</Text>
+              <Text style={[styles.statItemLabel, { color: Colors.textMuted }]}>Pot</Text>
             </View>
             <View style={[styles.statDivider, { backgroundColor: Colors.border }]} />
             <View style={styles.statItem}>

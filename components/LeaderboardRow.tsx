@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Spacing, BorderRadius, FontSize } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSize, Colors } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getTrustBadge } from '@/lib/trust';
 import ReportUserModal from '@/components/ReportUserModal';

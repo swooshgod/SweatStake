@@ -70,7 +70,7 @@ export default function WelcomeScreen() {
         <StatusBar barStyle="light-content" />
         <View style={modalStyles.handle} />
         <Image
-          source={require('@/assets/logo.png')}
+          source={require('@/assets/icon.png')}
           style={modalStyles.logo}
           resizeMode="contain"
         />
@@ -91,15 +91,6 @@ export default function WelcomeScreen() {
               <Text style={modalStyles.appleButtonText}>Sign in with Apple</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity
-            style={modalStyles.googleButton}
-            activeOpacity={0.85}
-            onPress={handleGoogleSignIn}
-            disabled={loading}
-          >
-            <Ionicons name="logo-google" size={18} color={Colors.background} />
-            <Text style={modalStyles.googleButtonText}>Sign in with Google</Text>
-          </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={modalStyles.cancelButton} onPress={() => router.back()}>
@@ -128,11 +119,6 @@ export default function WelcomeScreen() {
 
       {/* Top wordmark */}
       <View style={styles.topBar}>
-        <Image
-          source={require('@/assets/logo.png')}
-          style={styles.logoImg}
-          resizeMode="contain"
-        />
         <Text style={styles.wordmark}>PODIUM</Text>
       </View>
 
@@ -172,16 +158,6 @@ export default function WelcomeScreen() {
               <Text style={styles.appleButtonText}>Sign in with Apple</Text>
             </TouchableOpacity>
           )}
-
-          <TouchableOpacity
-            style={styles.googleButton}
-            activeOpacity={0.85}
-            onPress={handleGoogleSignIn}
-            disabled={loading}
-          >
-            <Ionicons name="logo-google" size={18} color={Colors.background} />
-            <Text style={styles.googleButtonText}>Sign in with Google</Text>
-          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.skipButton}

@@ -199,9 +199,9 @@ export default function CompetitionCard({ competition, variant = 'full', viewerT
                 hasFee && { opacity: prizeOpacity },
               ]}
             >
-              {!hasFee ? 'Free' : `$${(competition.prize_pool_cents * 0.9 / 100).toFixed(0)}`}
+              {!hasFee ? 'Free' : `$${((competition.entry_fee_cents * (competition.max_participants ?? 1)) / 100).toFixed(0)}`}
             </Animated.Text>
-            {hasFee && <Text style={[styles.potLabel, dynamicStyles.potLabel]}>prize</Text>}
+            {hasFee && <Text style={[styles.potLabel, dynamicStyles.potLabel]}>pot</Text>}
           </View>
         </View>
 

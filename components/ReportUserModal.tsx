@@ -19,7 +19,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Spacing, BorderRadius, FontSize } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
   submitReport,
