@@ -86,8 +86,8 @@ export const DarkColors = {
 
   // Overlay
   overlay:      'rgba(0, 0, 0, 0.75)',
-  tabBar:       '#0D1428',
-  tabBarBorder: '#1E2A4A',
+  tabBar:       '#0F1A2E',
+  tabBarBorder: '#1A2540',
 } as const;
 
 // Default export — will be switched by ThemeContext

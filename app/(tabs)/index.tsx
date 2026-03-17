@@ -171,11 +171,24 @@ export default function HomeScreen() {
             ))
           ) : (
             <View style={[styles.emptyState, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
-              <Ionicons name="trophy-outline" size={48} color={Colors.textMuted} />
-              <Text style={[styles.emptyText, { color: Colors.textSecondary }]}>No live competitions yet</Text>
-              <Text style={[styles.emptySubtext, { color: Colors.textMuted }]}>
-                Be the first to create one!
+              <Ionicons name="trophy-outline" size={48} color={Colors.primary} />
+              <Text style={[styles.emptyText, { color: Colors.textPrimary }]}>No live competitions yet</Text>
+              <Text style={[styles.emptySubtext, { color: Colors.textSecondary }]}>
+                Create a challenge and invite your friends!
               </Text>
+              <TouchableOpacity
+                style={[styles.emptyButton, { backgroundColor: Colors.primary }]}
+                onPress={() => {
+                  if (!isAuthenticated) {
+                    router.push('/(auth)/welcome');
+                    return;
+                  }
+                  router.push('/create');
+                }}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.emptyButtonText}>Create Competition</Text>
+              </TouchableOpacity>
             </View>
           )}
         </Animated.View>
@@ -274,6 +287,17 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: FontSize.sm,
     marginTop: Spacing.xs,
+  },
+  emptyButton: {
+    marginTop: Spacing.xl,
+    paddingHorizontal: Spacing.xxl,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+  },
+  emptyButtonText: {
+    color: '#fff',
+    fontSize: FontSize.md,
+    fontWeight: '700',
   },
   fab: {
     position: 'absolute',
