@@ -17,16 +17,19 @@ import { useAuth } from '@/hooks/useAuth';
 import { isHealthKitAvailable, requestHealthKitPermissions } from '@/lib/healthkit';
 import { formatCents } from '@/lib/stripe';
 import { getCreditsBalance, getCreditsDisplay } from '@/lib/prizes';
+import { getProStatus, getProBadge, type ProStatus } from '@/lib/subscription';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { Colors, Shadow } = useTheme();
   const { profile, isAuthenticated, signOut } = useAuth();
   const [creditsBalance, setCreditsBalance] = useState<number>(0);
+  const [proStatus, setProStatus] = useState<ProStatus>({ isPro: false, expiresAt: null, daysRemaining: null });
 
   useEffect(() => {
     if (profile?.id) {
       getCreditsBalance(profile.id).then(setCreditsBalance);
+      getProStatus(profile.id).then(setProStatus);
     }
   }, [profile?.id]);
 
@@ -170,6 +173,32 @@ export default function ProfileScreen() {
           <Text style={[styles.username, dynamicStyles.username]}>@{profile.username}</Text>
         )}
       </View>
+
+
+      {/* ─── Pro Banner ─── */}
+      {proStatus.isPro ? (
+        <View style={styles.proBanner}>
+          <View style={styles.proBannerLeft}>
+            <Text style={styles.proBannerBadge}>⭐ PODIUM PRO</Text>
+            <Text style={styles.proBannerSub}>
+              {proStatus.daysRemaining !== null ? `${proStatus.daysRemaining} days remaining` : 'Active'}
+            </Text>
+          </View>
+          <Text style={styles.proBannerFee}>0% fees</Text>
+        </View>
+      ) : (
+        <TouchableOpacity
+          style={styles.proUpgradeBanner}
+          onPress={() => router.push('/pro-upgrade')}
+          activeOpacity={0.85}
+        >
+          <View>
+            <Text style={styles.proUpgradeTitle}>⭐ Upgrade to Pro</Text>
+            <Text style={styles.proUpgradeSub}>Keep 100% of your winnings · $9.99/mo</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
+        </TouchableOpacity>
+      )}
 
       {/* ─── Credits Banner ─── */}
       {creditsBalance > 0 && (
