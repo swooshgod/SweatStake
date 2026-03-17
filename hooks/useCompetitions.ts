@@ -78,7 +78,9 @@ export function useCompetitionDetail(competitionId: string) {
         .from('participants')
         .select('*, profile:profiles!user_id(*)')
         .eq('competition_id', competitionId)
-        .order('total_points', { ascending: false }),
+        .order('total_points', { ascending: false })
+        .order('best_streak', { ascending: false })
+        .order('joined_at', { ascending: true }),
     ]);
 
     setCompetition(compRes.data as Competition | null);

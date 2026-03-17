@@ -84,7 +84,7 @@ serve(async (req) => {
       if (compError || !comp) throw new Error('Competition not found');
       if (comp.status === 'completed') throw new Error('Already paid out — idempotency check passed');
       if (comp.status === 'cancelled') throw new Error('Competition was cancelled');
-      if (!['active', 'open'].includes(comp.status)) throw new Error(`Invalid status: ${comp.status}`);
+      if (!['active', 'open', 'paying_out'].includes(comp.status)) throw new Error(`Invalid status: ${comp.status}`);
 
       // If JWT call, verify user is the creator
       if (hasAuthHeader && !isInternalCall) {
@@ -95,12 +95,13 @@ serve(async (req) => {
         }
       }
 
-      // ── Find winner ───────────────────────────────────────────────────────
+      // ── Find winner (exclude disqualified participants) ─────────────────
       const { data: winner, error: winnerError } = await supabase
         .from('participants')
         .select('user_id, total_points, best_streak, joined_at, profiles(display_name, stripe_connect_account_id, wallet_address)')
         .eq('competition_id', competitionId)
         .eq('paid', true)
+        .or('disqualified.is.null,disqualified.eq.false')
         .order('total_points', { ascending: false })
         .order('best_streak', { ascending: false })
         .order('joined_at', { ascending: true })
@@ -109,70 +110,104 @@ serve(async (req) => {
 
       if (winnerError || !winner) throw new Error('No eligible winner found');
 
-      const totalPot = comp.prize_pool_cents;
+      // ── Recalculate prize pool from actual paid participants ──────────────
+      const { count: paidCount } = await supabase
+        .from('participants')
+        .select('*', { count: 'exact', head: true })
+        .eq('competition_id', competitionId)
+        .eq('paid', true);
+
+      const actualPrizePool = comp.entry_fee_cents > 0
+        ? (paidCount ?? 0) * comp.entry_fee_cents
+        : 0;
+      const totalPot = actualPrizePool;
       const fee = Math.floor(totalPot * SERVICE_FEE_PCT);
       const winnerAmount = totalPot - fee;
 
       let payoutResult: any = {};
 
-      // ── Mark as completed FIRST (before payment) to prevent double-payout ──
-      const { error: updateError } = await supabase
+      // ── Mark as 'paying_out' to prevent concurrent attempts ────────────────
+      const { error: lockError } = await supabase
         .from('competitions')
-        .update({ status: 'completed', winner_id: winner.user_id })
+        .update({ status: 'paying_out' })
         .eq('id', competitionId)
         .eq('status', comp.status); // Optimistic concurrency check
 
-      if (updateError) throw new Error('Failed to lock competition status — concurrent update detected');
+      if (lockError) throw new Error('Failed to lock competition status — concurrent update detected');
 
-      // ── Execute payout ────────────────────────────────────────────────────
-      if (comp.payment_type === 'stripe') {
-        const connectAccountId = winner.profiles?.stripe_connect_account_id;
-        if (!connectAccountId) throw new Error('Winner has no Stripe Connect account');
+      // ── Execute payout (skip if prize is $0) ──────────────────────────────
+      if (winnerAmount > 0) {
+        try {
+          if (comp.payment_type === 'stripe') {
+            const connectAccountId = winner.profiles?.stripe_connect_account_id;
+            if (!connectAccountId) throw new Error('Winner has no Stripe Connect account');
 
-        const transfer = await stripe.transfers.create({
-          amount: winnerAmount,
-          currency: 'usd',
-          destination: connectAccountId,
-          metadata: {
-            competition_id: competitionId,
-            winner_id: winner.user_id,
-            total_pot_cents: String(totalPot),
-            fee_cents: String(fee),
-          },
-          description: `Podium winnings — ${comp.name}`,
-        });
+            const transfer = await stripe.transfers.create({
+              amount: winnerAmount,
+              currency: 'usd',
+              destination: connectAccountId,
+              metadata: {
+                competition_id: competitionId,
+                winner_id: winner.user_id,
+                total_pot_cents: String(totalPot),
+                fee_cents: String(fee),
+              },
+              description: `Podium winnings — ${comp.name}`,
+            });
 
-        payoutResult = { method: 'stripe', transferId: transfer.id, amount: winnerAmount / 100 };
+            payoutResult = { method: 'stripe', transferId: transfer.id, amount: winnerAmount / 100 };
 
-      } else if (comp.payment_type === 'usdc') {
-        const winnerAddress = winner.profiles?.wallet_address;
-        if (!winnerAddress) throw new Error('Winner has no wallet address');
+          } else if (comp.payment_type === 'usdc') {
+            const winnerAddress = winner.profiles?.wallet_address;
+            if (!winnerAddress) throw new Error('Winner has no wallet address');
 
-        const escrowKey = Deno.env.get('PODIUM_ESCROW_PRIVATE_KEY');
-        if (!escrowKey) throw new Error('Escrow key not configured');
+            const escrowKey = Deno.env.get('PODIUM_ESCROW_PRIVATE_KEY');
+            if (!escrowKey) throw new Error('Escrow key not configured');
 
-        const provider = new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
-        const wallet = new ethers.Wallet(escrowKey, provider);
-        const usdcAbi = ['function transfer(address to, uint256 amount) returns (bool)'];
-        const usdc = new ethers.Contract(USDC_BASE, usdcAbi, wallet);
-        const usdcAmount = ethers.utils.parseUnits((winnerAmount / 100).toFixed(2), 6);
-        const tx = await usdc.transfer(winnerAddress, usdcAmount);
-        await tx.wait();
+            const provider = new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
+            const wallet = new ethers.Wallet(escrowKey, provider);
+            const usdcAbi = ['function transfer(address to, uint256 amount) returns (bool)'];
+            const usdc = new ethers.Contract(USDC_BASE, usdcAbi, wallet);
+            const usdcAmount = ethers.utils.parseUnits((winnerAmount / 100).toFixed(2), 6);
+            const tx = await usdc.transfer(winnerAddress, usdcAmount);
+            await tx.wait();
 
-        payoutResult = { method: 'usdc', txHash: tx.hash, amount: winnerAmount / 100 };
+            payoutResult = { method: 'usdc', txHash: tx.hash, amount: winnerAmount / 100 };
+          }
+        } catch (payoutError) {
+          // Rollback status so payout can be retried
+          await supabase
+            .from('competitions')
+            .update({ status: comp.status })
+            .eq('id', competitionId);
+          throw payoutError;
+        }
+      } else {
+        payoutResult = { method: 'none', amount: 0, reason: 'Free competition — no monetary payout' };
       }
 
-      // ── Update winner profile stats (separate RPC calls) ──────────────────
-      await supabase.rpc('increment_credits', {
-        p_user_id: winner.user_id,
-        p_amount: Math.floor((winnerAmount / 100) * 100), // convert to credits
-      });
-
-      // Increment competitions_won
+      // ── Mark as completed AFTER successful payout ──────────────────────────
       await supabase
-        .from('profiles')
-        .update({ competitions_won: supabase.rpc('increment_field', { field: 'competitions_won', user_id: winner.user_id }) })
-        .eq('id', winner.user_id);
+        .from('competitions')
+        .update({
+          status: 'completed',
+          winner_id: winner.user_id,
+          prize_pool_cents: actualPrizePool, // Store actual amount collected
+        })
+        .eq('id', competitionId);
+
+      // ── Update winner profile stats ────────────────────────────────────────
+      if (winnerAmount > 0) {
+        await supabase.rpc('increment_credits', {
+          p_user_id: winner.user_id,
+          p_amount: Math.floor((winnerAmount / 100) * 100), // convert to credits
+        });
+      }
+
+      // Increment competitions_won via RPC
+      await supabase.rpc('increment_competitions_won', {
+        p_user_id: winner.user_id,
+      });
 
       console.log(`[payout-winner] ✅ Paid out ${comp.name} to ${winner.profiles?.display_name}: $${winnerAmount / 100}`);
 

@@ -208,18 +208,64 @@ export default function CompetitionDetailScreen() {
       if (!myParticipant || !competition) return;
 
       const today = new Date().toISOString().split('T')[0];
+
+      // Calculate actual points from scoring categories
+      const getEntryValue = (name: string): boolean => {
+        const lower = name.toLowerCase();
+        if (lower.includes('steps')) {
+          const stepsVal = (data.steps as number) ?? 0;
+          if (lower.includes('10,000')) return stepsVal >= 10000;
+          if (lower.includes('8,000')) return stepsVal >= 8000;
+          if (lower.includes('5,000')) return stepsVal >= 5000;
+          return stepsVal >= 8000;
+        }
+        if (lower.includes('active calories') || lower.includes('calories')) {
+          const cal = (data.activeCalories as number) ?? 0;
+          if (lower.includes('500')) return cal >= 500;
+          if (lower.includes('300')) return cal >= 300;
+          if (lower.includes('150')) return cal >= 150;
+          return cal >= 300;
+        }
+        if (lower.includes('active minutes')) {
+          return ((data.activeMinutes as number) ?? 0) >= 30;
+        }
+        if (lower.includes('workout')) return !!data.workout;
+        return false;
+      };
+
+      const scoringCategories: ScoringCategory[] = competition.scoring_template?.categories ?? [];
+      const pointsEarned = scoringCategories.reduce((sum, cat) => {
+        return sum + (getEntryValue(cat.name) ? cat.points : 0);
+      }, 0);
+
       await supabase.from('daily_logs').upsert(
         {
           participant_id: myParticipant.id,
           log_date: today,
           entries: data,
-          points_earned: 0,
+          points_earned: pointsEarned,
           auto_synced: true,
         },
         { onConflict: 'participant_id,log_date' }
       );
+
+      // Recalculate total_points from all daily_logs for this participant
+      const { data: allLogs } = await supabase
+        .from('daily_logs')
+        .select('points_earned')
+        .eq('participant_id', myParticipant.id);
+
+      const totalPoints = (allLogs ?? []).reduce((sum, log) => sum + (log.points_earned ?? 0), 0);
+
+      await supabase
+        .from('participants')
+        .update({ total_points: totalPoints })
+        .eq('id', myParticipant.id);
+
+      // Refresh leaderboard
+      refetch();
     },
-    [myParticipant, competition]
+    [myParticipant, competition, refetch]
   );
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
@@ -272,7 +318,7 @@ export default function CompetitionDetailScreen() {
           {/* Stats bar */}
           <View style={[styles.statsBar, { backgroundColor: Colors.background }]}>
             <View style={styles.statItem}>
-              <Text style={[styles.statItemValue, { color: Colors.textPrimary }]}>
+              <Text style={[styles.statItemValue, { color: isPaid ? Colors.accentGold : Colors.textPrimary }]}>
                 {isPaid
                   ? competitionPrizeInCredits(Math.floor(competition.prize_pool_cents * 0.9))
                   : 'Free'}

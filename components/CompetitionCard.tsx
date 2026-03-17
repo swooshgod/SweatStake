@@ -194,7 +194,7 @@ export default function CompetitionCard({ competition, variant = 'full', viewerT
             <Animated.Text
               style={[
                 styles.potAmount,
-                { color: Colors.success },
+                { color: hasFee ? Colors.accentGold : Colors.success },
                 !hasFee && [styles.potFree, { color: Colors.success }],
                 hasFee && { opacity: prizeOpacity },
               ]}

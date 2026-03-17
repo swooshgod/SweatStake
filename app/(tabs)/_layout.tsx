@@ -11,8 +11,8 @@ function TabHeader() {
   return (
     <View style={[styles.header, { backgroundColor: Colors.background }]}>
       <View style={styles.headerInner}>
-        <Text style={[styles.wordmark, { color: Colors.primary }]}>PODIUM</Text>
-        <View style={[styles.wordmarkUnderline, { backgroundColor: Colors.primary }]} />
+        <Text style={[styles.wordmark, { color: Colors.accentGold }]}>PODIUM</Text>
+        <View style={[styles.wordmarkUnderline, { backgroundColor: Colors.accentGold }]} />
       </View>
       <TouchableOpacity
         onPress={toggleTheme}

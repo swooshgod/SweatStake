@@ -50,7 +50,7 @@ export default function LeaderboardRow({
           {isDisqualified ? (
             <Text style={styles.disqualifiedIcon}>🚫</Text>
           ) : medal ? (
-            <Text style={styles.medal}>{medal}</Text>
+            <Text style={[styles.medal, rank === 1 && { textShadowColor: Colors.accentGold, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8 }]}>{medal}</Text>
           ) : (
             <Text style={[styles.rankNumber, { color: Colors.textMuted }]}>{rank}</Text>
           )}
@@ -72,7 +72,7 @@ export default function LeaderboardRow({
         {/* Name + streak + trust */}
         <View style={styles.nameContainer}>
           <View style={styles.nameRow}>
-            <Text style={[styles.name, { color: Colors.textPrimary }, isDisqualified && { textDecorationLine: 'line-through', color: Colors.textMuted }]} numberOfLines={1}>
+            <Text style={[styles.name, { color: Colors.textPrimary }, rank === 1 && !isDisqualified && { color: Colors.accentGold }, isDisqualified && { textDecorationLine: 'line-through', color: Colors.textMuted }]} numberOfLines={1}>
               {profile?.display_name ?? 'Unknown'}
               {isCurrentUser && <Text style={[styles.youBadge, { color: Colors.primary }]}> (You)</Text>}
             </Text>
@@ -97,7 +97,7 @@ export default function LeaderboardRow({
             <Text style={[
               styles.points,
               { color: Colors.textPrimary },
-              rank === 1 && !isDisqualified && { color: Colors.accent },
+              rank === 1 && !isDisqualified && { color: Colors.accentGold },
               isDisqualified && { color: Colors.textMuted, fontSize: FontSize.md },
             ]}>
               {isDisqualified ? '—' : participant.total_points}

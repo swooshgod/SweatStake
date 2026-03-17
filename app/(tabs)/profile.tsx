@@ -218,7 +218,7 @@ export default function ProfileScreen() {
       {proStatus.isPro ? (
         <View style={[styles.proBanner, { backgroundColor: Colors.primaryGlow, borderColor: Colors.borderGold }]}>
           <View style={styles.proBannerLeft}>
-            <Text style={[styles.proBannerBadge, { color: Colors.primary }]}>⭐ PODIUM PRO</Text>
+            <Text style={[styles.proBannerBadge, { color: Colors.accentGold }]}>⭐ PODIUM PRO</Text>
             <Text style={[styles.proBannerSub, { color: Colors.textSecondary }]}>
               {proStatus.daysRemaining !== null ? `${proStatus.daysRemaining} days remaining` : 'Active'}
             </Text>
@@ -267,7 +267,7 @@ export default function ProfileScreen() {
           <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Competed</Text>
         </View>
         <View style={[styles.statCard, dynamicStyles.statCard, dynamicStyles.statCardGold]}>
-          <Text style={[styles.statValue, { color: Colors.primary }]}>
+          <Text style={[styles.statValue, { color: Colors.accentGold }]}>
             {profile.competitions_won}
           </Text>
           <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Won 🏆</Text>
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
   earningsAmount: {
     fontSize: FontSize.xxxl,
     fontWeight: '900',
-    color: '#F5A623',
+    color: '#C9A84C',
   },
   menuSection: {
     marginBottom: Spacing.xxl,

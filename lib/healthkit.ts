@@ -240,7 +240,7 @@ async function workoutHasHeartRate(
  */
 export async function getTodayHealthData(requireHeartRate = false): Promise<HealthKitData> {
   if (Platform.OS !== 'ios') {
-    return { steps: 0, workouts: 0, activeCalories: 0, activeMinutes: 0 };
+    return { steps: 0, workouts: 0, activeCalories: 0, activeMinutes: 0, distanceMiles: 0 };
   }
 
   try {
@@ -354,7 +354,7 @@ export async function getTodayHealthData(requireHeartRate = false): Promise<Heal
     };
   } catch (error) {
     console.warn('Failed to fetch HealthKit data:', error);
-    return { steps: 0, workouts: 0, activeCalories: 0, activeMinutes: 0 };
+    return { steps: 0, workouts: 0, activeCalories: 0, activeMinutes: 0, distanceMiles: 0 };
   }
 }
 
