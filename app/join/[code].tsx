@@ -15,13 +15,12 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from "expo-image-picker";
 import {
-  Colors,
   Spacing,
   BorderRadius,
   FontSize,
-  Shadow,
   CompetitionTypes,
 } from "@/constants/theme";
+import { useTheme } from "@/contexts/ThemeContext";
 import { formatCents } from "@/lib/stripe";
 import { getEscrowAddress } from "@/lib/usdc";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +36,7 @@ export default function JoinScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
   const router = useRouter();
   const { profile, isAuthenticated } = useAuth();
+  const { Colors, Shadow } = useTheme();
   const [competition, setCompetition] = useState<Competition | null>(null);
   const [participantCount, setParticipantCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -55,6 +55,61 @@ export default function JoinScreen() {
   const [promoMessage, setPromoMessage] = useState("");
   const [promoError, setPromoError] = useState("");
   const [promoLoading, setPromoLoading] = useState(false);
+
+  // Dynamic styles — recomputed whenever Colors/Shadow change (theme switch)
+  const dynamicStyles = {
+    scrollContainer: { backgroundColor: Colors.background },
+    centered: { backgroundColor: Colors.background },
+    loadingText: { color: Colors.textSecondary },
+    errorTitle: { color: Colors.textPrimary },
+    errorSubtitle: { color: Colors.textSecondary },
+    backHomeBtn: { backgroundColor: Colors.primary },
+    card: { backgroundColor: Colors.surface, ...Shadow.lg },
+    inviteBadge: { backgroundColor: Colors.primaryGlow },
+    inviteBadgeText: { color: Colors.primary },
+    competitionName: { color: Colors.textPrimary },
+    description: { color: Colors.textSecondary },
+    detailsGrid: { borderTopColor: Colors.borderLight },
+    detailText: { color: Colors.textPrimary },
+    promoLabel: { color: Colors.textSecondary },
+    promoInput: {
+      backgroundColor: Colors.surfaceLight,
+      color: Colors.textPrimary,
+      borderColor: Colors.border,
+    },
+    promoButton: { backgroundColor: Colors.primary },
+    promoButtonRemove: { backgroundColor: Colors.surfaceLight, borderColor: Colors.border },
+    promoButtonRemoveText: { color: Colors.textSecondary },
+    promoSuccessText: { color: Colors.success },
+    promoErrorText: { color: Colors.error },
+    feesummary: { backgroundColor: Colors.background, borderColor: Colors.border },
+    feeLabelText: { color: Colors.textSecondary },
+    feeValueText: { color: Colors.textPrimary },
+    feeValueStrike: { color: Colors.textMuted },
+    feeTotalLine: { borderTopColor: Colors.border },
+    feeTotalLabel: { color: Colors.textPrimary },
+    feeTotalValue: { color: Colors.primary },
+    paymentSectionTitle: { color: Colors.textPrimary },
+    paymentOption: { borderColor: Colors.border },
+    paymentOptionSelected: { borderColor: Colors.primary, backgroundColor: Colors.primaryGlow },
+    radioOuter: { borderColor: Colors.textMuted },
+    radioInner: { backgroundColor: Colors.primary },
+    paymentOptionTitle: { color: Colors.textPrimary },
+    paymentOptionNote: { color: Colors.textMuted },
+    addressCopyBtn: { backgroundColor: Colors.primaryGlow },
+    usdcAddress: { color: Colors.primary },
+    joinButton: { backgroundColor: Colors.primary, ...Shadow.gold },
+    beforePhotoCard: { backgroundColor: Colors.background, borderColor: Colors.border },
+    beforePhotoTitle: { color: Colors.textPrimary },
+    beforePhotoSubtitle: { color: Colors.textSecondary },
+    beforePhotoPickerBtn: { borderColor: Colors.primaryGlow, backgroundColor: Colors.primaryGlow },
+    beforePhotoPickerText: { color: Colors.primary },
+    beforePhotoImage: { backgroundColor: Colors.surface },
+    beforePhotoRetake: { borderColor: Colors.border },
+    beforePhotoRetakeText: { color: Colors.textSecondary },
+    beforePhotoUploadBtn: { backgroundColor: Colors.primary },
+    beforePhotoSkipText: { color: Colors.textMuted },
+  };
 
   useEffect(() => {
     fetchCompetition();
@@ -235,16 +290,23 @@ export default function JoinScreen() {
   };
 
   if (loading) {
-    return <View style={styles.centered}><ActivityIndicator size="large" color={Colors.primary} /><Text style={styles.loadingText}>Finding competition...</Text></View>;
+    return (
+      <View style={[styles.centered, dynamicStyles.centered]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={[styles.loadingText, dynamicStyles.loadingText]}>Finding competition...</Text>
+      </View>
+    );
   }
 
   if (!competition) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, dynamicStyles.centered]}>
         <Ionicons name="alert-circle-outline" size={64} color={Colors.textMuted} />
-        <Text style={styles.errorTitle}>Competition Not Found</Text>
-        <Text style={styles.errorSubtitle}>The invite code "{code}" doesn't match any competition.</Text>
-        <TouchableOpacity style={styles.backHomeBtn} onPress={() => router.replace("/(tabs)")}><Text style={styles.backHomeBtnText}>Go Home</Text></TouchableOpacity>
+        <Text style={[styles.errorTitle, dynamicStyles.errorTitle]}>Competition Not Found</Text>
+        <Text style={[styles.errorSubtitle, dynamicStyles.errorSubtitle]}>The invite code "{code}" doesn't match any competition.</Text>
+        <TouchableOpacity style={[styles.backHomeBtn, dynamicStyles.backHomeBtn]} onPress={() => router.replace("/(tabs)")}>
+          <Text style={styles.backHomeBtnText}>Go Home</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -254,12 +316,12 @@ export default function JoinScreen() {
   const hasFee = competition.entry_fee_cents > 0;
 
   return (
-    <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent}>
-      <View style={styles.card}>
+    <ScrollView style={[styles.scrollContainer, dynamicStyles.scrollContainer]} contentContainerStyle={styles.scrollContent}>
+      <View style={[styles.card, dynamicStyles.card]}>
         {/* Invite badge */}
-        <View style={styles.inviteBadge}>
+        <View style={[styles.inviteBadge, dynamicStyles.inviteBadge]}>
           <Ionicons name="mail-open" size={20} color={Colors.primary} />
-          <Text style={styles.inviteBadgeText}>You've been invited!</Text>
+          <Text style={[styles.inviteBadgeText, dynamicStyles.inviteBadgeText]}>You've been invited!</Text>
         </View>
 
         <View style={[styles.typeBadge, { backgroundColor: typeInfo.color + "18" }]}>
@@ -267,29 +329,29 @@ export default function JoinScreen() {
           <Text style={[styles.typeLabel, { color: typeInfo.color }]}>{typeInfo.label}</Text>
         </View>
 
-        <View style={[styles.watchBadge, { backgroundColor: competition.requires_watch ? "#F59E0B18" : "#22C55E18" }]}>
+        <View style={[styles.watchBadge, { backgroundColor: competition.requires_watch ? Colors.warning + "18" : Colors.success + "18" }]}>
           <Text style={styles.watchBadgeIcon}>{competition.requires_watch ? "⌚" : "📱"}</Text>
-          <Text style={[styles.watchBadgeText, { color: competition.requires_watch ? "#F59E0B" : "#22C55E" }]}>
+          <Text style={[styles.watchBadgeText, { color: competition.requires_watch ? Colors.warning : Colors.success }]}>
             {competition.requires_watch ? "Requires Apple Watch" : "iPhone Compatible"}
           </Text>
         </View>
 
-        <Text style={styles.competitionName}>{competition.name}</Text>
-        {competition.description && <Text style={styles.description}>{competition.description}</Text>}
+        <Text style={[styles.competitionName, dynamicStyles.competitionName]}>{competition.name}</Text>
+        {competition.description && <Text style={[styles.description, dynamicStyles.description]}>{competition.description}</Text>}
 
         {/* Details */}
-        <View style={styles.detailsGrid}>
+        <View style={[styles.detailsGrid, dynamicStyles.detailsGrid]}>
           <View style={styles.detailItem}>
             <Ionicons name="calendar" size={18} color={Colors.textMuted} />
-            <Text style={styles.detailText}>{new Date(competition.start_date).toLocaleDateString()} — {new Date(competition.end_date).toLocaleDateString()}</Text>
+            <Text style={[styles.detailText, dynamicStyles.detailText]}>{new Date(competition.start_date).toLocaleDateString()} — {new Date(competition.end_date).toLocaleDateString()}</Text>
           </View>
           <View style={styles.detailItem}>
             <Ionicons name="people" size={18} color={Colors.textMuted} />
-            <Text style={styles.detailText}>{participantCount}/{competition.max_participants} players</Text>
+            <Text style={[styles.detailText, dynamicStyles.detailText]}>{participantCount}/{competition.max_participants} players</Text>
           </View>
           <View style={styles.detailItem}>
             <Ionicons name="cash" size={18} color={Colors.textMuted} />
-            <Text style={styles.detailText}>Entry: {formatCents(competition.entry_fee_cents)}</Text>
+            <Text style={[styles.detailText, dynamicStyles.detailText]}>Entry: {formatCents(competition.entry_fee_cents)}</Text>
           </View>
           <View style={styles.detailItem}>
             <Ionicons name="trophy" size={18} color={Colors.primary} />
@@ -302,10 +364,10 @@ export default function JoinScreen() {
         {/* ── Promo Code ── */}
         {hasFee && !alreadyJoined && !isFull && (
           <View style={styles.promoSection}>
-            <Text style={styles.promoLabel}>Have a promo code?</Text>
+            <Text style={[styles.promoLabel, dynamicStyles.promoLabel]}>Have a promo code?</Text>
             <View style={styles.promoRow}>
               <TextInput
-                style={styles.promoInput}
+                style={[styles.promoInput, dynamicStyles.promoInput]}
                 placeholder="e.g. PODIUM10"
                 placeholderTextColor={Colors.textMuted}
                 value={promoInput}
@@ -314,11 +376,11 @@ export default function JoinScreen() {
                 editable={!promoApplied}
               />
               {promoApplied ? (
-                <TouchableOpacity style={[styles.promoButton, styles.promoButtonRemove]} onPress={() => { setPromoApplied(false); setPromoDiscount(0); setPromoMessage(""); setPromoInput(""); }}>
-                  <Text style={styles.promoButtonRemoveText}>Remove</Text>
+                <TouchableOpacity style={[styles.promoButton, styles.promoButtonRemove, dynamicStyles.promoButtonRemove]} onPress={() => { setPromoApplied(false); setPromoDiscount(0); setPromoMessage(""); setPromoInput(""); }}>
+                  <Text style={[styles.promoButtonRemoveText, dynamicStyles.promoButtonRemoveText]}>Remove</Text>
                 </TouchableOpacity>
               ) : (
-                <TouchableOpacity style={[styles.promoButton, !promoInput.trim() && { opacity: 0.5 }]} onPress={handleApplyPromo} disabled={!promoInput.trim() || promoLoading}>
+                <TouchableOpacity style={[styles.promoButton, dynamicStyles.promoButton, !promoInput.trim() && { opacity: 0.5 }]} onPress={handleApplyPromo} disabled={!promoInput.trim() || promoLoading}>
                   <Text style={styles.promoButtonText}>{promoLoading ? "..." : "Apply"}</Text>
                 </TouchableOpacity>
               )}
@@ -326,33 +388,33 @@ export default function JoinScreen() {
             {promoMessage ? (
               <View style={styles.promoSuccess}>
                 <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
-                <Text style={styles.promoSuccessText}>{promoMessage}</Text>
+                <Text style={[styles.promoSuccessText, dynamicStyles.promoSuccessText]}>{promoMessage}</Text>
               </View>
             ) : null}
             {promoError ? (
-              <Text style={styles.promoErrorText}>{promoError}</Text>
+              <Text style={[styles.promoErrorText, dynamicStyles.promoErrorText]}>{promoError}</Text>
             ) : null}
           </View>
         )}
 
         {/* ── Entry fee summary ── */}
         {hasFee && !alreadyJoined && !isFull && (
-          <View style={styles.feesummary}>
+          <View style={[styles.feesummary, dynamicStyles.feesummary]}>
             {promoApplied && promoDiscount > 0 && (
               <View style={styles.feeLine}>
-                <Text style={styles.feeLabelText}>Original fee</Text>
-                <Text style={styles.feeValueStrike}>{formatCents(competition.entry_fee_cents)}</Text>
+                <Text style={[styles.feeLabelText, dynamicStyles.feeLabelText]}>Original fee</Text>
+                <Text style={[styles.feeValueStrike, dynamicStyles.feeValueStrike]}>{formatCents(competition.entry_fee_cents)}</Text>
               </View>
             )}
             {promoApplied && promoDiscount > 0 && (
               <View style={styles.feeLine}>
-                <Text style={styles.feeLabelText}>Promo ({promoInput})</Text>
-                <Text style={[styles.feeValueText, { color: Colors.success }]}>-{formatCents(promoDiscount)}</Text>
+                <Text style={[styles.feeLabelText, dynamicStyles.feeLabelText]}>Promo ({promoInput})</Text>
+                <Text style={[styles.feeValueText, dynamicStyles.feeValueText, { color: Colors.success }]}>-{formatCents(promoDiscount)}</Text>
               </View>
             )}
-            <View style={[styles.feeLine, styles.feeTotalLine]}>
-              <Text style={styles.feeTotalLabel}>You pay</Text>
-              <Text style={[styles.feeTotalValue, effectiveEntryCents === 0 && { color: Colors.success }]}>
+            <View style={[styles.feeLine, styles.feeTotalLine, dynamicStyles.feeTotalLine]}>
+              <Text style={[styles.feeTotalLabel, dynamicStyles.feeTotalLabel]}>You pay</Text>
+              <Text style={[styles.feeTotalValue, dynamicStyles.feeTotalValue, effectiveEntryCents === 0 && { color: Colors.success }]}>
                 {effectiveEntryCents === 0 ? "FREE 🎉" : formatCents(effectiveEntryCents)}
               </Text>
             </View>
@@ -362,30 +424,30 @@ export default function JoinScreen() {
         {/* ── Payment method ── */}
         {hasFee && effectiveEntryCents > 0 && !alreadyJoined && !isFull && (
           <View style={styles.paymentSection}>
-            <Text style={styles.paymentSectionTitle}>Payment Method</Text>
-            <TouchableOpacity style={[styles.paymentOption, paymentMethod === "stripe" && styles.paymentOptionSelected]} onPress={() => setPaymentMethod("stripe")} activeOpacity={0.7}>
+            <Text style={[styles.paymentSectionTitle, dynamicStyles.paymentSectionTitle]}>Payment Method</Text>
+            <TouchableOpacity style={[styles.paymentOption, dynamicStyles.paymentOption, paymentMethod === "stripe" && dynamicStyles.paymentOptionSelected]} onPress={() => setPaymentMethod("stripe")} activeOpacity={0.7}>
               <View style={styles.paymentOptionHeader}>
-                <View style={styles.radioOuter}>{paymentMethod === "stripe" && <View style={styles.radioInner} />}</View>
+                <View style={[styles.radioOuter, dynamicStyles.radioOuter]}>{paymentMethod === "stripe" && <View style={[styles.radioInner, dynamicStyles.radioInner]} />}</View>
                 <Text style={styles.paymentOptionIcon}>💳</Text>
-                <Text style={styles.paymentOptionTitle}>Card / Apple Pay</Text>
+                <Text style={[styles.paymentOptionTitle, dynamicStyles.paymentOptionTitle]}>Card / Apple Pay</Text>
               </View>
-              <Text style={styles.paymentOptionNote}>Secure · Instant · Refunded if cancelled</Text>
+              <Text style={[styles.paymentOptionNote, dynamicStyles.paymentOptionNote]}>Secure · Instant · Refunded if cancelled</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.paymentOption, paymentMethod === "usdc" && styles.paymentOptionSelected]} onPress={() => setPaymentMethod("usdc")} activeOpacity={0.7}>
+            <TouchableOpacity style={[styles.paymentOption, dynamicStyles.paymentOption, paymentMethod === "usdc" && dynamicStyles.paymentOptionSelected]} onPress={() => setPaymentMethod("usdc")} activeOpacity={0.7}>
               <View style={styles.paymentOptionHeader}>
-                <View style={styles.radioOuter}>{paymentMethod === "usdc" && <View style={styles.radioInner} />}</View>
+                <View style={[styles.radioOuter, dynamicStyles.radioOuter]}>{paymentMethod === "usdc" && <View style={[styles.radioInner, dynamicStyles.radioInner]} />}</View>
                 <Text style={styles.paymentOptionIcon}>🔵</Text>
-                <Text style={styles.paymentOptionTitle}>USDC (Base)</Text>
+                <Text style={[styles.paymentOptionTitle, dynamicStyles.paymentOptionTitle]}>USDC (Base)</Text>
               </View>
               {paymentMethod === "usdc" && (
                 <View style={styles.usdcDetails}>
-                  <TouchableOpacity style={styles.addressCopyBtn} onPress={copyEscrowAddress}>
-                    <Text style={styles.usdcAddress}>{`${getEscrowAddress().slice(0, 8)}...${getEscrowAddress().slice(-4)}`}</Text>
+                  <TouchableOpacity style={[styles.addressCopyBtn, dynamicStyles.addressCopyBtn]} onPress={copyEscrowAddress}>
+                    <Text style={[styles.usdcAddress, dynamicStyles.usdcAddress]}>{`${getEscrowAddress().slice(0, 8)}...${getEscrowAddress().slice(-4)}`}</Text>
                     <Ionicons name={copied ? "checkmark" : "copy-outline"} size={14} color={Colors.primary} />
                   </TouchableOpacity>
                 </View>
               )}
-              <Text style={styles.paymentOptionNote}>⚡ Zero fees · Instant payout</Text>
+              <Text style={[styles.paymentOptionNote, dynamicStyles.paymentOptionNote]}>⚡ Zero fees · Instant payout</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -393,20 +455,20 @@ export default function JoinScreen() {
         {/* ── Join button ── */}
         {alreadyJoined ? (
           <TouchableOpacity style={[styles.joinButton, { backgroundColor: Colors.success }]} onPress={() => router.replace(`/competition/${competition.id}`)}>
-            <Ionicons name="checkmark-circle" size={20} color="#000" />
-            <Text style={[styles.joinButtonText, { color: '#000' }]}>Already Joined — View Competition</Text>
+            <Ionicons name="checkmark-circle" size={20} color={Colors.textPrimary} />
+            <Text style={[styles.joinButtonText, { color: Colors.textPrimary }]}>Already Joined — View Competition</Text>
           </TouchableOpacity>
         ) : isFull ? (
           <View style={[styles.joinButton, { backgroundColor: Colors.textMuted }]}>
-            <Ionicons name="close-circle" size={20} color="#fff" />
-            <Text style={styles.joinButtonText}>Competition Full</Text>
+            <Ionicons name="close-circle" size={20} color={Colors.surface} />
+            <Text style={[styles.joinButtonText, { color: Colors.surface }]}>Competition Full</Text>
           </View>
         ) : (
-          <TouchableOpacity style={styles.joinButton} onPress={handleJoin} disabled={joining} activeOpacity={0.85}>
-            {joining ? <ActivityIndicator size="small" color="#000" /> : (
+          <TouchableOpacity style={[styles.joinButton, dynamicStyles.joinButton]} onPress={handleJoin} disabled={joining} activeOpacity={0.85}>
+            {joining ? <ActivityIndicator size="small" color={Colors.textPrimary} /> : (
               <>
-                <Ionicons name="flash" size={20} color="#000" />
-                <Text style={[styles.joinButtonText, { color: '#000' }]}>
+                <Ionicons name="flash" size={20} color={Colors.textPrimary} />
+                <Text style={[styles.joinButtonText, { color: Colors.textPrimary }]}>
                   {effectiveEntryCents === 0 ? "Join Free 🎉" : `Pay ${formatCents(effectiveEntryCents)} & Join`}
                 </Text>
               </>
@@ -416,27 +478,29 @@ export default function JoinScreen() {
 
         {/* ── Before photo ── */}
         {showBeforePhoto && competition && (
-          <View style={styles.beforePhotoCard}>
-            <Text style={styles.beforePhotoTitle}>📸 Add a before photo</Text>
-            <Text style={styles.beforePhotoSubtitle}>Optional — share your starting point. Only visible to competition members.</Text>
+          <View style={[styles.beforePhotoCard, dynamicStyles.beforePhotoCard]}>
+            <Text style={[styles.beforePhotoTitle, dynamicStyles.beforePhotoTitle]}>📸 Add a before photo</Text>
+            <Text style={[styles.beforePhotoSubtitle, dynamicStyles.beforePhotoSubtitle]}>Optional — share your starting point. Only visible to competition members.</Text>
             {beforePhotoUri ? (
               <View style={styles.beforePhotoPreview}>
-                <Image source={{ uri: beforePhotoUri }} style={styles.beforePhotoImage} />
+                <Image source={{ uri: beforePhotoUri }} style={[styles.beforePhotoImage, dynamicStyles.beforePhotoImage]} />
                 <View style={styles.beforePhotoActions}>
-                  <TouchableOpacity style={styles.beforePhotoRetake} onPress={handlePickBeforePhoto}><Text style={styles.beforePhotoRetakeText}>Retake</Text></TouchableOpacity>
-                  <TouchableOpacity style={[styles.beforePhotoUploadBtn, uploadingPhoto && { opacity: 0.6 }]} onPress={handleUploadBeforePhoto} disabled={uploadingPhoto}>
-                    <Text style={styles.beforePhotoUploadText}>{uploadingPhoto ? "Uploading..." : "Save Photo"}</Text>
+                  <TouchableOpacity style={[styles.beforePhotoRetake, dynamicStyles.beforePhotoRetake]} onPress={handlePickBeforePhoto}>
+                    <Text style={[styles.beforePhotoRetakeText, dynamicStyles.beforePhotoRetakeText]}>Retake</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.beforePhotoUploadBtn, dynamicStyles.beforePhotoUploadBtn, uploadingPhoto && { opacity: 0.6 }]} onPress={handleUploadBeforePhoto} disabled={uploadingPhoto}>
+                    <Text style={[styles.beforePhotoUploadText, { color: Colors.textPrimary }]}>{uploadingPhoto ? "Uploading..." : "Save Photo"}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             ) : (
-              <TouchableOpacity style={styles.beforePhotoPickerBtn} onPress={handlePickBeforePhoto}>
+              <TouchableOpacity style={[styles.beforePhotoPickerBtn, dynamicStyles.beforePhotoPickerBtn]} onPress={handlePickBeforePhoto}>
                 <Ionicons name="camera-outline" size={28} color={Colors.primary} />
-                <Text style={styles.beforePhotoPickerText}>Choose a photo</Text>
+                <Text style={[styles.beforePhotoPickerText, dynamicStyles.beforePhotoPickerText]}>Choose a photo</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity style={styles.beforePhotoSkip} onPress={() => router.replace(`/competition/${competition.id}`)}>
-              <Text style={styles.beforePhotoSkipText}>Skip for now →</Text>
+              <Text style={[styles.beforePhotoSkipText, dynamicStyles.beforePhotoSkipText]}>Skip for now →</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -446,79 +510,78 @@ export default function JoinScreen() {
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: { flex: 1, backgroundColor: Colors.background },
+  scrollContainer: { flex: 1 },
   scrollContent: { flexGrow: 1, justifyContent: "center", padding: Spacing.xxl },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: Colors.background, padding: Spacing.xxl },
-  loadingText: { fontSize: FontSize.md, color: Colors.textSecondary, marginTop: Spacing.lg },
-  errorTitle: { fontSize: FontSize.xl, fontWeight: "700", color: Colors.textPrimary, marginTop: Spacing.lg },
-  errorSubtitle: { fontSize: FontSize.md, color: Colors.textSecondary, marginTop: Spacing.sm, textAlign: "center" },
-  backHomeBtn: { marginTop: Spacing.xxl, paddingHorizontal: Spacing.xxl, paddingVertical: Spacing.md, backgroundColor: Colors.primary, borderRadius: BorderRadius.lg },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center", padding: Spacing.xxl },
+  loadingText: { fontSize: FontSize.md, marginTop: Spacing.lg },
+  errorTitle: { fontSize: FontSize.xl, fontWeight: "700", marginTop: Spacing.lg },
+  errorSubtitle: { fontSize: FontSize.md, marginTop: Spacing.sm, textAlign: "center" },
+  backHomeBtn: { marginTop: Spacing.xxl, paddingHorizontal: Spacing.xxl, paddingVertical: Spacing.md, borderRadius: BorderRadius.lg },
   backHomeBtnText: { color: "#000", fontSize: FontSize.md, fontWeight: "700" },
-  card: { backgroundColor: Colors.surface, borderRadius: BorderRadius.xl, padding: Spacing.xxl, ...Shadow.lg },
-  inviteBadge: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, alignSelf: "center", marginBottom: Spacing.xxl, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, backgroundColor: Colors.primaryGlow, borderRadius: BorderRadius.full },
-  inviteBadgeText: { fontSize: FontSize.sm, fontWeight: "700", color: Colors.primary },
+  card: { borderRadius: BorderRadius.xl, padding: Spacing.xxl },
+  inviteBadge: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, alignSelf: "center", marginBottom: Spacing.xxl, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, borderRadius: BorderRadius.full },
+  inviteBadgeText: { fontSize: FontSize.sm, fontWeight: "700" },
   typeBadge: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", gap: Spacing.xs, paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs, borderRadius: BorderRadius.sm, marginBottom: Spacing.md },
   typeLabel: { fontSize: FontSize.xs, fontWeight: "600" },
-  competitionName: { fontSize: FontSize.xxl, fontWeight: "800", color: Colors.textPrimary, marginBottom: Spacing.sm },
-  description: { fontSize: FontSize.md, color: Colors.textSecondary, lineHeight: 22, marginBottom: Spacing.lg },
-  detailsGrid: { gap: Spacing.md, marginBottom: Spacing.xxl, paddingTop: Spacing.lg, borderTopWidth: 1, borderTopColor: Colors.borderLight },
+  competitionName: { fontSize: FontSize.xxl, fontWeight: "800", marginBottom: Spacing.sm },
+  description: { fontSize: FontSize.md, lineHeight: 22, marginBottom: Spacing.lg },
+  detailsGrid: { gap: Spacing.md, marginBottom: Spacing.xxl, paddingTop: Spacing.lg, borderTopWidth: 1 },
   detailItem: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
-  detailText: { fontSize: FontSize.md, color: Colors.textPrimary },
+  detailText: { fontSize: FontSize.md },
   watchBadge: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.full, marginBottom: Spacing.sm, gap: 4 },
   watchBadgeIcon: { fontSize: FontSize.xs },
   watchBadgeText: { fontSize: FontSize.xs, fontWeight: "600" },
   // Promo
   promoSection: { marginBottom: Spacing.lg },
-  promoLabel: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.textSecondary, marginBottom: Spacing.sm },
+  promoLabel: { fontSize: FontSize.sm, fontWeight: "600", marginBottom: Spacing.sm },
   promoRow: { flexDirection: "row", gap: Spacing.sm },
-  promoInput: { flex: 1, backgroundColor: Colors.surfaceLight, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, fontSize: FontSize.md, color: Colors.textPrimary, borderWidth: 1, borderColor: Colors.border, fontWeight: "700", letterSpacing: 1 },
-  promoButton: { backgroundColor: Colors.primary, paddingHorizontal: Spacing.xl, borderRadius: BorderRadius.md, justifyContent: "center" },
+  promoInput: { flex: 1, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, fontSize: FontSize.md, borderWidth: 1, fontWeight: "700", letterSpacing: 1 },
+  promoButton: { paddingHorizontal: Spacing.xl, borderRadius: BorderRadius.md, justifyContent: "center" },
   promoButtonText: { color: "#000", fontWeight: "800", fontSize: FontSize.sm },
-  promoButtonRemove: { backgroundColor: Colors.surfaceLight, borderWidth: 1, borderColor: Colors.border },
-  promoButtonRemoveText: { color: Colors.textSecondary, fontWeight: "600", fontSize: FontSize.sm },
+  promoButtonRemove: { borderWidth: 1 },
+  promoButtonRemoveText: { fontWeight: "600", fontSize: FontSize.sm },
   promoSuccess: { flexDirection: "row", alignItems: "center", gap: Spacing.xs, marginTop: Spacing.sm },
-  promoSuccessText: { fontSize: FontSize.sm, color: Colors.success, fontWeight: "600" },
-  promoErrorText: { fontSize: FontSize.sm, color: Colors.error, marginTop: Spacing.sm },
+  promoSuccessText: { fontSize: FontSize.sm, fontWeight: "600" },
+  promoErrorText: { fontSize: FontSize.sm, marginTop: Spacing.sm },
   // Fee summary
-  feeummary: { backgroundColor: Colors.background, borderRadius: BorderRadius.md, padding: Spacing.lg, marginBottom: Spacing.xl, borderWidth: 1, borderColor: Colors.border },
-  feesummary: { backgroundColor: Colors.background, borderRadius: BorderRadius.md, padding: Spacing.lg, marginBottom: Spacing.xl, borderWidth: 1, borderColor: Colors.border },
+  feesummary: { borderRadius: BorderRadius.md, padding: Spacing.lg, marginBottom: Spacing.xl, borderWidth: 1 },
   feeLine: { flexDirection: "row", justifyContent: "space-between", marginBottom: Spacing.sm },
-  feeLabelText: { fontSize: FontSize.sm, color: Colors.textSecondary },
-  feeValueText: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.textPrimary },
-  feeValueStrike: { fontSize: FontSize.sm, color: Colors.textMuted, textDecorationLine: "line-through" },
-  feeTotalLine: { borderTopWidth: 1, borderTopColor: Colors.border, paddingTop: Spacing.sm, marginBottom: 0 },
-  feeTotalLabel: { fontSize: FontSize.md, fontWeight: "700", color: Colors.textPrimary },
-  feeTotalValue: { fontSize: FontSize.md, fontWeight: "900", color: Colors.primary },
+  feeLabelText: { fontSize: FontSize.sm },
+  feeValueText: { fontSize: FontSize.sm, fontWeight: "600" },
+  feeValueStrike: { fontSize: FontSize.sm, textDecorationLine: "line-through" },
+  feeTotalLine: { borderTopWidth: 1, paddingTop: Spacing.sm, marginBottom: 0 },
+  feeTotalLabel: { fontSize: FontSize.md, fontWeight: "700" },
+  feeTotalValue: { fontSize: FontSize.md, fontWeight: "900" },
   // Payment
   paymentSection: { marginBottom: Spacing.xxl, gap: Spacing.md },
-  paymentSectionTitle: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.textPrimary },
-  paymentOption: { borderWidth: 2, borderColor: Colors.border, borderRadius: BorderRadius.md, padding: Spacing.lg },
-  paymentOptionSelected: { borderColor: Colors.primary, backgroundColor: Colors.primaryGlow },
+  paymentSectionTitle: { fontSize: FontSize.lg, fontWeight: "700" },
+  paymentOption: { borderWidth: 2, borderRadius: BorderRadius.md, padding: Spacing.lg },
+  paymentOptionSelected: {},
   paymentOptionHeader: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, marginBottom: Spacing.xs },
-  radioOuter: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: Colors.textMuted, justifyContent: "center", alignItems: "center" },
-  radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.primary },
+  radioOuter: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, justifyContent: "center", alignItems: "center" },
+  radioInner: { width: 10, height: 10, borderRadius: 5 },
   paymentOptionIcon: { fontSize: FontSize.lg },
-  paymentOptionTitle: { fontSize: FontSize.md, fontWeight: "700", color: Colors.textPrimary },
-  paymentOptionNote: { fontSize: FontSize.xs, color: Colors.textMuted, marginLeft: 36 },
+  paymentOptionTitle: { fontSize: FontSize.md, fontWeight: "700" },
+  paymentOptionNote: { fontSize: FontSize.xs, marginLeft: 36 },
   usdcDetails: { marginLeft: 36, marginTop: Spacing.sm },
-  addressCopyBtn: { flexDirection: "row", alignItems: "center", gap: Spacing.xs, paddingHorizontal: Spacing.sm, paddingVertical: 4, backgroundColor: Colors.primaryGlow, borderRadius: BorderRadius.sm, alignSelf: "flex-start" },
-  usdcAddress: { fontSize: FontSize.sm, fontWeight: "600", color: Colors.primary },
+  addressCopyBtn: { flexDirection: "row", alignItems: "center", gap: Spacing.xs, paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: BorderRadius.sm, alignSelf: "flex-start" },
+  usdcAddress: { fontSize: FontSize.sm, fontWeight: "600" },
   // Join button
-  joinButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: Spacing.sm, backgroundColor: Colors.primary, paddingVertical: Spacing.lg, borderRadius: BorderRadius.lg, ...Shadow.gold },
-  joinButtonText: { color: "#fff", fontSize: FontSize.md, fontWeight: "800" },
+  joinButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: Spacing.sm, paddingVertical: Spacing.lg, borderRadius: BorderRadius.lg },
+  joinButtonText: { fontSize: FontSize.md, fontWeight: "800" },
   // Before photo
-  beforePhotoCard: { marginTop: Spacing.xxl, padding: Spacing.xl, backgroundColor: Colors.background, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.border },
-  beforePhotoTitle: { fontSize: FontSize.lg, fontWeight: "700", color: Colors.textPrimary, marginBottom: Spacing.xs },
-  beforePhotoSubtitle: { fontSize: FontSize.sm, color: Colors.textSecondary, lineHeight: 20, marginBottom: Spacing.lg },
-  beforePhotoPickerBtn: { alignItems: "center", justifyContent: "center", gap: Spacing.sm, paddingVertical: Spacing.xxl, borderRadius: BorderRadius.lg, borderWidth: 1.5, borderColor: Colors.primaryGlow, borderStyle: "dashed", backgroundColor: Colors.primaryGlow },
-  beforePhotoPickerText: { fontSize: FontSize.md, fontWeight: "600", color: Colors.primary },
+  beforePhotoCard: { marginTop: Spacing.xxl, padding: Spacing.xl, borderRadius: BorderRadius.lg, borderWidth: 1 },
+  beforePhotoTitle: { fontSize: FontSize.lg, fontWeight: "700", marginBottom: Spacing.xs },
+  beforePhotoSubtitle: { fontSize: FontSize.sm, lineHeight: 20, marginBottom: Spacing.lg },
+  beforePhotoPickerBtn: { alignItems: "center", justifyContent: "center", gap: Spacing.sm, paddingVertical: Spacing.xxl, borderRadius: BorderRadius.lg, borderWidth: 1.5, borderStyle: "dashed" },
+  beforePhotoPickerText: { fontSize: FontSize.md, fontWeight: "600" },
   beforePhotoPreview: { gap: Spacing.md },
-  beforePhotoImage: { width: "100%", height: 260, borderRadius: BorderRadius.lg, backgroundColor: Colors.surface },
+  beforePhotoImage: { width: "100%", height: 260, borderRadius: BorderRadius.lg },
   beforePhotoActions: { flexDirection: "row", gap: Spacing.md },
-  beforePhotoRetake: { flex: 1, alignItems: "center", paddingVertical: Spacing.md, borderRadius: BorderRadius.lg, borderWidth: 1.5, borderColor: Colors.border },
-  beforePhotoRetakeText: { fontSize: FontSize.md, fontWeight: "600", color: Colors.textSecondary },
-  beforePhotoUploadBtn: { flex: 1, alignItems: "center", paddingVertical: Spacing.md, borderRadius: BorderRadius.lg, backgroundColor: Colors.primary },
-  beforePhotoUploadText: { fontSize: FontSize.md, fontWeight: "700", color: "#000" },
+  beforePhotoRetake: { flex: 1, alignItems: "center", paddingVertical: Spacing.md, borderRadius: BorderRadius.lg, borderWidth: 1.5 },
+  beforePhotoRetakeText: { fontSize: FontSize.md, fontWeight: "600" },
+  beforePhotoUploadBtn: { flex: 1, alignItems: "center", paddingVertical: Spacing.md, borderRadius: BorderRadius.lg },
+  beforePhotoUploadText: { fontSize: FontSize.md, fontWeight: "700" },
   beforePhotoSkip: { alignSelf: "center", marginTop: Spacing.lg, paddingVertical: Spacing.sm },
-  beforePhotoSkipText: { fontSize: FontSize.md, color: Colors.textMuted, fontWeight: "600" },
+  beforePhotoSkipText: { fontSize: FontSize.md, fontWeight: "600" },
 });

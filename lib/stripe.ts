@@ -9,6 +9,7 @@
 import { SERVICE_FEE_PCT } from "./payments";
 
 export const STRIPE_PUBLISHABLE_KEY =
+  process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ??
   "pk_live_51TAL5oKTqskC6Sks7frRhPbu38RrHUl23DVhIOkt6r70zLcrchhn8I8p4NT3wPp47Qcq8s3AIK0H85YFewFctojm003uoVaxo1";
 
 // ── Formatting ──────────────────────────────────────────────────────────────

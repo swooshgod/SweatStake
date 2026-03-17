@@ -72,7 +72,7 @@ export function centsToCredits(cents: number): number {
 /**
  * Convert credits to cents.
  */
-export function creditsToСents(credits: number): number {
+export function creditsToCents(credits: number): number {
   return Math.floor((credits / CREDITS_PER_DOLLAR) * 100);
 }
 

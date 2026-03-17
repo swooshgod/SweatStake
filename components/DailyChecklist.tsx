@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSize } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getTodayHealthData, evaluateHealthData, isHealthKitAvailable } from '@/lib/healthkit';
 import type { ScoringCategory, DailyLogEntries } from '@/lib/types';
 
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export default function DailyChecklist({ categories, entries, onSyncHealthKit }: Props) {
+  const { Colors, Shadow } = useTheme();
   const [syncing, setSyncing] = useState(false);
 
   const handleSync = useCallback(async () => {
@@ -80,37 +82,37 @@ export default function DailyChecklist({ categories, entries, onSyncHealthKit }:
   const workoutsToday = entries.workout ? 1 : 0;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: Colors.surface, ...Shadow.md }]}>
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Today's Summary</Text>
-          <Text style={styles.subtitle}>Auto-tracked via Apple Health</Text>
+          <Text style={[styles.title, { color: Colors.textPrimary }]}>Today's Summary</Text>
+          <Text style={[styles.subtitle, { color: Colors.textSecondary }]}>Auto-tracked via Apple Health</Text>
         </View>
-        <View style={styles.pointsBadge}>
-          <Text style={styles.pointsText}>
+        <View style={[styles.pointsBadge, { backgroundColor: Colors.primary + '12' }]}>
+          <Text style={[styles.pointsText, { color: Colors.primary }]}>
             {totalPoints}/{maxPoints}
           </Text>
-          <Text style={styles.pointsLabel}>pts</Text>
+          <Text style={[styles.pointsLabelText, { color: Colors.primary }]}>pts</Text>
         </View>
       </View>
 
       {/* Auto-synced stats */}
       <View style={styles.statsGrid}>
-        <View style={styles.statCard}>
+        <View style={[styles.statCard, { backgroundColor: Colors.background }]}>
           <Text style={styles.statIcon}>{'\u{1F463}'}</Text>
-          <Text style={styles.statValue}>{stepsToday.toLocaleString()}</Text>
-          <Text style={styles.statLabel}>Steps</Text>
+          <Text style={[styles.statValue, { color: Colors.textPrimary }]}>{stepsToday.toLocaleString()}</Text>
+          <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>Steps</Text>
         </View>
-        <View style={styles.statCard}>
+        <View style={[styles.statCard, { backgroundColor: Colors.background }]}>
           <Text style={styles.statIcon}>{'\u{1F525}'}</Text>
-          <Text style={styles.statValue}>{caloriesToday.toLocaleString()}</Text>
-          <Text style={styles.statLabel}>Active Cal</Text>
+          <Text style={[styles.statValue, { color: Colors.textPrimary }]}>{caloriesToday.toLocaleString()}</Text>
+          <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>Active Cal</Text>
         </View>
-        <View style={styles.statCard}>
+        <View style={[styles.statCard, { backgroundColor: Colors.background }]}>
           <Text style={styles.statIcon}>{'\u{1F4AA}'}</Text>
-          <Text style={styles.statValue}>{workoutsToday}</Text>
-          <Text style={styles.statLabel}>Workouts</Text>
+          <Text style={[styles.statValue, { color: Colors.textPrimary }]}>{workoutsToday}</Text>
+          <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>Workouts</Text>
         </View>
       </View>
 
@@ -120,17 +122,17 @@ export default function DailyChecklist({ categories, entries, onSyncHealthKit }:
         return (
           <View
             key={category.name}
-            style={[styles.item, completed && styles.itemCompleted]}
+            style={[styles.item, { borderBottomColor: Colors.borderLight }, completed && styles.itemCompleted]}
           >
-            <View style={[styles.statusDot, completed && styles.statusDotCompleted]} />
+            <View style={[styles.statusDot, { backgroundColor: Colors.border }, completed && { backgroundColor: Colors.success }]} />
             <View style={styles.itemContent}>
-              <Text style={[styles.itemName, completed && styles.itemNameCompleted]}>
+              <Text style={[styles.itemName, { color: Colors.textPrimary }, completed && { color: Colors.textSecondary }]}>
                 {category.name}
               </Text>
             </View>
-            <View style={[styles.pointsChip, completed && styles.pointsChipEarned]}>
+            <View style={[styles.pointsChip, { backgroundColor: Colors.borderLight }, completed && { backgroundColor: Colors.success + '18' }]}>
               <Text
-                style={[styles.pointsChipText, completed && styles.pointsChipTextEarned]}
+                style={[styles.pointsChipText, { color: Colors.textMuted }, completed && { color: Colors.success }]}
               >
                 {completed ? '+' : ''}{category.points}
               </Text>
@@ -142,7 +144,7 @@ export default function DailyChecklist({ categories, entries, onSyncHealthKit }:
       {/* HealthKit sync button */}
       {isHealthKitAvailable() && (
         <TouchableOpacity
-          style={styles.syncButton}
+          style={[styles.syncButton, { borderColor: Colors.primary + '30' }]}
           activeOpacity={0.7}
           onPress={handleSync}
           disabled={syncing}
@@ -152,7 +154,7 @@ export default function DailyChecklist({ categories, entries, onSyncHealthKit }:
           ) : (
             <>
               <Text style={styles.syncIcon}>{'\u{2764}\u{FE0F}'}</Text>
-              <Text style={styles.syncText}>Sync from Apple Health</Text>
+              <Text style={[styles.syncText, { color: Colors.primary }]}>Sync from Apple Health</Text>
             </>
           )}
         </TouchableOpacity>
@@ -163,10 +165,8 @@ export default function DailyChecklist({ categories, entries, onSyncHealthKit }:
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
-    ...Shadow.md,
   },
   header: {
     flexDirection: 'row',
@@ -177,15 +177,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSize.lg,
     fontWeight: '700',
-    color: Colors.textPrimary,
   },
   subtitle: {
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
     marginTop: 2,
   },
   pointsBadge: {
-    backgroundColor: Colors.primary + '12',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.sm,
@@ -194,11 +191,9 @@ const styles = StyleSheet.create({
   pointsText: {
     fontSize: FontSize.lg,
     fontWeight: '800',
-    color: Colors.primary,
   },
-  pointsLabel: {
+  pointsLabelText: {
     fontSize: FontSize.xs,
-    color: Colors.primary,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -207,7 +202,6 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: Colors.background,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     alignItems: 'center',
@@ -219,11 +213,9 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: FontSize.lg,
     fontWeight: '800',
-    color: Colors.textPrimary,
   },
   statLabel: {
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
     marginTop: 2,
   },
   item: {
@@ -231,7 +223,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
   },
   itemCompleted: {
     opacity: 0.85,
@@ -240,11 +231,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: Colors.border,
     marginRight: Spacing.md,
-  },
-  statusDotCompleted: {
-    backgroundColor: Colors.success,
   },
   itemContent: {
     flex: 1,
@@ -252,27 +239,15 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: FontSize.md,
     fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  itemNameCompleted: {
-    color: Colors.textSecondary,
   },
   pointsChip: {
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.borderLight,
-  },
-  pointsChipEarned: {
-    backgroundColor: Colors.success + '18',
   },
   pointsChipText: {
     fontSize: FontSize.sm,
     fontWeight: '700',
-    color: Colors.textMuted,
-  },
-  pointsChipTextEarned: {
-    color: Colors.success,
   },
   syncButton: {
     flexDirection: 'row',
@@ -282,7 +257,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     borderRadius: BorderRadius.sm,
     borderWidth: 1,
-    borderColor: Colors.primary + '30',
     borderStyle: 'dashed',
   },
   syncIcon: {
@@ -292,6 +266,5 @@ const styles = StyleSheet.create({
   syncText: {
     fontSize: FontSize.sm,
     fontWeight: '600',
-    color: Colors.primary,
   },
 });

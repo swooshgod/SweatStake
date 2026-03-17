@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, BorderRadius, FontSize } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSize } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getTrustBadge } from '@/lib/trust';
 import ReportUserModal from '@/components/ReportUserModal';
 import type { Participant } from '@/lib/types';
@@ -25,13 +26,14 @@ export default function LeaderboardRow({
   currentUserId,
   competitionId,
 }: Props) {
+  const { Colors } = useTheme();
   const rank = participant.rank ?? 0;
   const medal = RANK_MEDALS[rank];
   const profile = participant.profile;
   const [reportModalVisible, setReportModalVisible] = useState(false);
 
   // Trust badge
-  const trustScore = (profile as any)?.trust_score ?? 50;
+  const trustScore = profile?.trust_score ?? 50;
   const trustBadge = getTrustBadge(trustScore);
   const isDisqualified = participant.disqualified;
 
@@ -39,8 +41,9 @@ export default function LeaderboardRow({
     <>
       <View style={[
         styles.row,
-        isCurrentUser && styles.rowHighlighted,
-        isDisqualified && styles.rowDisqualified,
+        { borderBottomColor: Colors.borderLight },
+        isCurrentUser && { backgroundColor: Colors.primary + '08', borderLeftWidth: 3, borderLeftColor: Colors.primary },
+        isDisqualified && { opacity: 0.5, backgroundColor: Colors.error + '05' },
       ]}>
         {/* Rank */}
         <View style={styles.rankContainer}>
@@ -49,7 +52,7 @@ export default function LeaderboardRow({
           ) : medal ? (
             <Text style={styles.medal}>{medal}</Text>
           ) : (
-            <Text style={styles.rankNumber}>{rank}</Text>
+            <Text style={[styles.rankNumber, { color: Colors.textMuted }]}>{rank}</Text>
           )}
         </View>
 
@@ -58,8 +61,8 @@ export default function LeaderboardRow({
           {profile?.avatar_url ? (
             <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
           ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <Text style={styles.avatarInitial}>
+            <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: Colors.primary + '20' }]}>
+              <Text style={[styles.avatarInitial, { color: Colors.primary }]}>
                 {(profile?.display_name ?? '?')[0].toUpperCase()}
               </Text>
             </View>
@@ -69,9 +72,9 @@ export default function LeaderboardRow({
         {/* Name + streak + trust */}
         <View style={styles.nameContainer}>
           <View style={styles.nameRow}>
-            <Text style={[styles.name, isDisqualified && styles.nameDisqualified]} numberOfLines={1}>
+            <Text style={[styles.name, { color: Colors.textPrimary }, isDisqualified && { textDecorationLine: 'line-through', color: Colors.textMuted }]} numberOfLines={1}>
               {profile?.display_name ?? 'Unknown'}
-              {isCurrentUser && <Text style={styles.youBadge}> (You)</Text>}
+              {isCurrentUser && <Text style={[styles.youBadge, { color: Colors.primary }]}> (You)</Text>}
             </Text>
             {/* Trust badge */}
             <View style={[styles.trustBadge, { backgroundColor: trustBadge.bgColor }]}>
@@ -79,12 +82,12 @@ export default function LeaderboardRow({
             </View>
           </View>
           {participant.current_streak > 0 && !isDisqualified && (
-            <Text style={styles.streak}>
+            <Text style={[styles.streak, { color: Colors.textSecondary }]}>
               🔥 {participant.current_streak} day streak
             </Text>
           )}
           {isDisqualified && (
-            <Text style={styles.disqualifiedText}>Disqualified</Text>
+            <Text style={[styles.disqualifiedText, { color: Colors.error }]}>Disqualified</Text>
           )}
         </View>
 
@@ -93,12 +96,13 @@ export default function LeaderboardRow({
           <View style={styles.pointsContainer}>
             <Text style={[
               styles.points,
-              rank === 1 && !isDisqualified && styles.pointsGold,
-              isDisqualified && styles.pointsDisqualified,
+              { color: Colors.textPrimary },
+              rank === 1 && !isDisqualified && { color: Colors.accent },
+              isDisqualified && { color: Colors.textMuted, fontSize: FontSize.md },
             ]}>
               {isDisqualified ? '—' : participant.total_points}
             </Text>
-            {!isDisqualified && <Text style={styles.pointsLabel}>pts</Text>}
+            {!isDisqualified && <Text style={[styles.pointsLabel, { color: Colors.textMuted }]}>pts</Text>}
           </View>
 
           {/* Report button — only show for other users */}

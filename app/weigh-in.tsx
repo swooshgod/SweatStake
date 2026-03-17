@@ -25,7 +25,8 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSize } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
 import { logWeighIn, validateWeighIn, calculateWeightLossPct } from '@/lib/healthkit';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,6 +41,7 @@ export default function WeighInScreen() {
   }>();
   const router = useRouter();
   const { profile } = useAuth();
+  const { Colors, Shadow } = useTheme();
 
   const [weightInput, setWeightInput] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -190,20 +192,20 @@ export default function WeighInScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: Colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.iconWrap}>
+          <View style={[styles.iconWrap, { backgroundColor: Colors.primaryGlow }]}>
             <Text style={styles.icon}>⚖️</Text>
           </View>
-          <Text style={styles.title}>
+          <Text style={[styles.title, { color: Colors.textPrimary }]}>
             {isStartingWeight ? 'Log Starting Weight' : 'Weekly Weigh-In'}
           </Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.subtitle, { color: Colors.textSecondary }]}>
             {isStartingWeight
               ? 'This sets your baseline. All future progress is calculated from this weight.'
               : 'Log your weight weekly. Photo proof is required to keep it fair for everyone.'}
@@ -212,10 +214,10 @@ export default function WeighInScreen() {
 
         {/* Weight input */}
         <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>Current Weight (lbs)</Text>
-          <View style={styles.weightInputRow}>
+          <Text style={[styles.inputLabel, { color: Colors.textSecondary }]}>Current Weight (lbs)</Text>
+          <View style={[styles.weightInputRow, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <TextInput
-              style={styles.weightInput}
+              style={[styles.weightInput, { color: Colors.textPrimary }]}
               value={weightInput}
               onChangeText={setWeightInput}
               keyboardType="decimal-pad"
@@ -223,20 +225,20 @@ export default function WeighInScreen() {
               placeholderTextColor={Colors.textMuted}
               maxLength={6}
             />
-            <Text style={styles.weightUnit}>lbs</Text>
+            <Text style={[styles.weightUnit, { color: Colors.textMuted }]}>lbs</Text>
           </View>
 
           {/* Live loss preview */}
           {previewLoss !== null && (
-            <View style={styles.lossPreview}>
+            <View style={[styles.lossPreview, { backgroundColor: Colors.success + '18' }]}>
               <Ionicons name="trending-down" size={16} color={Colors.success} />
-              <Text style={styles.lossPreviewText}>
+              <Text style={[styles.lossPreviewText, { color: Colors.success }]}>
                 {previewLoss}% body weight lost so far
               </Text>
             </View>
           )}
           {!isStartingWeight && prevWeight && !isNaN(weightNum) && weightNum > prevWeight && (
-            <View style={[styles.lossPreview, { backgroundColor: '#F59E0B18' }]}>
+            <View style={[styles.lossPreview, { backgroundColor: Colors.warning + '18' }]}>
               <Ionicons name="trending-up" size={16} color={Colors.warning} />
               <Text style={[styles.lossPreviewText, { color: Colors.warning }]}>
                 Up {(weightNum - prevWeight).toFixed(1)} lbs from last week
@@ -247,8 +249,8 @@ export default function WeighInScreen() {
 
         {/* Photo proof */}
         <View style={styles.photoSection}>
-          <Text style={styles.inputLabel}>Scale Photo (Required)</Text>
-          <Text style={styles.photoHint}>
+          <Text style={[styles.inputLabel, { color: Colors.textSecondary }]}>Scale Photo (Required)</Text>
+          <Text style={[styles.photoHint, { color: Colors.textSecondary }]}>
             📸 Stand on your scale and take a photo showing the number and your feet. This verifies your weigh-in is real.
           </Text>
 
@@ -257,22 +259,22 @@ export default function WeighInScreen() {
               <Image source={{ uri: photoUri }} style={styles.photoImage} resizeMode="cover" />
               <TouchableOpacity style={styles.retakeButton} onPress={handlePickPhoto}>
                 <Ionicons name="camera" size={16} color={Colors.primary} />
-                <Text style={styles.retakeText}>Retake</Text>
+                <Text style={[styles.retakeText, { color: Colors.primary }]}>Retake</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity style={styles.photoPickerBtn} onPress={handlePickPhoto} activeOpacity={0.7}>
+            <TouchableOpacity style={[styles.photoPickerBtn, { borderColor: Colors.primaryGlow, backgroundColor: Colors.primaryGlow }]} onPress={handlePickPhoto} activeOpacity={0.7}>
               <Ionicons name="camera-outline" size={32} color={Colors.primary} />
-              <Text style={styles.photoPickerText}>Take Scale Photo</Text>
-              <Text style={styles.photoPickerSub}>Camera or library</Text>
+              <Text style={[styles.photoPickerText, { color: Colors.primary }]}>Take Scale Photo</Text>
+              <Text style={[styles.photoPickerSub, { color: Colors.textMuted }]}>Camera or library</Text>
             </TouchableOpacity>
           )}
         </View>
 
         {/* Anti-cheat notice */}
-        <View style={styles.fairnessNote}>
+        <View style={[styles.fairnessNote, { backgroundColor: Colors.success + '10', borderColor: Colors.success + '20' }]}>
           <Ionicons name="shield-checkmark" size={16} color={Colors.success} />
-          <Text style={styles.fairnessText}>
+          <Text style={[styles.fairnessText, { color: Colors.textSecondary }]}>
             Weigh-ins over 3% per week are automatically flagged. This keeps the competition fair for everyone.
           </Text>
         </View>
@@ -281,6 +283,7 @@ export default function WeighInScreen() {
         <TouchableOpacity
           style={[
             styles.submitButton,
+            { backgroundColor: Colors.primary, ...Shadow.gold },
             (!weightInput || !photoUri || uploading) && { opacity: 0.5 },
           ]}
           onPress={handleSubmit}
@@ -288,11 +291,11 @@ export default function WeighInScreen() {
           activeOpacity={0.85}
         >
           {uploading ? (
-            <ActivityIndicator color="#000" />
+            <ActivityIndicator color={Colors.textPrimary} />
           ) : (
             <>
-              <Ionicons name="checkmark-circle" size={20} color="#000" />
-              <Text style={styles.submitText}>
+              <Ionicons name="checkmark-circle" size={20} color={Colors.textPrimary} />
+              <Text style={[styles.submitText, { color: Colors.textPrimary }]}>
                 {isStartingWeight ? 'Set Starting Weight' : 'Submit Weigh-In'}
               </Text>
             </>
@@ -305,31 +308,31 @@ export default function WeighInScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   scrollContent: { padding: Spacing.xl, paddingBottom: 60 },
   header: { alignItems: 'center', marginBottom: Spacing.xxxl },
-  iconWrap: { width: 72, height: 72, borderRadius: 36, backgroundColor: Colors.primaryGlow, justifyContent: 'center', alignItems: 'center', marginBottom: Spacing.lg },
+  iconWrap: { width: 72, height: 72, borderRadius: 36, justifyContent: 'center', alignItems: 'center', marginBottom: Spacing.lg },
   icon: { fontSize: 36 },
-  title: { fontSize: FontSize.xxl, fontWeight: '800', color: Colors.textPrimary, textAlign: 'center', marginBottom: Spacing.sm },
-  subtitle: { fontSize: FontSize.sm, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20, maxWidth: 300 },
+  title: { fontSize: FontSize.xxl, fontWeight: '800', textAlign: 'center', marginBottom: Spacing.sm },
+  subtitle: { fontSize: FontSize.sm, textAlign: 'center', lineHeight: 20, maxWidth: 300 },
   inputSection: { marginBottom: Spacing.xxl },
-  inputLabel: { fontSize: FontSize.sm, fontWeight: '700', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: Spacing.md },
-  weightInputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: BorderRadius.lg, borderWidth: 2, borderColor: Colors.border, paddingHorizontal: Spacing.xl, overflow: 'hidden' },
-  weightInput: { flex: 1, fontSize: 36, fontWeight: '800', color: Colors.textPrimary, paddingVertical: Spacing.lg },
-  weightUnit: { fontSize: FontSize.lg, fontWeight: '600', color: Colors.textMuted },
-  lossPreview: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginTop: Spacing.md, backgroundColor: '#22C55E18', borderRadius: BorderRadius.md, padding: Spacing.md },
-  lossPreviewText: { fontSize: FontSize.sm, fontWeight: '600', color: Colors.success },
+  inputLabel: { fontSize: FontSize.sm, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: Spacing.md },
+  weightInputRow: { flexDirection: 'row', alignItems: 'center', borderRadius: BorderRadius.lg, borderWidth: 2, paddingHorizontal: Spacing.xl, overflow: 'hidden' },
+  weightInput: { flex: 1, fontSize: 36, fontWeight: '800', paddingVertical: Spacing.lg },
+  weightUnit: { fontSize: FontSize.lg, fontWeight: '600' },
+  lossPreview: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginTop: Spacing.md, borderRadius: BorderRadius.md, padding: Spacing.md },
+  lossPreviewText: { fontSize: FontSize.sm, fontWeight: '600' },
   photoSection: { marginBottom: Spacing.xl },
-  photoHint: { fontSize: FontSize.sm, color: Colors.textSecondary, lineHeight: 20, marginBottom: Spacing.md },
-  photoPickerBtn: { alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, paddingVertical: Spacing.xxxl, borderRadius: BorderRadius.lg, borderWidth: 2, borderColor: Colors.primaryGlow, borderStyle: 'dashed', backgroundColor: Colors.primaryGlow },
-  photoPickerText: { fontSize: FontSize.md, fontWeight: '700', color: Colors.primary },
-  photoPickerSub: { fontSize: FontSize.xs, color: Colors.textMuted },
+  photoHint: { fontSize: FontSize.sm, lineHeight: 20, marginBottom: Spacing.md },
+  photoPickerBtn: { alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, paddingVertical: Spacing.xxxl, borderRadius: BorderRadius.lg, borderWidth: 2, borderStyle: 'dashed' },
+  photoPickerText: { fontSize: FontSize.md, fontWeight: '700' },
+  photoPickerSub: { fontSize: FontSize.xs },
   photoPreview: { borderRadius: BorderRadius.lg, overflow: 'hidden', position: 'relative' },
   photoImage: { width: '100%', height: 240, borderRadius: BorderRadius.lg },
   retakeButton: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, position: 'absolute', top: Spacing.md, right: Spacing.md, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: BorderRadius.full },
-  retakeText: { fontSize: FontSize.sm, color: Colors.primary, fontWeight: '600' },
-  fairnessNote: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm, backgroundColor: '#22C55E10', borderRadius: BorderRadius.md, padding: Spacing.lg, marginBottom: Spacing.xl, borderWidth: 1, borderColor: '#22C55E20' },
-  fairnessText: { flex: 1, fontSize: FontSize.xs, color: Colors.textSecondary, lineHeight: 18 },
-  submitButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, backgroundColor: Colors.primary, paddingVertical: Spacing.lg, borderRadius: BorderRadius.lg, ...Shadow.gold },
-  submitText: { fontSize: FontSize.md, fontWeight: '800', color: '#000' },
+  retakeText: { fontSize: FontSize.sm, fontWeight: '600' },
+  fairnessNote: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm, borderRadius: BorderRadius.md, padding: Spacing.lg, marginBottom: Spacing.xl, borderWidth: 1 },
+  fairnessText: { flex: 1, fontSize: FontSize.xs, lineHeight: 18 },
+  submitButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, paddingVertical: Spacing.lg, borderRadius: BorderRadius.lg },
+  submitText: { fontSize: FontSize.md, fontWeight: '800' },
 });

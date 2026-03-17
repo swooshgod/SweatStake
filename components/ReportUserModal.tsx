@@ -19,7 +19,8 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSize } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   submitReport,
   hasAlreadyReported,
@@ -58,6 +59,7 @@ export default function ReportUserModal({
   const [submitted, setSubmitted] = useState(false);
   const [alreadyReported, setAlreadyReported] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { Colors, Shadow } = useTheme();
 
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
@@ -125,30 +127,30 @@ export default function ReportUserModal({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        style={styles.overlay}
+        style={[styles.overlay, { backgroundColor: Colors.overlay }]}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Animated.View style={[styles.sheet, { opacity: fadeAnim }]}>
+        <Animated.View style={[styles.sheet, { opacity: fadeAnim, backgroundColor: Colors.surface, ...Shadow.lg }]}>
           {/* Handle */}
-          <View style={styles.handle} />
+          <View style={[styles.handle, { backgroundColor: Colors.border }]} />
 
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={styles.title}>Report Competitor</Text>
-              <Text style={styles.subtitle}>
-                Reporting <Text style={styles.name}>{reportedDisplayName}</Text>
+              <Text style={[styles.title, { color: Colors.textPrimary }]}>Report Competitor</Text>
+              <Text style={[styles.subtitle, { color: Colors.textSecondary }]}>
+                Reporting <Text style={[styles.name, { color: Colors.primary }]}>{reportedDisplayName}</Text>
               </Text>
             </View>
-            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+            <TouchableOpacity style={[styles.closeBtn, { backgroundColor: Colors.surfaceLight }]} onPress={onClose}>
               <Ionicons name="close" size={20} color={Colors.textMuted} />
             </TouchableOpacity>
           </View>
 
           {/* Anonymous notice */}
-          <View style={styles.anonNotice}>
+          <View style={[styles.anonNotice, { backgroundColor: Colors.success + '10', borderColor: Colors.success + '20' }]}>
             <Ionicons name="shield-checkmark" size={14} color={Colors.success} />
-            <Text style={styles.anonText}>Reports are anonymous and reviewed fairly.</Text>
+            <Text style={[styles.anonText, { color: Colors.success }]}>Reports are anonymous and reviewed fairly.</Text>
           </View>
 
           {/* Already reported state */}

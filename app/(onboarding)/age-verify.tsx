@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSize } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { verifyAge, saveAgeVerification, MIN_AGE } from '@/lib/compliance';
 
 // ---------------------------------------------------------------------------
@@ -72,6 +73,7 @@ function ScrollPicker({ items, selectedIndex, onSelect, width }: ScrollPickerPro
 
 export default function AgeVerifyScreen() {
   const router = useRouter();
+  const { Colors, Shadow } = useTheme();
   const [monthIndex, setMonthIndex] = useState(0);
   const [dayIndex, setDayIndex] = useState(0);
   const [yearIndex, setYearIndex] = useState(17); // Default ~18 years ago
@@ -110,7 +112,7 @@ export default function AgeVerifyScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: Colors.background }]}>
       <StatusBar barStyle="light-content" />
 
       <ScrollView
@@ -120,12 +122,12 @@ export default function AgeVerifyScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.iconContainer}>
+          <View style={[styles.iconContainer, { backgroundColor: Colors.primary + '18' }]}>
             <Ionicons name="shield-checkmark" size={36} color={Colors.primary} />
           </View>
-          <Text style={styles.wordmark}>PODIUM</Text>
-          <Text style={styles.headline}>Age Verification</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.wordmark, { color: Colors.textMuted }]}>PODIUM</Text>
+          <Text style={[styles.headline, { color: Colors.textPrimary }]}>Age Verification</Text>
+          <Text style={[styles.subtitle, { color: Colors.textSecondary }]}>
             You must be {MIN_AGE} or older to enter paid competitions.
             Enter your date of birth to continue.
           </Text>
@@ -133,11 +135,11 @@ export default function AgeVerifyScreen() {
 
         {/* Date pickers */}
         <View style={styles.pickerSection}>
-          <Text style={styles.pickerLabel}>Date of Birth</Text>
-          <View style={styles.pickerRow}>
+          <Text style={[styles.pickerLabel, { color: Colors.textSecondary }]}>Date of Birth</Text>
+          <View style={[styles.pickerRow, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             {/* Month */}
             <View style={styles.pickerColumn}>
-              <Text style={styles.pickerColumnLabel}>Month</Text>
+              <Text style={[styles.pickerColumnLabel, { color: Colors.textMuted }]}>Month</Text>
               <View style={styles.pickerWrapper}>
                 <ScrollPicker
                   items={MONTHS}
@@ -145,13 +147,13 @@ export default function AgeVerifyScreen() {
                   onSelect={setMonthIndex}
                   width={120}
                 />
-                <View style={styles.pickerHighlight} pointerEvents="none" />
+                <View style={[styles.pickerHighlight, { borderColor: Colors.primary + '30' }]} pointerEvents="none" />
               </View>
             </View>
 
             {/* Day */}
             <View style={styles.pickerColumn}>
-              <Text style={styles.pickerColumnLabel}>Day</Text>
+              <Text style={[styles.pickerColumnLabel, { color: Colors.textMuted }]}>Day</Text>
               <View style={styles.pickerWrapper}>
                 <ScrollPicker
                   items={DAYS}
@@ -159,13 +161,13 @@ export default function AgeVerifyScreen() {
                   onSelect={setDayIndex}
                   width={64}
                 />
-                <View style={styles.pickerHighlight} pointerEvents="none" />
+                <View style={[styles.pickerHighlight, { borderColor: Colors.primary + '30' }]} pointerEvents="none" />
               </View>
             </View>
 
             {/* Year */}
             <View style={styles.pickerColumn}>
-              <Text style={styles.pickerColumnLabel}>Year</Text>
+              <Text style={[styles.pickerColumnLabel, { color: Colors.textMuted }]}>Year</Text>
               <View style={styles.pickerWrapper}>
                 <ScrollPicker
                   items={YEARS}
@@ -173,7 +175,7 @@ export default function AgeVerifyScreen() {
                   onSelect={setYearIndex}
                   width={80}
                 />
-                <View style={styles.pickerHighlight} pointerEvents="none" />
+                <View style={[styles.pickerHighlight, { borderColor: Colors.primary + '30' }]} pointerEvents="none" />
               </View>
             </View>
           </View>
@@ -181,23 +183,23 @@ export default function AgeVerifyScreen() {
 
         {/* Error */}
         {error && (
-          <View style={styles.errorBox}>
-            <Ionicons name="alert-circle" size={18} color="#FF4D4D" />
-            <Text style={styles.errorText}>{error}</Text>
+          <View style={[styles.errorBox, { backgroundColor: Colors.error + '18', borderColor: Colors.error + '40' }]}>
+            <Ionicons name="alert-circle" size={18} color={Colors.error} />
+            <Text style={[styles.errorText, { color: Colors.error }]}>{error}</Text>
           </View>
         )}
 
         {/* Success */}
         {verified && (
-          <View style={styles.successBox}>
-            <Ionicons name="checkmark-circle" size={18} color={Colors.success ?? '#22C55E'} />
-            <Text style={styles.successText}>Verified! Taking you in…</Text>
+          <View style={[styles.successBox, { backgroundColor: Colors.success + '18', borderColor: Colors.success + '40' }]}>
+            <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
+            <Text style={[styles.successText, { color: Colors.success }]}>Verified! Taking you in…</Text>
           </View>
         )}
 
         {/* Confirm button */}
         <TouchableOpacity
-          style={[styles.confirmButton, (loading || verified) && { opacity: 0.6 }]}
+          style={[styles.confirmButton, { backgroundColor: Colors.primary, ...Shadow.md }, (loading || verified) && { opacity: 0.6 }]}
           onPress={handleConfirm}
           disabled={loading || verified}
           activeOpacity={0.85}
@@ -212,7 +214,7 @@ export default function AgeVerifyScreen() {
         </TouchableOpacity>
 
         {/* Legal disclaimer */}
-        <Text style={styles.legal}>
+        <Text style={[styles.legal, { color: Colors.textMuted }]}>
           Age verification is required by law for prize competitions.{'\n'}
           Your date of birth is stored securely and never shared.
         </Text>
@@ -222,7 +224,7 @@ export default function AgeVerifyScreen() {
           style={styles.skipButton}
           onPress={() => router.replace('/(tabs)')}
         >
-          <Text style={styles.skipText}>Continue without verifying (free competitions only)</Text>
+          <Text style={[styles.skipText, { color: Colors.textMuted }]}>Continue without verifying (free competitions only)</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -234,188 +236,63 @@ export default function AgeVerifyScreen() {
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
+  container: { flex: 1 },
   scrollContent: {
     paddingHorizontal: Spacing.xl,
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingBottom: 60,
     alignItems: 'center',
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: Spacing.xxxl ?? 48,
-  },
+  header: { alignItems: 'center', marginBottom: Spacing.xxxl },
   iconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: (Colors.primary ?? '#6366F1') + '18',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing.md,
+    width: 72, height: 72, borderRadius: 36,
+    justifyContent: 'center', alignItems: 'center', marginBottom: Spacing.md,
   },
-  wordmark: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: Colors.textMuted ?? '#666',
-    letterSpacing: 6,
-    marginBottom: Spacing.xl,
-  },
-  headline: {
-    fontSize: FontSize.xxl ?? 24,
-    fontWeight: '800',
-    color: Colors.textPrimary ?? '#fff',
-    textAlign: 'center',
-    marginBottom: Spacing.md,
-  },
-  subtitle: {
-    fontSize: FontSize.sm ?? 14,
-    color: Colors.textSecondary ?? '#aaa',
-    textAlign: 'center',
-    lineHeight: 22,
-    maxWidth: 300,
-  },
-  pickerSection: {
-    width: '100%',
-    marginBottom: Spacing.xxl ?? 32,
-  },
+  wordmark: { fontSize: 14, fontWeight: '900', letterSpacing: 6, marginBottom: Spacing.xl },
+  headline: { fontSize: FontSize.xxl, fontWeight: '800', textAlign: 'center', marginBottom: Spacing.md },
+  subtitle: { fontSize: FontSize.sm, textAlign: 'center', lineHeight: 22, maxWidth: 300 },
+  pickerSection: { width: '100%', marginBottom: Spacing.xxl },
   pickerLabel: {
-    fontSize: FontSize.sm ?? 14,
-    fontWeight: '700',
-    color: Colors.textSecondary ?? '#aaa',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: Spacing.md,
-    textAlign: 'center',
+    fontSize: FontSize.sm, fontWeight: '700', textTransform: 'uppercase',
+    letterSpacing: 0.5, marginBottom: Spacing.md, textAlign: 'center',
   },
   pickerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: Spacing.sm ?? 8,
-    backgroundColor: Colors.surface ?? '#1a1a1a',
-    borderRadius: BorderRadius.xl ?? 16,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border ?? '#333',
+    flexDirection: 'row', justifyContent: 'center', gap: Spacing.sm,
+    borderRadius: BorderRadius.xl, padding: Spacing.md, borderWidth: 1,
   },
-  pickerColumn: {
-    alignItems: 'center',
-  },
+  pickerColumn: { alignItems: 'center' },
   pickerColumnLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.textMuted ?? '#666',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 4,
+    fontSize: 11, fontWeight: '600', textTransform: 'uppercase',
+    letterSpacing: 0.5, marginBottom: 4,
   },
-  pickerWrapper: {
-    height: 132,
-    overflow: 'hidden',
-    borderRadius: BorderRadius.md ?? 8,
-  },
-  picker: {
-    flexGrow: 0,
-  },
-  pickerItem: {
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: BorderRadius.sm ?? 6,
-  },
-  pickerItemSelected: {
-    backgroundColor: (Colors.primary ?? '#6366F1') + '20',
-  },
-  pickerItemText: {
-    fontSize: FontSize.sm ?? 14,
-    color: Colors.textSecondary ?? '#aaa',
-    fontWeight: '500',
-  },
-  pickerItemTextSelected: {
-    color: Colors.primary ?? '#6366F1',
-    fontWeight: '700',
-    fontSize: FontSize.md ?? 16,
-  },
+  pickerWrapper: { height: 132, overflow: 'hidden', borderRadius: BorderRadius.md },
+  picker: { flexGrow: 0 },
+  pickerItem: { height: 44, justifyContent: 'center', alignItems: 'center', borderRadius: BorderRadius.sm },
+  pickerItemSelected: {},
+  pickerItemText: { fontSize: FontSize.sm, fontWeight: '500' },
+  pickerItemTextSelected: { fontWeight: '700', fontSize: FontSize.md },
   pickerHighlight: {
-    position: 'absolute',
-    top: 44,
-    left: 0,
-    right: 0,
-    height: 44,
-    borderRadius: BorderRadius.sm ?? 6,
-    borderWidth: 1,
-    borderColor: (Colors.primary ?? '#6366F1') + '30',
-    pointerEvents: 'none',
+    position: 'absolute', top: 44, left: 0, right: 0, height: 44,
+    borderRadius: BorderRadius.sm, borderWidth: 1, pointerEvents: 'none',
   },
   errorBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs ?? 4,
-    backgroundColor: '#FF4D4D18',
-    borderRadius: BorderRadius.lg ?? 12,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.lg,
-    borderWidth: 1,
-    borderColor: '#FF4D4D40',
-    width: '100%',
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.xs,
+    borderRadius: BorderRadius.lg, paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg, marginBottom: Spacing.lg, borderWidth: 1, width: '100%',
   },
-  errorText: {
-    flex: 1,
-    fontSize: FontSize.sm ?? 14,
-    color: '#FF4D4D',
-    fontWeight: '500',
-  },
+  errorText: { flex: 1, fontSize: FontSize.sm, fontWeight: '500' },
   successBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs ?? 4,
-    backgroundColor: '#22C55E18',
-    borderRadius: BorderRadius.lg ?? 12,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.lg,
-    borderWidth: 1,
-    borderColor: '#22C55E40',
-    width: '100%',
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.xs,
+    borderRadius: BorderRadius.lg, paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg, marginBottom: Spacing.lg, borderWidth: 1, width: '100%',
   },
-  successText: {
-    fontSize: FontSize.sm ?? 14,
-    color: '#22C55E',
-    fontWeight: '600',
-  },
+  successText: { fontSize: FontSize.sm, fontWeight: '600' },
   confirmButton: {
-    width: '100%',
-    backgroundColor: Colors.primary ?? '#6366F1',
-    paddingVertical: Spacing.lg ?? 16,
-    borderRadius: BorderRadius.lg ?? 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.xl,
-    ...(Shadow?.md ?? {}),
+    width: '100%', paddingVertical: Spacing.lg, borderRadius: BorderRadius.lg,
+    alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.xl,
   },
-  confirmButtonText: {
-    color: '#fff',
-    fontSize: FontSize.md ?? 16,
-    fontWeight: '700',
-  },
-  legal: {
-    fontSize: 11,
-    color: Colors.textMuted ?? '#555',
-    textAlign: 'center',
-    lineHeight: 17,
-    marginBottom: Spacing.xl,
-  },
-  skipButton: {
-    paddingVertical: Spacing.md,
-  },
-  skipText: {
-    fontSize: FontSize.sm ?? 13,
-    color: Colors.textMuted ?? '#555',
-    textDecorationLine: 'underline',
-    textAlign: 'center',
-  },
+  confirmButtonText: { color: '#fff', fontSize: FontSize.md, fontWeight: '700' },
+  legal: { fontSize: 11, textAlign: 'center', lineHeight: 17, marginBottom: Spacing.xl },
+  skipButton: { paddingVertical: Spacing.md },
+  skipText: { fontSize: FontSize.sm, textDecorationLine: 'underline', textAlign: 'center' },
 });

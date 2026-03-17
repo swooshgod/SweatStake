@@ -181,22 +181,24 @@ export async function submitReport(
  * Award trust points for completing a clean competition (no flags).
  */
 export async function rewardCleanCompetition(userId: string): Promise<void> {
-  await supabase.rpc('adjust_trust_score', {
+  const { error } = await supabase.rpc('adjust_trust_score', {
     p_user_id: userId,
     p_delta: 3,
     p_reason: 'clean_competition_completed',
   });
+  if (error) console.warn('[Trust] rewardCleanCompetition failed:', error.message);
 }
 
 /**
  * Award trust points for connecting Apple Watch.
  */
 export async function rewardWatchConnection(userId: string): Promise<void> {
-  await supabase.rpc('adjust_trust_score', {
+  const { error } = await supabase.rpc('adjust_trust_score', {
     p_user_id: userId,
     p_delta: 5,
     p_reason: 'apple_watch_connected',
   });
+  if (error) console.warn('[Trust] rewardWatchConnection failed:', error.message);
 }
 
 /**
@@ -207,11 +209,12 @@ export async function penalizeAnomalyFlag(
   severity: 'warn' | 'disqualify'
 ): Promise<void> {
   const delta = severity === 'disqualify' ? -15 : -5;
-  await supabase.rpc('adjust_trust_score', {
+  const { error } = await supabase.rpc('adjust_trust_score', {
     p_user_id: userId,
     p_delta: delta,
     p_reason: `anomaly_flag_${severity}`,
   });
+  if (error) console.warn('[Trust] penalizeAnomalyFlag failed:', error.message);
 }
 
 /**

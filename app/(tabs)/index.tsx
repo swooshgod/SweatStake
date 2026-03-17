@@ -193,7 +193,7 @@ export default function HomeScreen() {
           router.push('/create');
         }}
       >
-        <Ionicons name="add" size={28} color="#fff" />
+        <Ionicons name="add" size={28} color={Colors.surface} />
       </TouchableOpacity>
     </View>
   );

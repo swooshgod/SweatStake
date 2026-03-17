@@ -13,13 +13,12 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Colors,
   Spacing,
   BorderRadius,
   FontSize,
-  Shadow,
   ScoringTemplates,
 } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { formatCents } from '@/lib/stripe';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
@@ -55,6 +54,7 @@ const DURATION_OPTIONS = [
 export default function CreateCompetitionScreen() {
   const router = useRouter();
   const { profile } = useAuth();
+  const { Colors, Shadow } = useTheme();
   const [submitting, setSubmitting] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [creatorTier, setCreatorTier] = useState<string | null>(null);
@@ -185,9 +185,56 @@ export default function CreateCompetitionScreen() {
     }
   };
 
+  const dynamicStyles = {
+    container: { backgroundColor: Colors.background },
+    sectionLabel: { color: Colors.textPrimary },
+    typeCard: { borderColor: Colors.border, backgroundColor: Colors.surface },
+    typeCardSelected: { borderColor: Colors.primary, backgroundColor: Colors.primary + '12' },
+    typeCardName: { color: Colors.textPrimary },
+    typeCardNameSelected: { color: Colors.primary },
+    typeCardDesc: { color: Colors.textSecondary },
+    typeCardWatch: { color: Colors.warning },
+    typeCardPhone: { color: Colors.success },
+    fieldLabel: { color: Colors.textSecondary },
+    optionalTag: { color: Colors.textMuted },
+    pill: { borderColor: Colors.border, backgroundColor: Colors.surface },
+    pillSelected: { borderColor: Colors.primary, backgroundColor: Colors.primary + '18' },
+    pillText: { color: Colors.textSecondary },
+    pillTextSelected: { color: Colors.primary },
+    customFeeRow: { backgroundColor: Colors.surface, borderColor: Colors.border },
+    customFeePrefix: { color: Colors.primary },
+    customFeeInput: { color: Colors.textPrimary },
+    toggleOption: { borderColor: Colors.border, backgroundColor: Colors.surface },
+    toggleOptionActive: { borderColor: Colors.primary, backgroundColor: Colors.primary },
+    toggleText: { color: Colors.textSecondary },
+    toggleTextActive: { color: Colors.surface },
+    textInput: { backgroundColor: Colors.surface, color: Colors.textPrimary, borderColor: Colors.border },
+    advancedToggle: { borderTopColor: Colors.border },
+    advancedToggleText: { color: Colors.textMuted },
+    counterRow: { backgroundColor: Colors.surface, borderColor: Colors.border },
+    counterBtn: { backgroundColor: Colors.surfaceLight },
+    counterValue: { color: Colors.textPrimary },
+    scoringOption: { borderColor: Colors.border, backgroundColor: Colors.surface },
+    scoringOptionSelected: { borderColor: Colors.primary, backgroundColor: Colors.primary + '08' },
+    scoringName: { color: Colors.textPrimary },
+    scoringDesc: { color: Colors.textSecondary },
+    beforePhotoToggle: { backgroundColor: Colors.surface, borderColor: Colors.border },
+    beforePhotoLabel: { color: Colors.textPrimary },
+    beforePhotoSub: { color: Colors.textSecondary },
+    toggleSwitch: { backgroundColor: Colors.border },
+    toggleSwitchOn: { backgroundColor: Colors.primary },
+    toggleKnob: { backgroundColor: Colors.surface },
+    bottomBar: { backgroundColor: Colors.surface, borderTopColor: Colors.border },
+    feePreview: { color: Colors.primary },
+    feeNote: { color: Colors.textMuted },
+    tierInfo: { backgroundColor: Colors.primaryGlow, borderColor: Colors.borderGold },
+    tierInfoText: { color: Colors.primary },
+    createButton: { backgroundColor: Colors.primary, ...Shadow.md },
+  };
+
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, dynamicStyles.container]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
@@ -196,7 +243,7 @@ export default function CreateCompetitionScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {/* ─── Section 1: What kind of competition? ─── */}
-        <Text style={styles.sectionLabel}>What kind of competition?</Text>
+        <Text style={[styles.sectionLabel, dynamicStyles.sectionLabel]}>What kind of competition?</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -207,20 +254,20 @@ export default function CreateCompetitionScreen() {
             return (
               <TouchableOpacity
                 key={comp.id}
-                style={[styles.typeCard, isSelected && styles.typeCardSelected]}
+                style={[styles.typeCard, dynamicStyles.typeCard, isSelected && dynamicStyles.typeCardSelected]}
                 activeOpacity={0.7}
                 onPress={() => selectCompType(comp)}
               >
                 <Text style={styles.typeCardIcon}>{comp.icon}</Text>
-                <Text style={[styles.typeCardName, isSelected && styles.typeCardNameSelected]}>
+                <Text style={[styles.typeCardName, dynamicStyles.typeCardName, isSelected && dynamicStyles.typeCardNameSelected]}>
                   {comp.name}
                 </Text>
-                <Text style={styles.typeCardDesc}>{comp.desc}</Text>
+                <Text style={[styles.typeCardDesc, dynamicStyles.typeCardDesc]}>{comp.desc}</Text>
                 {comp.watch && (
-                  <Text style={styles.typeCardWatch}>{'\u{231A}'} Watch</Text>
+                  <Text style={[styles.typeCardWatch, dynamicStyles.typeCardWatch]}>{'\u{231A}'} Watch</Text>
                 )}
                 {!comp.watch && (
-                  <Text style={styles.typeCardPhone}>{'\u{1F4F1}'} iPhone OK</Text>
+                  <Text style={[styles.typeCardPhone, dynamicStyles.typeCardPhone]}>{'\u{1F4F1}'} iPhone OK</Text>
                 )}
               </TouchableOpacity>
             );
@@ -228,42 +275,42 @@ export default function CreateCompetitionScreen() {
         </ScrollView>
 
         {/* ─── Section 2: Set the stakes ─── */}
-        <Text style={styles.sectionLabel}>Set the stakes</Text>
+        <Text style={[styles.sectionLabel, dynamicStyles.sectionLabel]}>Set the stakes</Text>
 
         {/* Entry Fee */}
-        <Text style={styles.fieldLabel}>Entry fee</Text>
+        <Text style={[styles.fieldLabel, dynamicStyles.fieldLabel]}>Entry fee</Text>
         <View style={styles.pillRow}>
           {FEE_OPTIONS.map((opt) => {
             const isSelected = form.entryFeeCents === opt.cents && customFee === '';
             return (
               <TouchableOpacity
                 key={opt.cents}
-                style={[styles.pill, isSelected && styles.pillSelected]}
+                style={[styles.pill, dynamicStyles.pill, isSelected && dynamicStyles.pillSelected]}
                 onPress={() => {
                   updateForm('entryFeeCents', opt.cents);
                   setCustomFee('');
                 }}
               >
-                <Text style={[styles.pillText, isSelected && styles.pillTextSelected]}>
+                <Text style={[styles.pillText, dynamicStyles.pillText, isSelected && dynamicStyles.pillTextSelected]}>
                   {opt.label}
                 </Text>
               </TouchableOpacity>
             );
           })}
           <TouchableOpacity
-            style={[styles.pill, customFee !== '' && styles.pillSelected]}
+            style={[styles.pill, dynamicStyles.pill, customFee !== '' && dynamicStyles.pillSelected]}
             onPress={() => setCustomFee(customFee || '0')}
           >
-            <Text style={[styles.pillText, customFee !== '' && styles.pillTextSelected]}>
+            <Text style={[styles.pillText, dynamicStyles.pillText, customFee !== '' && dynamicStyles.pillTextSelected]}>
               Custom
             </Text>
           </TouchableOpacity>
         </View>
         {customFee !== '' && (
-          <View style={styles.customFeeRow}>
-            <Text style={styles.customFeePrefix}>$</Text>
+          <View style={[styles.customFeeRow, dynamicStyles.customFeeRow]}>
+            <Text style={[styles.customFeePrefix, dynamicStyles.customFeePrefix]}>$</Text>
             <TextInput
-              style={styles.customFeeInput}
+              style={[styles.customFeeInput, dynamicStyles.customFeeInput]}
               value={customFee}
               onChangeText={(t) => {
                 const cleaned = t.replace(/[^0-9]/g, '');
@@ -279,17 +326,17 @@ export default function CreateCompetitionScreen() {
         )}
 
         {/* Duration */}
-        <Text style={styles.fieldLabel}>Duration</Text>
+        <Text style={[styles.fieldLabel, dynamicStyles.fieldLabel]}>Duration</Text>
         <View style={styles.pillRow}>
           {DURATION_OPTIONS.map((dur) => {
             const isSelected = selectedDuration.days === dur.days;
             return (
               <TouchableOpacity
                 key={dur.days}
-                style={[styles.pill, isSelected && styles.pillSelected]}
+                style={[styles.pill, dynamicStyles.pill, isSelected && dynamicStyles.pillSelected]}
                 onPress={() => selectDuration(dur)}
               >
-                <Text style={[styles.pillText, isSelected && styles.pillTextSelected]}>
+                <Text style={[styles.pillText, dynamicStyles.pillText, isSelected && dynamicStyles.pillTextSelected]}>
                   {dur.label}
                 </Text>
               </TouchableOpacity>
@@ -300,26 +347,26 @@ export default function CreateCompetitionScreen() {
         {/* Before Photo Toggle — only for 2+ week competitions */}
         {selectedDuration.days >= 14 && (
           <TouchableOpacity
-            style={styles.beforePhotoToggle}
+            style={[styles.beforePhotoToggle, dynamicStyles.beforePhotoToggle]}
             activeOpacity={0.7}
             onPress={() => updateForm('allowBeforePhoto', !form.allowBeforePhoto)}
           >
             <Text style={styles.beforePhotoIcon}>{'\u{1F4F8}'}</Text>
             <View style={{ flex: 1 }}>
-              <Text style={styles.beforePhotoLabel}>Allow before photos</Text>
-              <Text style={styles.beforePhotoSub}>Members can optionally share a starting-point photo</Text>
+              <Text style={[styles.beforePhotoLabel, dynamicStyles.beforePhotoLabel]}>Allow before photos</Text>
+              <Text style={[styles.beforePhotoSub, dynamicStyles.beforePhotoSub]}>Members can optionally share a starting-point photo</Text>
             </View>
-            <View style={[styles.toggleSwitch, form.allowBeforePhoto && styles.toggleSwitchOn]}>
-              <View style={[styles.toggleKnob, form.allowBeforePhoto && styles.toggleKnobOn]} />
+            <View style={[styles.toggleSwitch, dynamicStyles.toggleSwitch, form.allowBeforePhoto && dynamicStyles.toggleSwitchOn]}>
+              <View style={[styles.toggleKnob, dynamicStyles.toggleKnob, form.allowBeforePhoto && styles.toggleKnobOn]} />
             </View>
           </TouchableOpacity>
         )}
 
         {/* Public/Private Toggle */}
-        <Text style={styles.fieldLabel}>Visibility</Text>
+        <Text style={[styles.fieldLabel, dynamicStyles.fieldLabel]}>Visibility</Text>
         <View style={styles.toggleRow}>
           <TouchableOpacity
-            style={[styles.toggleOption, !form.isPrivate && styles.toggleOptionActive]}
+            style={[styles.toggleOption, dynamicStyles.toggleOption, !form.isPrivate && dynamicStyles.toggleOptionActive]}
             onPress={() => setForm((prev) => {
               const needsReset = SCORING_MODES.find((m) => m.id === prev.scoringMode)?.privateOnly;
               return {
@@ -330,24 +377,24 @@ export default function CreateCompetitionScreen() {
               };
             })}
           >
-            <Text style={[styles.toggleText, !form.isPrivate && styles.toggleTextActive]}>
+            <Text style={[styles.toggleText, dynamicStyles.toggleText, !form.isPrivate && dynamicStyles.toggleTextActive]}>
               Public
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.toggleOption, form.isPrivate && styles.toggleOptionActive]}
+            style={[styles.toggleOption, dynamicStyles.toggleOption, form.isPrivate && dynamicStyles.toggleOptionActive]}
             onPress={() => setForm((prev) => ({ ...prev, isPublic: false, isPrivate: true }))}
           >
-            <Text style={[styles.toggleText, form.isPrivate && styles.toggleTextActive]}>
+            <Text style={[styles.toggleText, dynamicStyles.toggleText, form.isPrivate && dynamicStyles.toggleTextActive]}>
               Private
             </Text>
           </TouchableOpacity>
         </View>
 
         {/* Competition Name (optional) */}
-        <Text style={styles.fieldLabel}>Competition name <Text style={styles.optionalTag}>optional</Text></Text>
+        <Text style={[styles.fieldLabel, dynamicStyles.fieldLabel]}>Competition name <Text style={[styles.optionalTag, dynamicStyles.optionalTag]}>optional</Text></Text>
         <TextInput
-          style={styles.textInput}
+          style={[styles.textInput, dynamicStyles.textInput]}
           placeholder={generateName()}
           placeholderTextColor={Colors.textMuted}
           value={form.name}
@@ -357,11 +404,11 @@ export default function CreateCompetitionScreen() {
 
         {/* ─── Section 3: Advanced (collapsed) ─── */}
         <TouchableOpacity
-          style={styles.advancedToggle}
+          style={[styles.advancedToggle, dynamicStyles.advancedToggle]}
           onPress={() => setAdvancedOpen(!advancedOpen)}
           activeOpacity={0.7}
         >
-          <Text style={styles.advancedToggleText}>Advanced</Text>
+          <Text style={[styles.advancedToggleText, dynamicStyles.advancedToggleText]}>Advanced</Text>
           <Ionicons
             name={advancedOpen ? 'chevron-up' : 'chevron-down'}
             size={18}
@@ -372,17 +419,17 @@ export default function CreateCompetitionScreen() {
         {advancedOpen && (
           <View style={styles.advancedSection}>
             {/* Max Participants */}
-            <Text style={styles.fieldLabel}>Max participants</Text>
-            <View style={styles.counterRow}>
+            <Text style={[styles.fieldLabel, dynamicStyles.fieldLabel]}>Max participants</Text>
+            <View style={[styles.counterRow, dynamicStyles.counterRow]}>
               <TouchableOpacity
-                style={styles.counterBtn}
+                style={[styles.counterBtn, dynamicStyles.counterBtn]}
                 onPress={() => updateForm('maxParticipants', Math.max(form.entryFeeCents > 0 ? MIN_PARTICIPANTS : 2, form.maxParticipants - 5))}
               >
                 <Ionicons name="remove" size={20} color={Colors.textSecondary} />
               </TouchableOpacity>
-              <Text style={styles.counterValue}>{form.maxParticipants}</Text>
+              <Text style={[styles.counterValue, dynamicStyles.counterValue]}>{form.maxParticipants}</Text>
               <TouchableOpacity
-                style={styles.counterBtn}
+                style={[styles.counterBtn, dynamicStyles.counterBtn]}
                 onPress={() => updateForm('maxParticipants', Math.min(100, form.maxParticipants + 5))}
               >
                 <Ionicons name="add" size={20} color={Colors.textSecondary} />
@@ -390,7 +437,7 @@ export default function CreateCompetitionScreen() {
             </View>
 
             {/* Scoring Mode */}
-            <Text style={styles.fieldLabel}>Scoring mode</Text>
+            <Text style={[styles.fieldLabel, dynamicStyles.fieldLabel]}>Scoring mode</Text>
             {SCORING_MODES.map((mode) => {
               const isSelected = form.scoringMode === mode.id;
               const isLocked = mode.privateOnly && !form.isPrivate;
@@ -399,7 +446,8 @@ export default function CreateCompetitionScreen() {
                   key={mode.id}
                   style={[
                     styles.scoringOption,
-                    isSelected && styles.scoringOptionSelected,
+                    dynamicStyles.scoringOption,
+                    isSelected && dynamicStyles.scoringOptionSelected,
                     isLocked && { opacity: 0.4 },
                   ]}
                   onPress={() => {
@@ -407,10 +455,10 @@ export default function CreateCompetitionScreen() {
                     else Alert.alert('Private Only', 'Switch to Private to unlock this scoring mode.');
                   }}
                 >
-                  <Text style={[styles.scoringName, isSelected && { color: Colors.primary }]}>
+                  <Text style={[styles.scoringName, dynamicStyles.scoringName, isSelected && { color: Colors.primary }]}>
                     {mode.label}
                   </Text>
-                  <Text style={styles.scoringDesc}>{mode.description}</Text>
+                  <Text style={[styles.scoringDesc, dynamicStyles.scoringDesc]}>{mode.description}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -418,31 +466,31 @@ export default function CreateCompetitionScreen() {
             {/* Payment Method */}
             {form.entryFeeCents > 0 && (
               <>
-                <Text style={styles.fieldLabel}>Payment method</Text>
+                <Text style={[styles.fieldLabel, dynamicStyles.fieldLabel]}>Payment method</Text>
                 <View style={styles.toggleRow}>
                   <TouchableOpacity
-                    style={[styles.toggleOption, form.paymentType === 'stripe' && styles.toggleOptionActive]}
+                    style={[styles.toggleOption, dynamicStyles.toggleOption, form.paymentType === 'stripe' && dynamicStyles.toggleOptionActive]}
                     onPress={() => updateForm('paymentType', 'stripe')}
                   >
                     <Ionicons name="card" size={16} color={form.paymentType === 'stripe' ? '#fff' : Colors.textSecondary} />
-                    <Text style={[styles.toggleText, form.paymentType === 'stripe' && styles.toggleTextActive]}>Stripe</Text>
+                    <Text style={[styles.toggleText, dynamicStyles.toggleText, form.paymentType === 'stripe' && dynamicStyles.toggleTextActive]}>Stripe</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.toggleOption, form.paymentType === 'usdc' && styles.toggleOptionActive]}
+                    style={[styles.toggleOption, dynamicStyles.toggleOption, form.paymentType === 'usdc' && dynamicStyles.toggleOptionActive]}
                     onPress={() => updateForm('paymentType', 'usdc')}
                   >
                     <Ionicons name="wallet" size={16} color={form.paymentType === 'usdc' ? '#fff' : Colors.textSecondary} />
-                    <Text style={[styles.toggleText, form.paymentType === 'usdc' && styles.toggleTextActive]}>USDC</Text>
+                    <Text style={[styles.toggleText, dynamicStyles.toggleText, form.paymentType === 'usdc' && dynamicStyles.toggleTextActive]}>USDC</Text>
                   </TouchableOpacity>
                 </View>
               </>
             )}
 
             {/* Tier Lock */}
-            <Text style={styles.fieldLabel}>Fitness tier restriction</Text>
+            <Text style={[styles.fieldLabel, dynamicStyles.fieldLabel]}>Fitness tier restriction</Text>
             {creatorTier && (
-              <View style={styles.tierInfo}>
-                <Text style={styles.tierInfoText}>
+              <View style={[styles.tierInfo, dynamicStyles.tierInfo]}>
+                <Text style={[styles.tierInfoText, dynamicStyles.tierInfoText]}>
                   Your tier: {FITNESS_TIERS[creatorTier as keyof typeof FITNESS_TIERS]?.emoji} {FITNESS_TIERS[creatorTier as keyof typeof FITNESS_TIERS]?.label} ({FITNESS_TIERS[creatorTier as keyof typeof FITNESS_TIERS]?.description})
                 </Text>
               </View>
@@ -452,21 +500,21 @@ export default function CreateCompetitionScreen() {
               return (
                 <TouchableOpacity
                   key={opt.id}
-                  style={[styles.scoringOption, isSelected && styles.scoringOptionSelected]}
+                  style={[styles.scoringOption, dynamicStyles.scoringOption, isSelected && dynamicStyles.scoringOptionSelected]}
                   onPress={() => setTierLock(opt.id)}
                 >
-                  <Text style={[styles.scoringName, isSelected && { color: Colors.primary }]}>
+                  <Text style={[styles.scoringName, dynamicStyles.scoringName, isSelected && { color: Colors.primary }]}>
                     {opt.id === 'none' ? '🌐' : opt.id === 'within_one' ? '🎯' : '🔒'} {opt.label}
                   </Text>
-                  <Text style={styles.scoringDesc}>{opt.description}</Text>
+                  <Text style={[styles.scoringDesc, dynamicStyles.scoringDesc]}>{opt.description}</Text>
                 </TouchableOpacity>
               );
             })}
 
             {/* Description */}
-            <Text style={styles.fieldLabel}>Description <Text style={styles.optionalTag}>optional</Text></Text>
+            <Text style={[styles.fieldLabel, dynamicStyles.fieldLabel]}>Description <Text style={[styles.optionalTag, dynamicStyles.optionalTag]}>optional</Text></Text>
             <TextInput
-              style={[styles.textInput, styles.textArea]}
+              style={[styles.textInput, dynamicStyles.textInput, styles.textArea]}
               placeholder="What's this competition about?"
               placeholderTextColor={Colors.textMuted}
               value={form.description}
@@ -480,23 +528,23 @@ export default function CreateCompetitionScreen() {
       </ScrollView>
 
       {/* Bottom CTA */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, dynamicStyles.bottomBar]}>
         {form.entryFeeCents > 0 && (
           <View>
-            <Text style={styles.feePreview}>
+            <Text style={[styles.feePreview, dynamicStyles.feePreview]}>
               {formatCents(form.entryFeeCents)} entry · {form.maxParticipants} players max · winner gets{' '}
               {formatCents(Math.floor(form.entryFeeCents * form.maxParticipants * 0.9))}
             </Text>
-            <Text style={styles.feeNote}>
+            <Text style={[styles.feeNote, dynamicStyles.feeNote]}>
               Needs {MIN_PARTICIPANTS}+ players to run · Full refund if it doesn't fill
             </Text>
-            <Text style={styles.feeNote}>
+            <Text style={[styles.feeNote, dynamicStyles.feeNote]}>
               Tiebreaker: best streak → earliest join date
             </Text>
           </View>
         )}
         <TouchableOpacity
-          style={[styles.createButton, submitting && { opacity: 0.6 }]}
+          style={[styles.createButton, dynamicStyles.createButton, submitting && { opacity: 0.6 }]}
           disabled={submitting}
           onPress={handleSubmit}
           activeOpacity={0.85}
@@ -514,7 +562,6 @@ export default function CreateCompetitionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   scrollContent: {
     padding: Spacing.lg,
@@ -523,7 +570,6 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: FontSize.xl,
     fontWeight: '800',
-    color: Colors.textPrimary,
     marginBottom: Spacing.lg,
     marginTop: Spacing.lg,
   },
@@ -537,13 +583,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
     gap: 4,
-  },
-  typeCardSelected: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary + '12',
   },
   typeCardIcon: {
     fontSize: 28,
@@ -552,32 +592,24 @@ const styles = StyleSheet.create({
   typeCardName: {
     fontSize: FontSize.md,
     fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  typeCardNameSelected: {
-    color: Colors.primary,
   },
   typeCardDesc: {
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
     lineHeight: 15,
   },
   typeCardWatch: {
     fontSize: FontSize.xs,
-    color: Colors.warning,
     fontWeight: '600',
     marginTop: 4,
   },
   typeCardPhone: {
     fontSize: FontSize.xs,
-    color: Colors.success,
     fontWeight: '600',
     marginTop: 4,
   },
   fieldLabel: {
     fontSize: FontSize.sm,
     fontWeight: '700',
-    color: Colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: Spacing.sm,
@@ -587,7 +619,6 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     textTransform: 'none',
     letterSpacing: 0,
-    color: Colors.textMuted,
   },
   pillRow: {
     flexDirection: 'row',
@@ -599,41 +630,27 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.full,
     borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-  },
-  pillSelected: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary + '18',
   },
   pillText: {
     fontSize: FontSize.md,
     fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  pillTextSelected: {
-    color: Colors.primary,
   },
   customFeeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: Spacing.sm,
-    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
     paddingHorizontal: Spacing.lg,
   },
   customFeePrefix: {
     fontSize: FontSize.xl,
     fontWeight: '700',
-    color: Colors.primary,
   },
   customFeeInput: {
     flex: 1,
     fontSize: FontSize.xl,
     fontWeight: '700',
-    color: Colors.textPrimary,
     paddingVertical: Spacing.md,
     paddingLeft: Spacing.xs,
   },
@@ -650,30 +667,17 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.lg,
     borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-  },
-  toggleOptionActive: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary,
   },
   toggleText: {
     fontSize: FontSize.md,
     fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  toggleTextActive: {
-    color: '#fff',
   },
   textInput: {
-    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   textArea: {
     height: 80,
@@ -686,12 +690,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
     marginTop: Spacing.xxl,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
   },
   advancedToggleText: {
     fontSize: FontSize.md,
     fontWeight: '600',
-    color: Colors.textMuted,
   },
   advancedSection: {
     paddingBottom: Spacing.lg,
@@ -701,24 +703,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.xxl,
-    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
     paddingVertical: Spacing.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   counterBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.surfaceLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   counterValue: {
     fontSize: FontSize.xxl,
     fontWeight: '800',
-    color: Colors.textPrimary,
     minWidth: 50,
     textAlign: 'center',
   },
@@ -726,23 +724,15 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
     marginBottom: Spacing.sm,
-  },
-  scoringOptionSelected: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary + '08',
   },
   scoringName: {
     fontSize: FontSize.md,
     fontWeight: '700',
-    color: Colors.textPrimary,
     marginBottom: 2,
   },
   scoringDesc: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     lineHeight: 18,
   },
   beforePhotoToggle: {
@@ -751,10 +741,8 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     padding: Spacing.lg,
     marginTop: Spacing.xl,
-    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   beforePhotoIcon: {
     fontSize: 24,
@@ -762,29 +750,23 @@ const styles = StyleSheet.create({
   beforePhotoLabel: {
     fontSize: FontSize.md,
     fontWeight: '600',
-    color: Colors.textPrimary,
   },
   beforePhotoSub: {
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
     marginTop: 2,
   },
   toggleSwitch: {
     width: 44,
     height: 26,
     borderRadius: 13,
-    backgroundColor: Colors.border,
     padding: 2,
     justifyContent: 'center',
   },
-  toggleSwitchOn: {
-    backgroundColor: Colors.primary,
-  },
+  toggleSwitchOn: {},
   toggleKnob: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#fff',
   },
   toggleKnobOn: {
     alignSelf: 'flex-end',
@@ -793,33 +775,26 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     padding: Spacing.lg,
     paddingBottom: 34,
-    backgroundColor: Colors.surface,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
     gap: Spacing.md,
   },
   feePreview: {
     fontSize: FontSize.sm,
     fontWeight: '700',
-    color: Colors.primary,
     marginBottom: 2,
   },
   feeNote: {
     fontSize: FontSize.xs,
-    color: Colors.textMuted,
     marginTop: 1,
   },
   tierInfo: {
-    backgroundColor: Colors.primaryGlow,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     marginBottom: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.borderGold,
   },
   tierInfoText: {
     fontSize: FontSize.sm,
-    color: Colors.primary,
     fontWeight: '600',
   },
   createButton: {
@@ -827,10 +802,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.primary,
     paddingVertical: Spacing.lg,
     borderRadius: BorderRadius.lg,
-    ...Shadow.md,
   },
   createButtonText: {
     color: '#fff',

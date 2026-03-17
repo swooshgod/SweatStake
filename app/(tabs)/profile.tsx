@@ -11,7 +11,8 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, FontSize, Shadow, Gradients } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSize, Gradients } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/hooks/useAuth';
 import { isHealthKitAvailable, requestHealthKitPermissions } from '@/lib/healthkit';
 import { formatCents } from '@/lib/stripe';
@@ -19,6 +20,7 @@ import { getCreditsBalance, getCreditsDisplay } from '@/lib/prizes';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { Colors, Shadow } = useTheme();
   const { profile, isAuthenticated, signOut } = useAuth();
   const [creditsBalance, setCreditsBalance] = useState<number>(0);
 
@@ -28,21 +30,102 @@ export default function ProfileScreen() {
     }
   }, [profile?.id]);
 
+  const dynamicStyles = {
+    container: {
+      backgroundColor: Colors.background,
+    },
+    centered: {
+      backgroundColor: Colors.background,
+    },
+    signInIconWrap: {
+      backgroundColor: Colors.primaryGlow,
+    },
+    signInTitle: {
+      color: Colors.textPrimary,
+    },
+    signInSub: {
+      color: Colors.textSecondary,
+    },
+    signInButton: {
+      backgroundColor: Colors.primary,
+      ...Shadow.gold,
+    },
+    signInButtonText: {
+      color: Colors.textPrimary,
+    },
+    creditsBanner: {
+      ...Shadow.gold,
+    },
+    statCard: {
+      backgroundColor: Colors.surface,
+      borderColor: Colors.border,
+      ...Shadow.sm,
+    },
+    statCardGold: {
+      borderColor: Colors.borderGold,
+      backgroundColor: Colors.primaryGlow,
+    },
+    statValue: {
+      color: Colors.textPrimary,
+    },
+    statLabel: {
+      color: Colors.textMuted,
+    },
+    earningsCard: {
+      backgroundColor: Colors.surface,
+      borderColor: Colors.borderGold,
+      ...Shadow.goldSm,
+    },
+    earningsLabel: {
+      color: Colors.textMuted,
+    },
+    menuSectionTitle: {
+      color: Colors.textMuted,
+    },
+    menuItem: {
+      backgroundColor: Colors.surface,
+      borderColor: Colors.border,
+      ...Shadow.sm,
+    },
+    menuItemGold: {
+      borderColor: Colors.borderGold,
+      backgroundColor: Colors.primaryGlow,
+    },
+    menuItemTitle: {
+      color: Colors.textPrimary,
+    },
+    menuItemSubtitle: {
+      color: Colors.textSecondary,
+    },
+    displayName: {
+      color: Colors.textPrimary,
+    },
+    username: {
+      color: Colors.textMuted,
+    },
+    signOutText: {
+      color: Colors.error,
+    },
+    version: {
+      color: Colors.textMuted,
+    },
+  };
+
   if (!isAuthenticated || !profile) {
     return (
-      <View style={styles.centered}>
-        <View style={styles.signInIconWrap}>
+      <View style={[styles.centered, dynamicStyles.centered]}>
+        <View style={[styles.signInIconWrap, dynamicStyles.signInIconWrap]}>
           <Ionicons name="person-circle-outline" size={72} color={Colors.primary} />
         </View>
-        <Text style={styles.signInTitle}>Join the Competition</Text>
-        <Text style={styles.signInSub}>Sign in to track your wins, earnings, and stats.</Text>
+        <Text style={[styles.signInTitle, dynamicStyles.signInTitle]}>Join the Competition</Text>
+        <Text style={[styles.signInSub, dynamicStyles.signInSub]}>Sign in to track your wins, earnings, and stats.</Text>
         <TouchableOpacity
-          style={styles.signInButton}
+          style={[styles.signInButton, dynamicStyles.signInButton]}
           onPress={() => router.push('/(auth)/welcome')}
           activeOpacity={0.85}
         >
-          <Text style={styles.signInButtonText}>Sign In</Text>
-          <Ionicons name="arrow-forward" size={18} color="#000" />
+          <Text style={[styles.signInButtonText, dynamicStyles.signInButtonText]}>Sign In</Text>
+          <Ionicons name="arrow-forward" size={18} color={Colors.textPrimary} />
         </TouchableOpacity>
       </View>
     );
@@ -64,7 +147,7 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, dynamicStyles.container]}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
@@ -82,15 +165,15 @@ export default function ProfileScreen() {
             </Text>
           </LinearGradient>
         )}
-        <Text style={styles.displayName}>{profile.display_name ?? profile.username ?? 'Competitor'}</Text>
+        <Text style={[styles.displayName, dynamicStyles.displayName]}>{profile.display_name ?? profile.username ?? 'Competitor'}</Text>
         {profile.username && (
-          <Text style={styles.username}>@{profile.username}</Text>
+          <Text style={[styles.username, dynamicStyles.username]}>@{profile.username}</Text>
         )}
       </View>
 
       {/* ─── Credits Banner ─── */}
       {creditsBalance > 0 && (
-        <TouchableOpacity style={styles.creditsBanner} activeOpacity={0.85}>
+        <TouchableOpacity style={[styles.creditsBanner, dynamicStyles.creditsBanner]} activeOpacity={0.85}>
           <LinearGradient
             colors={[Colors.primaryDark, Colors.primary]}
             start={{ x: 0, y: 0 }}
@@ -111,29 +194,29 @@ export default function ProfileScreen() {
 
       {/* ─── Stats Row ─── */}
       <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{profile.competitions_entered}</Text>
-          <Text style={styles.statLabel}>Competed</Text>
+        <View style={[styles.statCard, dynamicStyles.statCard]}>
+          <Text style={[styles.statValue, dynamicStyles.statValue]}>{profile.competitions_entered}</Text>
+          <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Competed</Text>
         </View>
-        <View style={[styles.statCard, styles.statCardGold]}>
+        <View style={[styles.statCard, dynamicStyles.statCard, dynamicStyles.statCardGold]}>
           <Text style={[styles.statValue, { color: Colors.primary }]}>
             {profile.competitions_won}
           </Text>
-          <Text style={styles.statLabel}>Won 🏆</Text>
+          <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Won 🏆</Text>
         </View>
-        <View style={styles.statCard}>
+        <View style={[styles.statCard, dynamicStyles.statCard]}>
           <Text style={[styles.statValue, { color: Colors.success }]}>
             {winRate}%
           </Text>
-          <Text style={styles.statLabel}>Win Rate</Text>
+          <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Win Rate</Text>
         </View>
       </View>
 
       {/* ─── Total Earnings ─── */}
       {profile.total_winnings > 0 && (
-        <View style={styles.earningsCard}>
+        <View style={[styles.earningsCard, dynamicStyles.earningsCard]}>
           <View>
-            <Text style={styles.earningsLabel}>Total Earnings</Text>
+            <Text style={[styles.earningsLabel, dynamicStyles.earningsLabel]}>Total Earnings</Text>
             <Text style={styles.earningsAmount}>
               {formatCents(profile.total_winnings * 100)}
             </Text>
@@ -144,15 +227,15 @@ export default function ProfileScreen() {
 
       {/* ─── Connected Apps ─── */}
       <View style={styles.menuSection}>
-        <Text style={styles.menuSectionTitle}>Connected Apps</Text>
+        <Text style={[styles.menuSectionTitle, dynamicStyles.menuSectionTitle]}>Connected Apps</Text>
         {isHealthKitAvailable() && (
-          <TouchableOpacity style={styles.menuItem} onPress={handleConnectHealth} activeOpacity={0.7}>
+          <TouchableOpacity style={[styles.menuItem, dynamicStyles.menuItem]} onPress={handleConnectHealth} activeOpacity={0.7}>
             <View style={[styles.menuIconBg, { backgroundColor: '#FF375F18' }]}>
               <Ionicons name="heart" size={20} color="#FF375F" />
             </View>
             <View style={styles.menuItemContent}>
-              <Text style={styles.menuItemTitle}>Apple Health</Text>
-              <Text style={styles.menuItemSubtitle}>Auto-sync workouts & steps</Text>
+              <Text style={[styles.menuItemTitle, dynamicStyles.menuItemTitle]}>Apple Health</Text>
+              <Text style={[styles.menuItemSubtitle, dynamicStyles.menuItemSubtitle]}>Auto-sync workouts & steps</Text>
             </View>
             <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
           </TouchableOpacity>
@@ -161,24 +244,24 @@ export default function ProfileScreen() {
 
       {/* ─── Wallet ─── */}
       <View style={styles.menuSection}>
-        <Text style={styles.menuSectionTitle}>Wallet</Text>
-        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+        <Text style={[styles.menuSectionTitle, dynamicStyles.menuSectionTitle]}>Wallet</Text>
+        <TouchableOpacity style={[styles.menuItem, dynamicStyles.menuItem]} activeOpacity={0.7}>
           <View style={[styles.menuIconBg, { backgroundColor: '#6772E518' }]}>
             <Ionicons name="card" size={20} color="#6772E5" />
           </View>
           <View style={styles.menuItemContent}>
-            <Text style={styles.menuItemTitle}>Payment Methods</Text>
-            <Text style={styles.menuItemSubtitle}>Cards, Apple Pay & bank transfers</Text>
+            <Text style={[styles.menuItemTitle, dynamicStyles.menuItemTitle]}>Payment Methods</Text>
+            <Text style={[styles.menuItemSubtitle, dynamicStyles.menuItemSubtitle]}>Cards, Apple Pay & bank transfers</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+        <TouchableOpacity style={[styles.menuItem, dynamicStyles.menuItem]} activeOpacity={0.7}>
           <View style={[styles.menuIconBg, { backgroundColor: '#2775CA18' }]}>
             <Ionicons name="wallet" size={20} color="#2775CA" />
           </View>
           <View style={styles.menuItemContent}>
-            <Text style={styles.menuItemTitle}>USDC Wallet</Text>
-            <Text style={styles.menuItemSubtitle}>
+            <Text style={[styles.menuItemTitle, dynamicStyles.menuItemTitle]}>USDC Wallet</Text>
+            <Text style={[styles.menuItemSubtitle, dynamicStyles.menuItemSubtitle]}>
               {profile.wallet_address
                 ? `${profile.wallet_address.slice(0, 6)}...${profile.wallet_address.slice(-4)}`
                 : 'Not connected — tap to add'}
@@ -187,13 +270,13 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
         </TouchableOpacity>
         {credits.canRedeem && (
-          <TouchableOpacity style={[styles.menuItem, styles.menuItemGold]} activeOpacity={0.7}>
+          <TouchableOpacity style={[styles.menuItem, dynamicStyles.menuItem, dynamicStyles.menuItemGold]} activeOpacity={0.7}>
             <View style={[styles.menuIconBg, { backgroundColor: Colors.primaryGlow }]}>
               <Ionicons name="gift" size={20} color={Colors.primary} />
             </View>
             <View style={styles.menuItemContent}>
               <Text style={[styles.menuItemTitle, { color: Colors.primary }]}>Redeem Credits</Text>
-              <Text style={styles.menuItemSubtitle}>{credits.label} ready to cash out</Text>
+              <Text style={[styles.menuItemSubtitle, dynamicStyles.menuItemSubtitle]}>{credits.label} ready to cash out</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={Colors.primary} />
           </TouchableOpacity>
@@ -202,18 +285,18 @@ export default function ProfileScreen() {
 
       {/* ─── Settings ─── */}
       <View style={styles.menuSection}>
-        <Text style={styles.menuSectionTitle}>Settings</Text>
-        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+        <Text style={[styles.menuSectionTitle, dynamicStyles.menuSectionTitle]}>Settings</Text>
+        <TouchableOpacity style={[styles.menuItem, dynamicStyles.menuItem]} activeOpacity={0.7}>
           <View style={[styles.menuIconBg, { backgroundColor: Colors.textMuted + '18' }]}>
             <Ionicons name="notifications" size={20} color={Colors.textMuted} />
           </View>
           <View style={styles.menuItemContent}>
-            <Text style={styles.menuItemTitle}>Notifications</Text>
+            <Text style={[styles.menuItemTitle, dynamicStyles.menuItemTitle]}>Notifications</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.menuItem}
+          style={[styles.menuItem, dynamicStyles.menuItem]}
           activeOpacity={0.7}
           onPress={() => router.push('/(onboarding)/age-verify')}
         >
@@ -221,17 +304,17 @@ export default function ProfileScreen() {
             <Ionicons name="shield-checkmark" size={20} color={Colors.success} />
           </View>
           <View style={styles.menuItemContent}>
-            <Text style={styles.menuItemTitle}>Age Verification</Text>
-            <Text style={styles.menuItemSubtitle}>Required for paid competitions</Text>
+            <Text style={[styles.menuItemTitle, dynamicStyles.menuItemTitle]}>Age Verification</Text>
+            <Text style={[styles.menuItemSubtitle, dynamicStyles.menuItemSubtitle]}>Required for paid competitions</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+        <TouchableOpacity style={[styles.menuItem, dynamicStyles.menuItem]} activeOpacity={0.7}>
           <View style={[styles.menuIconBg, { backgroundColor: Colors.textMuted + '18' }]}>
             <Ionicons name="document-text" size={20} color={Colors.textMuted} />
           </View>
           <View style={styles.menuItemContent}>
-            <Text style={styles.menuItemTitle}>Terms & Privacy</Text>
+            <Text style={[styles.menuItemTitle, dynamicStyles.menuItemTitle]}>Terms & Privacy</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
         </TouchableOpacity>
@@ -249,11 +332,11 @@ export default function ProfileScreen() {
         activeOpacity={0.7}
       >
         <Ionicons name="log-out-outline" size={18} color={Colors.error} />
-        <Text style={styles.signOutText}>Sign Out</Text>
+        <Text style={[styles.signOutText, dynamicStyles.signOutText]}>Sign Out</Text>
       </TouchableOpacity>
 
       {/* Version */}
-      <Text style={styles.version}>Podium v1.0.0</Text>
+      <Text style={[styles.version, dynamicStyles.version]}>Podium v1.0.0</Text>
     </ScrollView>
   );
 }
@@ -261,7 +344,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   scrollContent: {
     padding: Spacing.lg,
@@ -271,14 +353,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.background,
     padding: Spacing.xxxl,
   },
   signInIconWrap: {
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: Colors.primaryGlow,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacing.xl,
@@ -286,12 +366,10 @@ const styles = StyleSheet.create({
   signInTitle: {
     fontSize: FontSize.xxl,
     fontWeight: '800',
-    color: Colors.textPrimary,
     marginBottom: Spacing.sm,
   },
   signInSub: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: Spacing.xxxl,
@@ -301,14 +379,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.primary,
     paddingHorizontal: Spacing.xxxl,
     paddingVertical: Spacing.lg,
     borderRadius: BorderRadius.lg,
-    ...Shadow.gold,
   },
   signInButtonText: {
-    color: '#000',
     fontSize: FontSize.md,
     fontWeight: '800',
   },
@@ -334,19 +409,16 @@ const styles = StyleSheet.create({
   displayName: {
     fontSize: FontSize.xxl,
     fontWeight: '800',
-    color: Colors.textPrimary,
     letterSpacing: -0.5,
   },
   username: {
     fontSize: FontSize.sm,
-    color: Colors.textMuted,
     marginTop: Spacing.xs,
   },
   creditsBanner: {
     marginBottom: Spacing.xl,
     borderRadius: BorderRadius.xl,
     overflow: 'hidden',
-    ...Shadow.gold,
   },
   creditsBannerGradient: {
     flexDirection: 'row',
@@ -390,45 +462,32 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
-    ...Shadow.sm,
-  },
-  statCardGold: {
-    borderColor: Colors.borderGold,
-    backgroundColor: Colors.primaryGlow,
   },
   statValue: {
     fontSize: FontSize.xxl,
     fontWeight: '900',
-    color: Colors.textPrimary,
   },
   statLabel: {
     fontSize: FontSize.xs,
     fontWeight: '600',
-    color: Colors.textMuted,
     marginTop: Spacing.xs,
   },
   earningsCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.xl,
     marginBottom: Spacing.xl,
     borderWidth: 1,
-    borderColor: Colors.borderGold,
-    ...Shadow.goldSm,
   },
   earningsLabel: {
     fontSize: FontSize.xs,
     fontWeight: '700',
-    color: Colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
@@ -436,7 +495,7 @@ const styles = StyleSheet.create({
   earningsAmount: {
     fontSize: FontSize.xxxl,
     fontWeight: '900',
-    color: Colors.primary,
+    color: '#F5A623',
   },
   menuSection: {
     marginBottom: Spacing.xxl,
@@ -444,7 +503,6 @@ const styles = StyleSheet.create({
   menuSectionTitle: {
     fontSize: FontSize.xs,
     fontWeight: '700',
-    color: Colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: Spacing.md,
@@ -453,17 +511,10 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.border,
-    ...Shadow.sm,
-  },
-  menuItemGold: {
-    borderColor: Colors.borderGold,
-    backgroundColor: Colors.primaryGlow,
   },
   menuIconBg: {
     width: 40,
@@ -479,11 +530,9 @@ const styles = StyleSheet.create({
   menuItemTitle: {
     fontSize: FontSize.md,
     fontWeight: '600',
-    color: Colors.textPrimary,
   },
   menuItemSubtitle: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     marginTop: 2,
   },
   signOutButton: {
@@ -497,12 +546,10 @@ const styles = StyleSheet.create({
   signOutText: {
     fontSize: FontSize.md,
     fontWeight: '600',
-    color: Colors.error,
   },
   version: {
     textAlign: 'center',
     fontSize: FontSize.xs,
-    color: Colors.textMuted,
     marginTop: Spacing.sm,
   },
 });

@@ -22,7 +22,7 @@ function TabHeader() {
         <Ionicons
           name={isDark ? 'sunny' : 'moon'}
           size={18}
-          color={isDark ? '#F5C518' : '#7C3AED'}
+          color={isDark ? Colors.accentGold : Colors.accentPurple}
         />
       </TouchableOpacity>
     </View>

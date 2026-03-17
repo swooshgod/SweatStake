@@ -8,6 +8,7 @@ export interface Profile {
   total_winnings: number;
   competitions_entered: number;
   competitions_won: number;
+  trust_score: number;
   created_at: string;
 }
 
@@ -145,6 +146,7 @@ export interface Participant {
   current_streak: number;
   best_streak: number;
   rank: number | null;
+  disqualified?: boolean;
   // Joined fields
   profile?: Profile;
 }

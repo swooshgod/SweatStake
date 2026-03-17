@@ -39,6 +39,7 @@ export const LightColors = {
   border:       '#E5E2DC',
   borderLight:  '#F0EDE8',
   borderAccent: 'rgba(255, 90, 31, 0.25)',
+  borderGold:   'rgba(255, 90, 31, 0.30)',
 
   // Overlay
   overlay:      'rgba(0, 0, 0, 0.5)',
@@ -81,6 +82,7 @@ export const DarkColors = {
   border:       '#242424',
   borderLight:  '#1A1A1A',
   borderAccent: 'rgba(255, 90, 31, 0.25)',
+  borderGold:   'rgba(255, 90, 31, 0.35)',
 
   // Overlay
   overlay:      'rgba(0, 0, 0, 0.75)',

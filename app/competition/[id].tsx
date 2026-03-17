@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, BorderRadius, FontSize, Shadow, CompetitionTypes } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSize, CompetitionTypes } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { formatCents, formatPrizePool } from '@/lib/stripe';
 import { useAuth } from '@/hooks/useAuth';
 import { useCompetitionDetail } from '@/hooks/useCompetitions';
@@ -28,18 +29,21 @@ import { SCORING_MODES } from '@/lib/types';
 
 type Tab = 'leaderboard' | 'progress' | 'rules';
 
-const SCORING_MODE_COLORS: Record<ScoringMode, string> = {
+const SCORING_MODE_COLORS: Partial<Record<ScoringMode, string>> = {
   relative_improvement: '#3B82F6',
   raw_steps: '#8B5CF6',
   raw_miles: '#EC4899',
   raw_calories: '#F59E0B',
   raw_workouts: '#10B981',
+  raw_active_minutes: '#6366F1',
+  raw_weight_loss_pct: '#EC4899',
 };
 
 export default function CompetitionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { profile } = useAuth();
+  const { Colors, Shadow } = useTheme();
   const { competition, participants, loading, refetch } = useCompetitionDetail(id);
   const [activeTab, setActiveTab] = useState<Tab>('leaderboard');
   const [todayEntries, setTodayEntries] = useState<DailyLogEntries>({});
@@ -232,7 +236,7 @@ export default function CompetitionDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { backgroundColor: Colors.background }]}>
         <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
@@ -240,9 +244,9 @@ export default function CompetitionDetailScreen() {
 
   if (!competition) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { backgroundColor: Colors.background }]}>
         <Ionicons name="alert-circle-outline" size={48} color={Colors.textMuted} />
-        <Text style={styles.errorText}>Competition not found</Text>
+        <Text style={[styles.errorText, { color: Colors.textMuted }]}>Competition not found</Text>
       </View>
     );
   }
@@ -251,44 +255,44 @@ export default function CompetitionDetailScreen() {
   const isPaid = competition.entry_fee_cents > 0;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: Colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Competition header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: Colors.surface }, Shadow.sm]}>
           <View style={[styles.typeBadge, { backgroundColor: typeInfo.color + '18' }]}>
             <Text style={styles.typeEmoji}>{typeInfo.emoji}</Text>
             <Text style={[styles.typeLabel, { color: typeInfo.color }]}>{typeInfo.label}</Text>
           </View>
-          <Text style={styles.competitionName}>{competition.name}</Text>
+          <Text style={[styles.competitionName, { color: Colors.textPrimary }]}>{competition.name}</Text>
 
           {competition.description && (
-            <Text style={styles.description}>{competition.description}</Text>
+            <Text style={[styles.description, { color: Colors.textSecondary }]}>{competition.description}</Text>
           )}
 
           {/* Stats bar */}
-          <View style={styles.statsBar}>
+          <View style={[styles.statsBar, { backgroundColor: Colors.background }]}>
             <View style={styles.statItem}>
-              <Text style={styles.statItemValue}>
+              <Text style={[styles.statItemValue, { color: Colors.textPrimary }]}>
                 {isPaid
                   ? competitionPrizeInCredits(Math.floor(competition.prize_pool_cents * 0.9))
                   : 'Free'}
               </Text>
-              <Text style={styles.statItemLabel}>Prize</Text>
+              <Text style={[styles.statItemLabel, { color: Colors.textMuted }]}>Prize</Text>
             </View>
-            <View style={styles.statDivider} />
+            <View style={[styles.statDivider, { backgroundColor: Colors.border }]} />
             <View style={styles.statItem}>
-              <Text style={styles.statItemValue}>{participants.length}/{competition.max_participants}</Text>
-              <Text style={styles.statItemLabel}>Players</Text>
+              <Text style={[styles.statItemValue, { color: Colors.textPrimary }]}>{participants.length}/{competition.max_participants}</Text>
+              <Text style={[styles.statItemLabel, { color: Colors.textMuted }]}>Players</Text>
             </View>
-            <View style={styles.statDivider} />
+            <View style={[styles.statDivider, { backgroundColor: Colors.border }]} />
             <View style={styles.statItem}>
-              <Text style={styles.statItemValue}>{daysLeft}d</Text>
-              <Text style={styles.statItemLabel}>Left</Text>
+              <Text style={[styles.statItemValue, { color: Colors.textPrimary }]}>{daysLeft}d</Text>
+              <Text style={[styles.statItemLabel, { color: Colors.textMuted }]}>Left</Text>
             </View>
-            <View style={styles.statDivider} />
+            <View style={[styles.statDivider, { backgroundColor: Colors.border }]} />
             <View style={styles.statItem}>
-              <Text style={styles.statItemValue}>{totalDays}d</Text>
-              <Text style={styles.statItemLabel}>Total</Text>
+              <Text style={[styles.statItemValue, { color: Colors.textPrimary }]}>{totalDays}d</Text>
+              <Text style={[styles.statItemLabel, { color: Colors.textMuted }]}>Total</Text>
             </View>
           </View>
 
@@ -296,7 +300,7 @@ export default function CompetitionDetailScreen() {
           <View style={styles.actionRow}>
             {!myParticipant && competition.status === 'open' && (
               <TouchableOpacity
-                style={[styles.joinButton, joining && { opacity: 0.6 }]}
+                style={[styles.joinButton, { backgroundColor: Colors.primary }, Shadow.md, joining && { opacity: 0.6 }]}
                 onPress={handleJoin}
                 disabled={joining}
               >
@@ -312,29 +316,29 @@ export default function CompetitionDetailScreen() {
                 )}
               </TouchableOpacity>
             )}
-            <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
+            <TouchableOpacity style={[styles.shareButton, { borderColor: Colors.primary + '40' }]} onPress={handleShare}>
               <Ionicons name="share-outline" size={18} color={Colors.primary} />
-              <Text style={styles.shareButtonText}>Invite</Text>
+              <Text style={[styles.shareButtonText, { color: Colors.primary }]}>Invite</Text>
             </TouchableOpacity>
           </View>
 
           {/* Age/region disclaimer for paid competitions */}
           {isPaid && !myParticipant && (
-            <Text style={styles.complianceNote}>
+            <Text style={[styles.complianceNote, { color: Colors.textMuted }]}>
               🔒 18+ only · Not available in all regions · Skill-based competition
             </Text>
           )}
         </View>
 
         {/* Tab bar */}
-        <View style={styles.tabBar}>
+        <View style={[styles.tabBar, { backgroundColor: Colors.surface }, Shadow.sm]}>
           {(['leaderboard', 'progress', 'rules'] as Tab[]).map((tab) => (
             <TouchableOpacity
               key={tab}
-              style={[styles.tab, activeTab === tab && styles.tabActive]}
+              style={[styles.tab, activeTab === tab && { borderBottomColor: Colors.primary }]}
               onPress={() => setActiveTab(tab)}
             >
-              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+              <Text style={[styles.tabText, { color: Colors.textMuted }, activeTab === tab && { color: Colors.primary }]}>
                 {tab === 'leaderboard' ? 'Leaderboard' : tab === 'progress' ? 'My Progress' : 'Rules'}
               </Text>
             </TouchableOpacity>
@@ -345,7 +349,7 @@ export default function CompetitionDetailScreen() {
         {activeTab === 'leaderboard' && (
           <View style={styles.tabContent}>
             {participants.length > 0 ? (
-              <View style={styles.leaderboardCard}>
+              <View style={[styles.leaderboardCard, { backgroundColor: Colors.surface }, Shadow.md]}>
                 {participants.map((p) => (
                   <LeaderboardRow
                     key={p.id}
@@ -357,7 +361,7 @@ export default function CompetitionDetailScreen() {
             ) : (
               <View style={styles.emptyTab}>
                 <Ionicons name="people-outline" size={48} color={Colors.textMuted} />
-                <Text style={styles.emptyTabText}>No participants yet</Text>
+                <Text style={[styles.emptyTabText, { color: Colors.textMuted }]}>No participants yet</Text>
               </View>
             )}
           </View>
@@ -368,21 +372,21 @@ export default function CompetitionDetailScreen() {
             {myParticipant ? (
               <>
                 <View style={styles.progressSummary}>
-                  <View style={styles.progressStat}>
-                    <Text style={styles.progressStatValue}>#{myParticipant.rank ?? '—'}</Text>
-                    <Text style={styles.progressStatLabel}>Rank</Text>
+                  <View style={[styles.progressStat, { backgroundColor: Colors.surface }, Shadow.sm]}>
+                    <Text style={[styles.progressStatValue, { color: Colors.textPrimary }]}>#{myParticipant.rank ?? '—'}</Text>
+                    <Text style={[styles.progressStatLabel, { color: Colors.textMuted }]}>Rank</Text>
                   </View>
-                  <View style={styles.progressStat}>
+                  <View style={[styles.progressStat, { backgroundColor: Colors.surface }, Shadow.sm]}>
                     <Text style={[styles.progressStatValue, { color: Colors.primary }]}>
                       {myParticipant.total_points}
                     </Text>
-                    <Text style={styles.progressStatLabel}>Points</Text>
+                    <Text style={[styles.progressStatLabel, { color: Colors.textMuted }]}>Points</Text>
                   </View>
-                  <View style={styles.progressStat}>
+                  <View style={[styles.progressStat, { backgroundColor: Colors.surface }, Shadow.sm]}>
                     <Text style={[styles.progressStatValue, { color: Colors.accent }]}>
                       {myParticipant.current_streak}
                     </Text>
-                    <Text style={styles.progressStatLabel}>Streak</Text>
+                    <Text style={[styles.progressStatLabel, { color: Colors.textMuted }]}>Streak</Text>
                   </View>
                 </View>
 
@@ -398,8 +402,8 @@ export default function CompetitionDetailScreen() {
                   if (penalty >= 0) return null;
                   const remaining = workoutCat.penalty.threshold - workoutsThisWeek;
                   return (
-                    <View style={styles.penaltyWarning}>
-                      <Text style={styles.penaltyWarningText}>
+                    <View style={[styles.penaltyWarning, { backgroundColor: Colors.warning + '18', borderColor: Colors.warning + '40' }]}>
+                      <Text style={[styles.penaltyWarningText, { color: Colors.warning }]}>
                         {'⚠️'} {remaining} more workout{remaining !== 1 ? 's' : ''} to avoid {penalty}pt penalty this week
                       </Text>
                     </View>
@@ -415,7 +419,7 @@ export default function CompetitionDetailScreen() {
             ) : (
               <View style={styles.emptyTab}>
                 <Ionicons name="lock-closed-outline" size={48} color={Colors.textMuted} />
-                <Text style={styles.emptyTabText}>Join this competition to track progress</Text>
+                <Text style={[styles.emptyTabText, { color: Colors.textMuted }]}>Join this competition to track progress</Text>
               </View>
             )}
           </View>
@@ -423,73 +427,73 @@ export default function CompetitionDetailScreen() {
 
         {activeTab === 'rules' && (
           <View style={styles.tabContent}>
-            <View style={styles.rulesCard}>
-              <View style={styles.ruleRow}>
-                <Text style={styles.ruleLabel}>Duration</Text>
-                <Text style={styles.ruleValue}>
+            <View style={[styles.rulesCard, { backgroundColor: Colors.surface }, Shadow.md]}>
+              <View style={[styles.ruleRow, { borderBottomColor: Colors.borderLight }]}>
+                <Text style={[styles.ruleLabel, { color: Colors.textSecondary }]}>Duration</Text>
+                <Text style={[styles.ruleValue, { color: Colors.textPrimary }]}>
                   {new Date(competition.start_date).toLocaleDateString()} — {new Date(competition.end_date).toLocaleDateString()}
                 </Text>
               </View>
-              <View style={styles.ruleRow}>
-                <Text style={styles.ruleLabel}>Entry Fee</Text>
-                <Text style={styles.ruleValue}>{formatCents(competition.entry_fee_cents)}</Text>
+              <View style={[styles.ruleRow, { borderBottomColor: Colors.borderLight }]}>
+                <Text style={[styles.ruleLabel, { color: Colors.textSecondary }]}>Entry Fee</Text>
+                <Text style={[styles.ruleValue, { color: Colors.textPrimary }]}>{formatCents(competition.entry_fee_cents)}</Text>
               </View>
-              <View style={styles.ruleRow}>
-                <Text style={styles.ruleLabel}>Prize</Text>
-                <Text style={styles.ruleValue}>
+              <View style={[styles.ruleRow, { borderBottomColor: Colors.borderLight }]}>
+                <Text style={[styles.ruleLabel, { color: Colors.textSecondary }]}>Prize</Text>
+                <Text style={[styles.ruleValue, { color: Colors.textPrimary }]}>
                   {isPaid
                     ? competitionPrizeInCredits(Math.floor(competition.prize_pool_cents * 0.9))
                     : 'None'}
                 </Text>
               </View>
-              <View style={styles.ruleRow}>
-                <Text style={styles.ruleLabel}>Max Players</Text>
-                <Text style={styles.ruleValue}>{competition.max_participants}</Text>
+              <View style={[styles.ruleRow, { borderBottomColor: Colors.borderLight }]}>
+                <Text style={[styles.ruleLabel, { color: Colors.textSecondary }]}>Max Players</Text>
+                <Text style={[styles.ruleValue, { color: Colors.textPrimary }]}>{competition.max_participants}</Text>
               </View>
-              <View style={styles.ruleRow}>
-                <Text style={styles.ruleLabel}>Payment</Text>
-                <Text style={styles.ruleValue}>{competition.payment_type === 'stripe' ? 'Card / Apple Pay' : 'USDC'}</Text>
+              <View style={[styles.ruleRow, { borderBottomColor: Colors.borderLight }]}>
+                <Text style={[styles.ruleLabel, { color: Colors.textSecondary }]}>Payment</Text>
+                <Text style={[styles.ruleValue, { color: Colors.textPrimary }]}>{competition.payment_type === 'stripe' ? 'Card / Apple Pay' : 'USDC'}</Text>
               </View>
-              <View style={styles.ruleRow}>
-                <Text style={styles.ruleLabel}>Service Fee</Text>
-                <Text style={styles.ruleValue}>{competition.service_fee_pct}%</Text>
+              <View style={[styles.ruleRow, { borderBottomColor: Colors.borderLight }]}>
+                <Text style={[styles.ruleLabel, { color: Colors.textSecondary }]}>Service Fee</Text>
+                <Text style={[styles.ruleValue, { color: Colors.textPrimary }]}>{competition.service_fee_pct}%</Text>
               </View>
-              <View style={styles.ruleRow}>
-                <Text style={styles.ruleLabel}>Visibility</Text>
-                <Text style={styles.ruleValue}>{competition.is_public ? 'Public' : 'Invite Only'}</Text>
+              <View style={[styles.ruleRow, { borderBottomColor: Colors.borderLight }]}>
+                <Text style={[styles.ruleLabel, { color: Colors.textSecondary }]}>Visibility</Text>
+                <Text style={[styles.ruleValue, { color: Colors.textPrimary }]}>{competition.is_public ? 'Public' : 'Invite Only'}</Text>
               </View>
-              <View style={styles.ruleRow}>
-                <Text style={styles.ruleLabel}>Scoring</Text>
-                <Text style={styles.ruleValue}>
+              <View style={[styles.ruleRow, { borderBottomColor: Colors.borderLight }]}>
+                <Text style={[styles.ruleLabel, { color: Colors.textSecondary }]}>Scoring</Text>
+                <Text style={[styles.ruleValue, { color: Colors.textPrimary }]}>
                   {SCORING_MODES.find((m) => m.id === competition.scoring_mode)?.label ?? '% Improvement'}
                 </Text>
               </View>
-              <View style={styles.ruleRow}>
-                <Text style={styles.ruleLabel}>Competition Type</Text>
-                <Text style={[styles.ruleValue, { color: '#6366F1' }]}>Skill-Based ✓</Text>
+              <View style={[styles.ruleRow, { borderBottomColor: Colors.borderLight }]}>
+                <Text style={[styles.ruleLabel, { color: Colors.textSecondary }]}>Competition Type</Text>
+                <Text style={[styles.ruleValue, { color: Colors.accentPurple }]}>Skill-Based ✓</Text>
               </View>
 
               {categories.length > 0 && (
                 <>
-                  <Text style={styles.rulesSubheading}>Scoring Categories</Text>
+                  <Text style={[styles.rulesSubheading, { color: Colors.textPrimary, borderTopColor: Colors.borderLight }]}>Scoring Categories</Text>
                   {categories.map((cat: ScoringCategory) => (
-                    <View key={cat.name} style={styles.ruleRow}>
-                      <Text style={styles.ruleLabel}>{cat.name}</Text>
-                      <Text style={styles.ruleValue}>{cat.points} pts (auto)</Text>
+                    <View key={cat.name} style={[styles.ruleRow, { borderBottomColor: Colors.borderLight }]}>
+                      <Text style={[styles.ruleLabel, { color: Colors.textSecondary }]}>{cat.name}</Text>
+                      <Text style={[styles.ruleValue, { color: Colors.textPrimary }]}>{cat.points} pts (auto)</Text>
                     </View>
                   ))}
                 </>
               )}
 
               <View style={[styles.ruleRow, styles.ruleRowLast]}>
-                <Text style={styles.ruleLabel}>Invite Code</Text>
+                <Text style={[styles.ruleLabel, { color: Colors.textSecondary }]}>Invite Code</Text>
                 <Text style={[styles.ruleValue, { fontWeight: '800', color: Colors.primary }]}>
                   {competition.invite_code}
                 </Text>
               </View>
 
               {isPaid && (
-                <Text style={styles.skillNote}>
+                <Text style={[styles.skillNote, { color: Colors.textMuted, borderTopColor: Colors.borderLight }]}>
                   Podium competitions are skill-based contests determined entirely by athletic effort and performance improvement as measured by Apple Health. Winners are determined by objective, verifiable fitness metrics — not chance.
                 </Text>
               )}
@@ -502,50 +506,48 @@ export default function CompetitionDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   scrollContent: { paddingBottom: 100 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
-  errorText: { fontSize: FontSize.md, color: Colors.textMuted, marginTop: Spacing.md },
-  header: { backgroundColor: Colors.surface, padding: Spacing.xl, paddingTop: Spacing.md, ...Shadow.sm },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  errorText: { fontSize: FontSize.md, marginTop: Spacing.md },
+  header: { padding: Spacing.xl, paddingTop: Spacing.md },
   typeBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs, borderRadius: BorderRadius.sm, marginBottom: Spacing.md },
   typeEmoji: { fontSize: FontSize.sm, marginRight: Spacing.xs },
   typeLabel: { fontSize: FontSize.xs, fontWeight: '600' },
-  competitionName: { fontSize: FontSize.xxl, fontWeight: '800', color: Colors.textPrimary, marginBottom: Spacing.sm },
-  description: { fontSize: FontSize.md, color: Colors.textSecondary, lineHeight: 22, marginBottom: Spacing.lg },
+  competitionName: { fontSize: FontSize.xxl, fontWeight: '800', marginBottom: Spacing.sm },
+  description: { fontSize: FontSize.md, lineHeight: 22, marginBottom: Spacing.lg },
   badge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.full, marginBottom: Spacing.md },
   badgeIcon: { fontSize: FontSize.xs },
   badgeText: { fontSize: FontSize.xs, fontWeight: '600' },
-  statsBar: { flexDirection: 'row', backgroundColor: Colors.background, borderRadius: BorderRadius.lg, paddingVertical: Spacing.md, marginBottom: Spacing.lg },
+  statsBar: { flexDirection: 'row', borderRadius: BorderRadius.lg, paddingVertical: Spacing.md, marginBottom: Spacing.lg },
   statItem: { flex: 1, alignItems: 'center' },
-  statItemValue: { fontSize: FontSize.sm, fontWeight: '800', color: Colors.textPrimary },
-  statItemLabel: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
-  statDivider: { width: 1, backgroundColor: Colors.border },
+  statItemValue: { fontSize: FontSize.sm, fontWeight: '800' },
+  statItemLabel: { fontSize: FontSize.xs, marginTop: 2 },
+  statDivider: { width: 1 },
   actionRow: { flexDirection: 'row', gap: Spacing.md },
-  joinButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary, paddingVertical: Spacing.md, borderRadius: BorderRadius.lg, gap: Spacing.sm, ...Shadow.md },
+  joinButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.md, borderRadius: BorderRadius.lg, gap: Spacing.sm },
   joinButtonText: { color: '#fff', fontSize: FontSize.md, fontWeight: '700' },
-  shareButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.md, paddingHorizontal: Spacing.xl, borderRadius: BorderRadius.lg, borderWidth: 1.5, borderColor: Colors.primary + '40', gap: Spacing.sm },
-  shareButtonText: { color: Colors.primary, fontSize: FontSize.md, fontWeight: '700' },
-  complianceNote: { fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.md },
-  tabBar: { flexDirection: 'row', backgroundColor: Colors.surface, marginTop: 1, paddingHorizontal: Spacing.lg, ...Shadow.sm },
+  shareButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.md, paddingHorizontal: Spacing.xl, borderRadius: BorderRadius.lg, borderWidth: 1.5, gap: Spacing.sm },
+  shareButtonText: { fontSize: FontSize.md, fontWeight: '700' },
+  complianceNote: { fontSize: 11, textAlign: 'center', marginTop: Spacing.md },
+  tabBar: { flexDirection: 'row', marginTop: 1, paddingHorizontal: Spacing.lg },
   tab: { flex: 1, paddingVertical: Spacing.md, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  tabActive: { borderBottomColor: Colors.primary },
-  tabText: { fontSize: FontSize.sm, fontWeight: '600', color: Colors.textMuted },
-  tabTextActive: { color: Colors.primary },
+  tabText: { fontSize: FontSize.sm, fontWeight: '600' },
   tabContent: { padding: Spacing.lg },
-  leaderboardCard: { backgroundColor: Colors.surface, borderRadius: BorderRadius.lg, overflow: 'hidden', ...Shadow.md },
+  leaderboardCard: { borderRadius: BorderRadius.lg, overflow: 'hidden' },
   emptyTab: { alignItems: 'center', paddingVertical: Spacing.xxxl * 2 },
-  emptyTabText: { fontSize: FontSize.md, color: Colors.textMuted, marginTop: Spacing.md },
+  emptyTabText: { fontSize: FontSize.md, marginTop: Spacing.md },
   progressSummary: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.xl },
-  progressStat: { flex: 1, backgroundColor: Colors.surface, borderRadius: BorderRadius.lg, padding: Spacing.lg, alignItems: 'center', ...Shadow.sm },
-  progressStatValue: { fontSize: FontSize.xxl, fontWeight: '800', color: Colors.textPrimary },
-  progressStatLabel: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: Spacing.xs },
-  rulesCard: { backgroundColor: Colors.surface, borderRadius: BorderRadius.lg, padding: Spacing.lg, ...Shadow.md },
-  rulesSubheading: { fontSize: FontSize.md, fontWeight: '700', color: Colors.textPrimary, marginTop: Spacing.lg, marginBottom: Spacing.md, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.borderLight },
-  ruleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.borderLight },
+  progressStat: { flex: 1, borderRadius: BorderRadius.lg, padding: Spacing.lg, alignItems: 'center' },
+  progressStatValue: { fontSize: FontSize.xxl, fontWeight: '800' },
+  progressStatLabel: { fontSize: FontSize.xs, marginTop: Spacing.xs },
+  rulesCard: { borderRadius: BorderRadius.lg, padding: Spacing.lg },
+  rulesSubheading: { fontSize: FontSize.md, fontWeight: '700', marginTop: Spacing.lg, marginBottom: Spacing.md, paddingTop: Spacing.md, borderTopWidth: 1 },
+  ruleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing.md, borderBottomWidth: 1 },
   ruleRowLast: { borderBottomWidth: 0 },
-  ruleLabel: { fontSize: FontSize.md, color: Colors.textSecondary },
-  ruleValue: { fontSize: FontSize.md, fontWeight: '600', color: Colors.textPrimary },
-  skillNote: { fontSize: 11, color: Colors.textMuted, lineHeight: 17, marginTop: Spacing.lg, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.borderLight },
-  penaltyWarning: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F59E0B18', borderRadius: BorderRadius.lg, paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg, marginBottom: Spacing.lg, borderWidth: 1, borderColor: '#F59E0B40' },
-  penaltyWarningText: { fontSize: FontSize.sm, fontWeight: '600', color: '#F59E0B' },
+  ruleLabel: { fontSize: FontSize.md },
+  ruleValue: { fontSize: FontSize.md, fontWeight: '600' },
+  skillNote: { fontSize: 11, lineHeight: 17, marginTop: Spacing.lg, paddingTop: Spacing.md, borderTopWidth: 1 },
+  penaltyWarning: { flexDirection: 'row', alignItems: 'center', borderRadius: BorderRadius.lg, paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg, marginBottom: Spacing.lg, borderWidth: 1 },
+  penaltyWarningText: { fontSize: FontSize.sm, fontWeight: '600' },
 });

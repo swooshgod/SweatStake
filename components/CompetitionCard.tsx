@@ -5,7 +5,7 @@ import { Spacing, BorderRadius, FontSize, CompetitionTypes } from '@/constants/t
 import { useTheme } from '@/contexts/ThemeContext';
 import { formatCents } from '@/lib/stripe';
 import { competitionPrizeInCredits } from '@/lib/prizes';
-import { FITNESS_TIERS } from '@/lib/healthkit';
+import { FITNESS_TIERS, getTierIndex } from '@/lib/healthkit';
 import type { Competition, ScoringMode, FitnessTier } from '@/lib/types';
 
 interface Props {
@@ -15,12 +15,14 @@ interface Props {
   index?: number;
 }
 
-const SCORING_MODE_BADGES: Record<ScoringMode, { emoji: string; label: string; color: string }> = {
+const SCORING_MODE_BADGES: Partial<Record<ScoringMode, { emoji: string; label: string; color: string }>> = {
   relative_improvement: { emoji: '📈', label: '% Improvement', color: '#3B82F6' },
   raw_steps: { emoji: '👟', label: 'Most Steps', color: '#8B5CF6' },
   raw_miles: { emoji: '🏃', label: 'Most Miles', color: '#EC4899' },
   raw_calories: { emoji: '🔥', label: 'Most Calories', color: '#F59E0B' },
   raw_workouts: { emoji: '💪', label: 'Most Workouts', color: '#10B981' },
+  raw_active_minutes: { emoji: '⏱️', label: 'Active Minutes', color: '#6366F1' },
+  raw_weight_loss_pct: { emoji: '⚖️', label: 'Weight Loss %', color: '#EC4899' },
 };
 
 export default function CompetitionCard({ competition, variant = 'full', viewerTier, index = 0 }: Props) {
@@ -105,7 +107,6 @@ export default function CompetitionCard({ competition, variant = 'full', viewerT
 
   let tierWarning: 'above' | 'below' | null = null;
   if (viewerTier && creatorTier) {
-    const { getTierIndex } = require('@/lib/healthkit');
     const diff = getTierIndex(viewerTier) - getTierIndex(creatorTier);
     if (diff >= 2) tierWarning = 'above';
     else if (diff <= -2) tierWarning = 'below';
