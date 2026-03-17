@@ -22,6 +22,9 @@ import {
   PRO_PRICE_YEARLY,
   estimateProSavings,
   FREE_SERVICE_FEE_PCT,
+  purchaseProMonthly,
+  purchaseProYearly,
+  restorePurchases,
 } from '@/lib/subscription';
 
 const PRO_BENEFITS = [
@@ -46,17 +49,40 @@ export default function ProUpgradeScreen() {
   const handleSubscribe = async () => {
     setPurchasing(true);
     try {
-      // TODO: Integrate RevenueCat
-      // const { customerInfo } = await Purchases.purchaseProduct(productId);
+      const result = selectedPlan === 'yearly'
+        ? await purchaseProYearly()
+        : await purchaseProMonthly();
+
+      if (result.error === 'cancelled') {
+        // User cancelled — silent
+        return;
+      }
+
+      if (!result.success) {
+        Alert.alert('Purchase Failed', result.error ?? 'Please try again.');
+        return;
+      }
+
       Alert.alert(
-        'Coming Soon',
-        'Podium Pro subscriptions will be available at launch. Join the waitlist to be first!',
-        [{ text: 'OK' }]
+        '⭐ Welcome to Podium Pro!',
+        'You now pay zero fees on all your winnings. Compete and keep everything you earn.',
+        [{ text: 'Let\'s Go!', onPress: () => router.back() }]
       );
     } catch (error) {
       Alert.alert('Purchase Failed', 'Please try again.');
     } finally {
       setPurchasing(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    const { isPro } = await restorePurchases();
+    if (isPro) {
+      Alert.alert('Restored!', 'Your Pro subscription has been restored.', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
+    } else {
+      Alert.alert('No Subscription Found', 'No active Pro subscription was found for your Apple ID.');
     }
   };
 

@@ -15,7 +15,7 @@ import { supabase } from './supabase';
 
 export const PRO_PRODUCT_ID_MONTHLY = 'com.podiumapp.pro.monthly';
 export const PRO_PRODUCT_ID_YEARLY  = 'com.podiumapp.pro.yearly';
-export const REVENUECAT_API_KEY_IOS = 'appl_REPLACE_WITH_YOUR_REVENUECAT_KEY';
+export const REVENUECAT_API_KEY_IOS = 'test_kaTdWTcQaylEoZrOfqPdzrNPJag';
 
 export const PRO_PRICE_MONTHLY = 9.99;
 export const PRO_PRICE_YEARLY  = 79.99;
