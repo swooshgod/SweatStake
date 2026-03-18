@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -314,7 +315,7 @@ export default function ProfileScreen() {
       {/* ─── Wallet ─── */}
       <View style={styles.menuSection}>
         <Text style={[styles.menuSectionTitle, dynamicStyles.menuSectionTitle]}>Wallet</Text>
-        <TouchableOpacity style={[styles.menuItem, dynamicStyles.menuItem]} activeOpacity={0.7}>
+        <TouchableOpacity style={[styles.menuItem, dynamicStyles.menuItem]} activeOpacity={0.7} onPress={() => Alert.alert('Coming Soon', 'Payment methods setup coming in the next update.')}>
           <View style={[styles.menuIconBg, { backgroundColor: '#6772E518' }]}>
             <Ionicons name="card" size={20} color="#6772E5" />
           </View>
@@ -324,7 +325,7 @@ export default function ProfileScreen() {
           </View>
           <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.menuItem, dynamicStyles.menuItem]} activeOpacity={0.7}>
+        <TouchableOpacity style={[styles.menuItem, dynamicStyles.menuItem]} activeOpacity={0.7} onPress={() => Alert.alert('Coming Soon', 'USDC wallet connection coming in the next update.')}>
           <View style={[styles.menuIconBg, { backgroundColor: '#2775CA18' }]}>
             <Ionicons name="wallet" size={20} color="#2775CA" />
           </View>
@@ -355,7 +356,7 @@ export default function ProfileScreen() {
       {/* ─── Settings ─── */}
       <View style={styles.menuSection}>
         <Text style={[styles.menuSectionTitle, dynamicStyles.menuSectionTitle]}>Settings</Text>
-        <TouchableOpacity style={[styles.menuItem, dynamicStyles.menuItem]} activeOpacity={0.7}>
+        <TouchableOpacity style={[styles.menuItem, dynamicStyles.menuItem]} activeOpacity={0.7} onPress={() => Alert.alert('Coming Soon', 'Push notifications coming soon.')}>
           <View style={[styles.menuIconBg, { backgroundColor: Colors.textMuted + '18' }]}>
             <Ionicons name="notifications" size={20} color={Colors.textMuted} />
           </View>
@@ -378,7 +379,7 @@ export default function ProfileScreen() {
           </View>
           <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.menuItem, dynamicStyles.menuItem]} activeOpacity={0.7}>
+        <TouchableOpacity style={[styles.menuItem, dynamicStyles.menuItem]} activeOpacity={0.7} onPress={() => Linking.openURL('https://podiumapp.fit/privacy')}>
           <View style={[styles.menuIconBg, { backgroundColor: Colors.textMuted + '18' }]}>
             <Ionicons name="document-text" size={20} color={Colors.textMuted} />
           </View>
