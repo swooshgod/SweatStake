@@ -491,15 +491,15 @@ export default function CreateCompetitionScreen() {
                     style={[styles.toggleOption, dynamicStyles.toggleOption, form.paymentType === 'stripe' && dynamicStyles.toggleOptionActive]}
                     onPress={() => updateForm('paymentType', 'stripe')}
                   >
-                    <Ionicons name="card" size={16} color={form.paymentType === 'stripe' ? '#fff' : Colors.textSecondary} />
-                    <Text style={[styles.toggleText, dynamicStyles.toggleText, form.paymentType === 'stripe' && dynamicStyles.toggleTextActive]}>Stripe</Text>
+                    <Ionicons name="logo-apple" size={16} color={form.paymentType === 'stripe' ? '#fff' : Colors.textSecondary} />
+                    <Text style={[styles.toggleText, dynamicStyles.toggleText, form.paymentType === 'stripe' && dynamicStyles.toggleTextActive]}>Apple Pay</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.toggleOption, dynamicStyles.toggleOption, form.paymentType === 'usdc' && dynamicStyles.toggleOptionActive]}
-                    onPress={() => updateForm('paymentType', 'usdc')}
+                    style={[styles.toggleOption, dynamicStyles.toggleOption, form.paymentType === 'card' && dynamicStyles.toggleOptionActive]}
+                    onPress={() => updateForm('paymentType', 'card')}
                   >
-                    <Ionicons name="wallet" size={16} color={form.paymentType === 'usdc' ? '#fff' : Colors.textSecondary} />
-                    <Text style={[styles.toggleText, dynamicStyles.toggleText, form.paymentType === 'usdc' && dynamicStyles.toggleTextActive]}>USDC</Text>
+                    <Ionicons name="card" size={16} color={form.paymentType === 'card' ? '#fff' : Colors.textSecondary} />
+                    <Text style={[styles.toggleText, dynamicStyles.toggleText, form.paymentType === 'card' && dynamicStyles.toggleTextActive]}>Card</Text>
                   </TouchableOpacity>
                 </View>
               </>

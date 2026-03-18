@@ -530,7 +530,7 @@ export default function CompetitionDetailScreen() {
               </View>
               <View style={[styles.ruleRow, { borderBottomColor: Colors.borderLight }]}>
                 <Text style={[styles.ruleLabel, { color: Colors.textSecondary }]}>Payment</Text>
-                <Text style={[styles.ruleValue, { color: Colors.textPrimary }]}>{competition.payment_type === 'stripe' ? 'Card / Apple Pay' : 'USDC'}</Text>
+                <Text style={[styles.ruleValue, { color: Colors.textPrimary }]}>{competition.payment_type === 'usdc' ? 'USDC' : 'Apple Pay / Card'}</Text>
               </View>
               <View style={[styles.ruleRow, { borderBottomColor: Colors.borderLight }]}>
                 <Text style={[styles.ruleLabel, { color: Colors.textSecondary }]}>Service Fee</Text>
