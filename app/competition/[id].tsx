@@ -34,9 +34,6 @@ const SCORING_MODE_COLORS: Partial<Record<ScoringMode, string>> = {
   relative_improvement: '#3B82F6',
   raw_steps: '#8B5CF6',
   raw_miles: '#EC4899',
-  raw_calories: '#F59E0B',
-  raw_workouts: '#10B981',
-  raw_active_minutes: '#6366F1',
   raw_weight_loss_pct: '#EC4899',
 };
 

@@ -252,29 +252,19 @@ export const ScoringTemplates = {
   },
   distance: {
     name: 'Distance Race',
-    description: 'Most miles/km covered — running, walking, cycling. Auto-tracked via GPS.',
+    description: 'Most miles/km covered — walking, running, swimming, or cycling. Auto-tracked via GPS.',
     categories: [
       { name: 'Distance (5+ miles)', points: 3, auto_tracked: true },
       { name: 'Distance (3+ miles)', points: 2, auto_tracked: true },
       { name: 'Distance (1+ mile)',  points: 1, auto_tracked: true },
     ],
   },
-  active_minutes: {
-    name: 'Active Minutes',
-    description: 'Most minutes of any exercise — running, yoga, swimming, anything.',
-    categories: [
-      { name: 'Active Minutes (60+)', points: 3, auto_tracked: true },
-      { name: 'Active Minutes (30+)', points: 2, auto_tracked: true },
-      { name: 'Active Minutes (15+)', points: 1, auto_tracked: true },
-    ],
-  },
   full_challenge: {
     name: 'Full Challenge',
-    description: 'Steps + Distance + Active Minutes — all auto-tracked',
+    description: 'Steps + Distance — all auto-tracked',
     categories: [
-      { name: 'Steps (8,000+)',       points: 2, auto_tracked: true },
-      { name: 'Distance (2+ miles)',  points: 2, auto_tracked: true },
-      { name: 'Active Min (30+)',     points: 2, auto_tracked: true },
+      { name: 'Steps (8,000+)',       points: 3, auto_tracked: true },
+      { name: 'Distance (2+ miles)',  points: 3, auto_tracked: true },
     ],
   },
   custom: {

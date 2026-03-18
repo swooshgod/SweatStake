@@ -19,9 +19,6 @@ const SCORING_MODE_BADGES: Partial<Record<ScoringMode, { emoji: string; label: s
   relative_improvement: { emoji: '📈', label: '% Improvement', color: '#3B82F6' },
   raw_steps: { emoji: '👟', label: 'Most Steps', color: '#8B5CF6' },
   raw_miles: { emoji: '🏃', label: 'Most Miles', color: '#EC4899' },
-  raw_calories: { emoji: '🔥', label: 'Most Calories', color: '#F59E0B' },
-  raw_workouts: { emoji: '💪', label: 'Most Workouts', color: '#10B981' },
-  raw_active_minutes: { emoji: '⏱️', label: 'Active Minutes', color: '#6366F1' },
   raw_weight_loss_pct: { emoji: '⚖️', label: 'Weight Loss %', color: '#EC4899' },
 };
 
