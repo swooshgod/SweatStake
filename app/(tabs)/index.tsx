@@ -87,7 +87,7 @@ export default function HomeScreen() {
         },
       ]}
     >
-      <Text style={[styles.sectionTitle, { color: Colors.textPrimary }]}>Your Active Competitions</Text>
+      <Text style={[styles.sectionTitle, { color: Colors.textPrimary }]}>Your Competitions</Text>
       {myLoading ? (
         <ActivityIndicator color={Colors.primary} style={styles.loader} />
       ) : (
@@ -109,7 +109,7 @@ export default function HomeScreen() {
       ]}
     >
       <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: Colors.textPrimary }]}>Live Competitions</Text>
+        <Text style={[styles.sectionTitle, { color: Colors.textPrimary }]}>Open Competitions</Text>
         {publicComps.length > 0 && (
           <View style={[styles.sectionBadgeContainer, { backgroundColor: Colors.success + '15' }]}>
             <View style={[styles.liveDot, { backgroundColor: Colors.success }]} />
