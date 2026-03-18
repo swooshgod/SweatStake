@@ -24,7 +24,7 @@ import { competitionPrizeInCredits } from '@/lib/prizes';
 import LeaderboardRow from '@/components/LeaderboardRow';
 import DailyChecklist from '@/components/DailyChecklist';
 import WeeklyCalendar from '@/components/WeeklyCalendar';
-import { calculateWeeklyPenalty } from '@/lib/healthkit';
+import { calculateWeeklyPenalty, validateDailyData } from '@/lib/healthkit';
 import type { DailyLogEntries, ScoringCategory, ScoringMode } from '@/lib/types';
 import { SCORING_MODES } from '@/lib/types';
 
@@ -187,23 +187,30 @@ export default function CompetitionDetailScreen() {
       // 3. Stripe PaymentSheet for paid competitions
       if (competition.entry_fee_cents > 0) {
         const { data: intentData, error: intentError } = await supabase.functions.invoke('create-payment-intent', {
-          body: { amount: competition.entry_fee_cents, competitionId: competition.id, userId: profile.id }
+          body: { competitionId: competition.id }
         });
-        if (intentError || !intentData?.clientSecret) {
-          Alert.alert('Payment Error', 'Could not set up payment. Please try again.');
+        if (intentError) {
+          Alert.alert('Payment Error', intentError.message ?? 'Could not set up payment. Please try again.');
           return;
         }
-        const { error: initError } = await initPaymentSheet({
-          paymentIntentClientSecret: intentData.clientSecret,
-          merchantDisplayName: 'Podium',
-          applePay: { merchantCountryCode: 'US' },
-          style: 'alwaysDark',
-        });
-        if (initError) { Alert.alert('Payment Error', initError.message); return; }
-        const { error: paymentError } = await presentPaymentSheet();
-        if (paymentError) {
-          if (paymentError.code !== 'Canceled') Alert.alert('Payment Failed', paymentError.message);
-          return;
+        // If promo made it free, skip Stripe
+        if (!intentData?.free) {
+          if (!intentData?.clientSecret) {
+            Alert.alert('Payment Error', 'Could not set up payment. Please try again.');
+            return;
+          }
+          const { error: initError } = await initPaymentSheet({
+            paymentIntentClientSecret: intentData.clientSecret,
+            merchantDisplayName: 'Podium',
+            applePay: { merchantCountryCode: 'US' },
+            style: 'alwaysDark',
+          });
+          if (initError) { Alert.alert('Payment Error', initError.message); return; }
+          const { error: paymentError } = await presentPaymentSheet();
+          if (paymentError) {
+            if (paymentError.code !== 'Canceled') Alert.alert('Payment Failed', paymentError.message);
+            return;
+          }
         }
       }
 
@@ -242,6 +249,41 @@ export default function CompetitionDetailScreen() {
       setTodayEntries(data);
 
       if (!myParticipant || !competition) return;
+
+      // Anti-cheat validation
+      const validation = validateDailyData({
+        steps: (data.steps as number) ?? 0,
+        workouts: data.workout ? 1 : 0,
+        activeCalories: (data.activeCalories as number) ?? 0,
+        activeMinutes: (data.activeMinutes as number) ?? 0,
+        distanceMiles: (data.distance as number) ?? 0,
+      });
+
+      if (!validation.valid) {
+        // Data exceeds physical limits — block submission and flag
+        Alert.alert('Data Flagged', 'Your activity data looks unusual and could not be recorded.');
+        await supabase.from('anomaly_flags').insert({
+          participant_id: myParticipant.id,
+          competition_id: competition.id,
+          user_id: profile?.id,
+          flags: validation.flags,
+          severity: 'disqualify',
+          log_date: new Date().toISOString().split('T')[0],
+        }).catch(() => {});
+        return;
+      }
+
+      // Warn-level flags — save data but record the anomaly
+      if (validation.flags.length > 0) {
+        await supabase.from('anomaly_flags').insert({
+          participant_id: myParticipant.id,
+          competition_id: competition.id,
+          user_id: profile?.id,
+          flags: validation.flags,
+          severity: 'warn',
+          log_date: new Date().toISOString().split('T')[0],
+        }).catch(() => {});
+      }
 
       const today = new Date().toISOString().split('T')[0];
 

@@ -167,14 +167,8 @@ export default function CreateCompetitionScreen() {
 
       if (error) throw error;
 
-      await supabase.from('participants').insert({
-        competition_id: data.id,
-        user_id: profile.id,
-        paid: true,
-      });
-
-      Alert.alert('Competition Created!', `Share code: ${data.invite_code}`, [
-        { text: 'View', onPress: () => router.replace(`/competition/${data.id}`) },
+      Alert.alert('Competition Created!', `Share code: ${data.invite_code}\n\nJoin your own competition to get on the leaderboard.`, [
+        { text: 'Join Now', onPress: () => router.replace(`/competition/${data.id}`) },
       ]);
     } catch (error) {
       Alert.alert('Error', 'Failed to create competition. Please try again.');
