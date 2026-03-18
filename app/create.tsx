@@ -427,7 +427,26 @@ export default function CreateCompetitionScreen() {
               >
                 <Ionicons name="remove" size={20} color={Colors.textSecondary} />
               </TouchableOpacity>
-              <Text style={[styles.counterValue, dynamicStyles.counterValue]}>{form.maxParticipants}</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  Alert.prompt(
+                    'Max Participants',
+                    `Enter a number (${form.entryFeeCents > 0 ? MIN_PARTICIPANTS : 2}–100):`,
+                    (text) => {
+                      const num = parseInt(text, 10);
+                      if (!isNaN(num)) {
+                        const min = form.entryFeeCents > 0 ? MIN_PARTICIPANTS : 2;
+                        updateForm('maxParticipants', Math.max(min, Math.min(100, num)));
+                      }
+                    },
+                    'plain-text',
+                    String(form.maxParticipants),
+                    'number-pad',
+                  );
+                }}
+              >
+                <Text style={[styles.counterValue, dynamicStyles.counterValue]}>{form.maxParticipants}</Text>
+              </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.counterBtn, dynamicStyles.counterBtn]}
                 onPress={() => updateForm('maxParticipants', Math.min(100, form.maxParticipants + 5))}
