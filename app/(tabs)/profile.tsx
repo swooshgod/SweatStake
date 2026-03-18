@@ -209,7 +209,37 @@ export default function ProfileScreen() {
             <Ionicons name="camera" size={12} color="#fff" />
           </View>
         </TouchableOpacity>
-        <Text style={[styles.displayName, dynamicStyles.displayName]}>{profile.display_name ?? profile.username ?? 'Champion'}</Text>
+        <TouchableOpacity
+          onPress={() => {
+            Alert.prompt(
+              'Edit Display Name',
+              'Enter your new display name:',
+              async (text) => {
+                const trimmed = text?.trim();
+                if (!trimmed || trimmed.length < 2) {
+                  Alert.alert('Invalid', 'Name must be at least 2 characters.');
+                  return;
+                }
+                try {
+                  const { error } = await supabase
+                    .from('profiles')
+                    .update({ display_name: trimmed })
+                    .eq('id', profile.id);
+                  if (error) throw error;
+                  Alert.alert('Updated', `Display name changed to "${trimmed}".`);
+                } catch (e) {
+                  Alert.alert('Error', 'Could not update name. Try again.');
+                }
+              },
+              'plain-text',
+              profile.display_name ?? profile.username ?? '',
+            );
+          }}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.displayName, dynamicStyles.displayName]}>{profile.display_name ?? profile.username ?? 'Champion'}</Text>
+          <Text style={{ color: Colors.primary, fontSize: 12, fontWeight: '600', marginTop: 2 }}>Tap to edit</Text>
+        </TouchableOpacity>
         {profile.username && (
           <Text style={[styles.username, dynamicStyles.username]}>@{profile.username}</Text>
         )}
