@@ -120,6 +120,7 @@ export default function JoinScreen() {
   }, [code]);
 
   async function fetchCompetition() {
+    setAlreadyJoined(false);
     setLoading(true);
     const { data: comp } = await supabase
       .from("competitions")

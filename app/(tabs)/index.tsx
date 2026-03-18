@@ -70,8 +70,13 @@ export default function HomeScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refetchMy(), refetchPublic()]);
-    setRefreshing(false);
+    try {
+      await Promise.all([refetchMy(), refetchPublic()]);
+    } catch (e) {
+      console.warn('Refresh failed:', e);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const hasActiveComps = myComps.length > 0;

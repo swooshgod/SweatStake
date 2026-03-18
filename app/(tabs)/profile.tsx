@@ -119,6 +119,7 @@ export default function ProfileScreen() {
   };
 
   const handlePickAvatar = async () => {
+    if (!profile) return;
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission needed', 'Please allow photo access to update your profile picture.');

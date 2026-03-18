@@ -450,6 +450,7 @@ export function validateWeighIn(
 
   const lostLbs = previousWeightLbs - newWeightLbs;
   const lostPct = (lostLbs / previousWeightLbs) * 100;
+  if (daysSinceLast <= 0) return { valid: true, flagged: false };
   const weeklyEquivalent = (lostPct / daysSinceLast) * 7;
 
   if (weeklyEquivalent > MAX_WEEKLY_LOSS_PCT) {

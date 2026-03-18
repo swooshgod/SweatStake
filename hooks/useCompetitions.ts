@@ -84,7 +84,11 @@ export function useCompetitionDetail(competitionId: string) {
     ]);
 
     setCompetition(compRes.data as Competition | null);
-    setParticipants((partRes.data as Participant[]) ?? []);
+    const ranked = (partRes.data ?? []).map((p: any, i: number) => ({
+      ...p,
+      rank: p.disqualified ? null : i + 1,
+    }));
+    setParticipants(ranked);
     setLoading(false);
   }, [competitionId]);
 

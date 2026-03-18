@@ -439,6 +439,8 @@ export default function CompetitionDetailScreen() {
                     key={p.id}
                     participant={p}
                     isCurrentUser={p.user_id === profile?.id}
+                    currentUserId={profile?.id}
+                    competitionId={competition.id}
                   />
                 ))}
               </View>
