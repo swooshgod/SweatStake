@@ -205,7 +205,7 @@ export default function ProfileScreen() {
               </Text>
             </LinearGradient>
           )}
-          <View style={styles.avatarEditBadge}>
+          <View style={[styles.avatarEditBadge, { borderColor: Colors.background }]}>
             <Ionicons name="camera" size={12} color="#fff" />
           </View>
         </TouchableOpacity>
@@ -318,7 +318,7 @@ export default function ProfileScreen() {
           <View>
             <Text style={[styles.earningsLabel, dynamicStyles.earningsLabel]}>Total Earnings</Text>
             <Text style={styles.earningsAmount}>
-              {formatCents(profile.total_winnings * 100)}
+              {formatCents((profile.total_winnings ?? 0) * 100)}
             </Text>
           </View>
           <Ionicons name="trophy" size={32} color={Colors.primary} />
@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#F8F8F8',
+    borderColor: 'transparent',
   },
   avatarGradient: {
     justifyContent: 'center',

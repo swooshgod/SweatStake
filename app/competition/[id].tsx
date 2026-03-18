@@ -81,7 +81,10 @@ export default function CompetitionDetailScreen() {
   };
 
   const handleJoin = async () => {
-    if (!profile || !competition) return;
+    if (!profile || !competition) {
+      if (!profile) router.push('/(auth)/welcome');
+      return;
+    }
 
     setJoining(true);
     try {
@@ -150,12 +153,13 @@ export default function CompetitionDetailScreen() {
           }
           if (warning) {
             // Show warning but allow them to proceed
-            await new Promise<void>((resolve) => {
+            const shouldProceed = await new Promise<boolean>((resolve) => {
               Alert.alert('Heads Up', warning, [
-                { text: 'Cancel', style: 'cancel', onPress: () => resolve() },
-                { text: 'Join Anyway', onPress: () => resolve() },
+                { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+                { text: 'Join Anyway', onPress: () => resolve(true) },
               ]);
             });
+            if (!shouldProceed) return;
           }
         }
       }
@@ -302,7 +306,9 @@ export default function CompetitionDetailScreen() {
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
-    d.setDate(d.getDate() - d.getDay() + i + 1);
+    const dayOfWeek = d.getDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    d.setDate(d.getDate() + mondayOffset + i);
     return {
       date: d.toISOString().split('T')[0],
       pointsEarned: 0,

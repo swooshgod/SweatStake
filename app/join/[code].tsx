@@ -31,8 +31,7 @@ import { competitionPrizeInCredits } from "@/lib/prizes";
 import { validatePromoCode, recordPromoRedemption, formatDiscount } from "@/lib/promos";
 import type { Competition } from "@/lib/types";
 import type { PaymentMethod } from "@/lib/payments";
-import { useStripe, StripeProvider } from "@stripe/stripe-react-native";
-import { STRIPE_PUBLISHABLE_KEY } from "@/lib/stripe";
+import { useStripe } from "@stripe/stripe-react-native";
 
 export default function JoinScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
@@ -368,7 +367,6 @@ export default function JoinScreen() {
   const hasFee = competition.entry_fee_cents > 0;
 
   return (
-    <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
     <ScrollView style={[styles.scrollContainer, dynamicStyles.scrollContainer]} contentContainerStyle={styles.scrollContent}>
       <View style={[styles.card, dynamicStyles.card]}>
         {/* Invite badge */}
@@ -559,7 +557,6 @@ export default function JoinScreen() {
         )}
       </View>
     </ScrollView>
-    </StripeProvider>
   );
 }
 

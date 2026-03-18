@@ -33,8 +33,7 @@ const COMP_TYPES = [
   { id: 'improvement',   icon: '📈', name: '% Improvement',   desc: 'Biggest improvement above your baseline', watch: false, type: 'fitness' as CompetitionType, scoringMode: 'relative_improvement' as ScoringMode },
   { id: 'weight_loss',   icon: '⚖️', name: 'Weight Loss %',   desc: 'Most % body weight lost — manual weigh-ins', watch: false, type: 'fitness' as CompetitionType, scoringMode: 'raw_weight_loss_pct' as ScoringMode },
   { id: 'distance',      icon: '🗺️', name: 'Distance Race',   desc: 'Most miles/km — auto-tracked via GPS',    watch: false, type: 'running' as CompetitionType, scoringMode: 'raw_miles' as ScoringMode },
-  { id: 'active_minutes',icon: '🧘', name: 'Active Minutes',  desc: 'Most minutes of any exercise',            watch: false, type: 'fitness' as CompetitionType, scoringMode: 'raw_active_minutes' as ScoringMode },
-  { id: 'full_challenge', icon: '🏆', name: 'Full Challenge',  desc: 'Steps + Distance + Active Minutes',       watch: false, type: 'fitness' as CompetitionType, scoringMode: 'raw_steps' as ScoringMode },
+  { id: 'full_challenge', icon: '🏆', name: 'Full Challenge',  desc: 'Steps + Distance + Improvement',          watch: false, type: 'fitness' as CompetitionType, scoringMode: 'raw_steps' as ScoringMode },
 ];
 
 const FEE_OPTIONS = [

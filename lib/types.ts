@@ -29,7 +29,7 @@ export interface ScoringTemplate {
 
 export type CompetitionType = 'fitness' | 'running' | 'cycling' | 'lifting' | 'custom';
 export type CompetitionStatus = 'open' | 'active' | 'completed' | 'cancelled';
-export type PaymentType = 'stripe' | 'usdc';
+export type PaymentType = 'stripe' | 'usdc' | 'card';
 
 export type TierLockMode = 'none' | 'within_one' | 'same';
 export type FitnessTier = 'beginner' | 'active' | 'athlete' | 'elite';

@@ -15,7 +15,6 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabase';
 
 const BG_IMAGE = {
   uri: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=1080&q=90&fit=crop',
@@ -40,24 +39,6 @@ export default function WelcomeScreen() {
     } catch (error) {
       console.error('Apple Sign-In error:', error);
       Alert.alert('Sign-In Failed', 'Something went wrong with Apple Sign-In. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
-      if (error) throw error;
-      if (isModal) {
-        router.back();
-      } else {
-        router.replace('/(tabs)');
-      }
-    } catch (error) {
-      console.error('Google Sign-In error:', error);
-      Alert.alert('Sign-In Failed', 'Something went wrong with Google Sign-In. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -229,20 +210,6 @@ const modalStyles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: '700',
   },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-    paddingVertical: 16,
-    borderRadius: BorderRadius.lg,
-    gap: Spacing.sm,
-  },
-  googleButtonText: {
-    color: Colors.background,
-    fontSize: FontSize.md,
-    fontWeight: '700',
-  },
   cancelButton: {
     marginTop: Spacing.xxl,
     paddingVertical: Spacing.md,
@@ -349,20 +316,6 @@ const styles = StyleSheet.create({
   },
   appleButtonText: {
     color: '#fff',
-    fontSize: FontSize.md,
-    fontWeight: '700',
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-    paddingVertical: 16,
-    borderRadius: BorderRadius.lg,
-    gap: Spacing.sm,
-  },
-  googleButtonText: {
-    color: Colors.background,
     fontSize: FontSize.md,
     fontWeight: '700',
   },
