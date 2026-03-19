@@ -147,7 +147,7 @@ export default function AgeVerifyScreen() {
                   onSelect={setMonthIndex}
                   width={120}
                 />
-                <View style={[styles.pickerHighlight, { borderColor: Colors.primary + '30' }]} pointerEvents="none" />
+                <View style={[styles.pickerHighlight, { borderColor: Colors.primary + '30', pointerEvents: 'none' }]} />
               </View>
             </View>
 
@@ -161,7 +161,7 @@ export default function AgeVerifyScreen() {
                   onSelect={setDayIndex}
                   width={64}
                 />
-                <View style={[styles.pickerHighlight, { borderColor: Colors.primary + '30' }]} pointerEvents="none" />
+                <View style={[styles.pickerHighlight, { borderColor: Colors.primary + '30', pointerEvents: 'none' }]} />
               </View>
             </View>
 
@@ -175,7 +175,7 @@ export default function AgeVerifyScreen() {
                   onSelect={setYearIndex}
                   width={80}
                 />
-                <View style={[styles.pickerHighlight, { borderColor: Colors.primary + '30' }]} pointerEvents="none" />
+                <View style={[styles.pickerHighlight, { borderColor: Colors.primary + '30', pointerEvents: 'none' }]} />
               </View>
             </View>
           </View>
