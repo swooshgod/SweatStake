@@ -143,6 +143,8 @@ export default function WelcomeScreen() {
           <TouchableOpacity
             style={styles.skipButton}
             onPress={() => router.replace('/(tabs)')}
+            accessibilityRole="button"
+            accessibilityLabel="Browse without signing in"
           >
             <Text style={styles.skipText}>Browse without signing in</Text>
           </TouchableOpacity>

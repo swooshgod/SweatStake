@@ -241,6 +241,8 @@ export default function FirstLaunchScreen() {
           style={styles.joinButton}
           onPress={handleJoin}
           activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={competition ? `Join competition for $${(competition.entry_fee_cents / 100).toFixed(0)}` : 'Start competing'}
         >
           <Ionicons name="flash" size={20} color="#000" />
           <Text style={styles.joinButtonText}>
@@ -248,7 +250,12 @@ export default function FirstLaunchScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+        <TouchableOpacity
+          style={styles.skipButton}
+          onPress={handleSkip}
+          accessibilityRole="button"
+          accessibilityLabel="Skip and browse competitions"
+        >
           <Text style={styles.skipText}>Just browsing →</Text>
         </TouchableOpacity>
       </Animated.View>

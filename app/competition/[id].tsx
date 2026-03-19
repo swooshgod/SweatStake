@@ -429,6 +429,8 @@ export default function CompetitionDetailScreen() {
                 style={[styles.joinButton, { backgroundColor: Colors.primary }, Shadow.md, joining && { opacity: 0.6 }]}
                 onPress={handleJoin}
                 disabled={joining}
+                accessibilityRole="button"
+                accessibilityLabel={`Join competition${competition.entry_fee_cents > 0 ? ` for ${formatCents(competition.entry_fee_cents)}` : ''}`}
               >
                 {joining ? (
                   <ActivityIndicator size="small" color="#fff" />
@@ -442,7 +444,7 @@ export default function CompetitionDetailScreen() {
                 )}
               </TouchableOpacity>
             )}
-            <TouchableOpacity style={[styles.shareButton, { borderColor: Colors.primary + '40' }]} onPress={handleShare}>
+            <TouchableOpacity style={[styles.shareButton, { borderColor: Colors.primary + '40' }]} onPress={handleShare} accessibilityRole="button" accessibilityLabel="Invite friends to this competition">
               <Ionicons name="share-outline" size={18} color={Colors.primary} />
               <Text style={[styles.shareButtonText, { color: Colors.primary }]}>Invite</Text>
             </TouchableOpacity>
@@ -457,12 +459,15 @@ export default function CompetitionDetailScreen() {
         </View>
 
         {/* Tab bar */}
-        <View style={[styles.tabBar, { backgroundColor: Colors.surface }, Shadow.sm]}>
+        <View style={[styles.tabBar, { backgroundColor: Colors.surface }, Shadow.sm]} accessibilityRole="tablist">
           {(['leaderboard', 'progress', 'rules'] as Tab[]).map((tab) => (
             <TouchableOpacity
               key={tab}
               style={[styles.tab, activeTab === tab && { borderBottomColor: Colors.primary }]}
               onPress={() => setActiveTab(tab)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: activeTab === tab }}
+              accessibilityLabel={tab === 'leaderboard' ? 'Leaderboard' : tab === 'progress' ? 'My Progress' : 'Rules'}
             >
               <Text style={[styles.tabText, { color: Colors.textMuted }, activeTab === tab && { color: Colors.primary }]}>
                 {tab === 'leaderboard' ? 'Leaderboard' : tab === 'progress' ? 'My Progress' : 'Rules'}

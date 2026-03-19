@@ -147,6 +147,8 @@ export default function HomeScreen() {
               router.push('/create');
             }}
             activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Create Competition"
           >
             <Text style={styles.emptyButtonText}>Create Competition</Text>
           </TouchableOpacity>
@@ -214,6 +216,8 @@ export default function HomeScreen() {
           }
           router.push('/create');
         }}
+        accessibilityRole="button"
+        accessibilityLabel="Create new competition"
       >
         <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>

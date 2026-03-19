@@ -163,6 +163,8 @@ export default function ProfileScreen() {
           style={[styles.signInButton, dynamicStyles.signInButton]}
           onPress={() => router.push('/(auth)/welcome')}
           activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Sign in to your account"
         >
           <Text style={[styles.signInButtonText, dynamicStyles.signInButtonText]}>Sign In</Text>
           <Ionicons name="arrow-forward" size={18} color={Colors.textPrimary} />
