@@ -1,7 +1,7 @@
 // Web shim for @stripe/stripe-react-native (native-only package)
-import React from 'react';
+import type { ReactNode } from 'react';
 
-export function StripeProvider({ children }: { children: React.ReactNode }) {
+export function StripeProvider({ children }: { children: ReactNode }): any {
   return children;
 }
 
