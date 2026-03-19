@@ -1,0 +1,44 @@
+[project]
+id = "fdrrpdqemiqclyuvqxgs"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[auth]
+enabled = true
+site_url = "https://podiumapp.fit"
+additional_redirect_urls = [
+  "https://podiumapp.fit",
+  "https://podiumapp.fit/**",
+  "http://localhost:*",
+  "http://localhost:*/**",
+  "podiumapp://",
+  "podiumapp://**",
+]
+
+[auth.external.apple]
+enabled = true
+
+[auth.external.google]
+enabled = true
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost"
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[realtime]
+enabled = true

@@ -73,7 +73,7 @@ export default function ReportUserModal({
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start();
     } else {
       // Reset state when closed

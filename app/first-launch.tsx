@@ -101,18 +101,18 @@ export default function FirstLaunchScreen() {
 
   const startAnimations = () => {
     Animated.sequence([
-      Animated.timing(logoOpacity, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.timing(logoOpacity, { toValue: 1, duration: 600, useNativeDriver: Platform.OS !== 'web' }),
       Animated.parallel([
-        Animated.timing(heroOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(heroY, { toValue: 0, duration: 500, useNativeDriver: true }),
+        Animated.timing(heroOpacity, { toValue: 1, duration: 500, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(heroY, { toValue: 0, duration: 500, useNativeDriver: Platform.OS !== 'web' }),
       ]),
       Animated.parallel([
-        Animated.timing(cardOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(cardY, { toValue: 0, duration: 500, useNativeDriver: true }),
+        Animated.timing(cardOpacity, { toValue: 1, duration: 500, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(cardY, { toValue: 0, duration: 500, useNativeDriver: Platform.OS !== 'web' }),
       ]),
       Animated.parallel([
-        Animated.timing(btnOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-        Animated.spring(btnScale, { toValue: 1, friction: 6, useNativeDriver: true }),
+        Animated.timing(btnOpacity, { toValue: 1, duration: 400, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.spring(btnScale, { toValue: 1, friction: 6, useNativeDriver: Platform.OS !== 'web' }),
       ]),
     ]).start();
   };
@@ -120,8 +120,8 @@ export default function FirstLaunchScreen() {
   const startPulse = () => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.06, duration: 900, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1.06, duration: 900, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: Platform.OS !== 'web' }),
       ])
     ).start();
   };
@@ -155,11 +155,11 @@ export default function FirstLaunchScreen() {
       {/* Background gradient */}
       <LinearGradient
         colors={['#0A0A0A', '#1A0A00', '#0A0A0A']}
-        style={StyleSheet.absoluteFill}
+        style={[StyleSheet.absoluteFill, { zIndex: 0, pointerEvents: 'none' } as any]}
       />
 
       {/* Orange glow */}
-      <Animated.View style={[styles.glow, { opacity: cardOpacity }]} />
+      <Animated.View style={[styles.glow, { opacity: cardOpacity, zIndex: 0, pointerEvents: 'none' } as any]} />
 
       {/* Top: PODIUM wordmark */}
       <Animated.View style={[styles.wordmarkContainer, { opacity: logoOpacity }]}>
@@ -288,17 +288,18 @@ const styles = StyleSheet.create({
     width: '80%',
     maxWidth: 500,
     height: 300,
-    backgroundColor: Colors.primary,
-    opacity: 0.07,
+    backgroundColor: 'transparent',
     borderRadius: 300,
     overflow: 'hidden',
     alignSelf: 'center',
-    // blur effect via shadow
-    ...Shadow.lg,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0 0 120px 80px rgba(255, 90, 31, 0.07)' }
+      : { backgroundColor: Colors.primary, opacity: 0.07, ...Shadow.lg }),
   },
   wordmarkContainer: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 60 : 40,
+    zIndex: 1,
   },
   wordmark: {
     fontSize: 16,
@@ -310,6 +311,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.xxl,
     marginTop: -60,
+    zIndex: 1,
   },
   heroLine1: {
     fontSize: FontSize.xxxl,
@@ -340,6 +342,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.primary + '30',
     marginBottom: Spacing.xl,
+    zIndex: 1,
     ...Shadow.gold,
   },
   liveBadge: {
@@ -461,6 +464,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 480,
     gap: Spacing.md,
+    zIndex: 1,
   },
   joinButton: {
     flexDirection: 'row',

@@ -4,6 +4,30 @@
 // Energy: Premium, competitive, athletic
 // ─────────────────────────────────────────────
 
+import { Platform } from 'react-native';
+
+// Helper: on web, only emit boxShadow (avoids deprecated shadow* warnings).
+// On native, emit shadow* props (boxShadow is ignored).
+function shadow(
+  color: string,
+  offset: { width: number; height: number },
+  opacity: number,
+  radius: number,
+  elevation: number,
+  boxShadowValue: string,
+) {
+  if (Platform.OS === 'web') {
+    return { boxShadow: boxShadowValue, elevation } as const;
+  }
+  return {
+    shadowColor: color,
+    shadowOffset: offset,
+    shadowOpacity: opacity,
+    shadowRadius: radius,
+    elevation,
+  } as const;
+}
+
 // Light mode colors (default)
 export const LightColors = {
   // Brand — Podium Orange
@@ -138,90 +162,20 @@ export const FontSize = {
 
 // ─── Shadows (Dark mode) ─────────────────────
 export const Shadow = {
-  sm: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 2,
-    boxShadow: '0px 1px 4px rgba(0, 0, 0, 0.3)',
-  },
-  md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 5,
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.4)',
-  },
-  lg: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 24,
-    elevation: 10,
-    boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.5)',
-  },
-  gold: {
-    shadowColor: '#FF5A1F',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 8,
-    boxShadow: '0px 4px 16px rgba(255, 90, 31, 0.4)',
-  },
-  goldSm: {
-    shadowColor: '#FF5A1F',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-    boxShadow: '0px 2px 8px rgba(255, 90, 31, 0.2)',
-  },
+  sm: shadow('#000', { width: 0, height: 1 }, 0.3, 4, 2, '0px 1px 4px rgba(0, 0, 0, 0.3)'),
+  md: shadow('#000', { width: 0, height: 4 }, 0.4, 12, 5, '0px 4px 12px rgba(0, 0, 0, 0.4)'),
+  lg: shadow('#000', { width: 0, height: 8 }, 0.5, 24, 10, '0px 8px 24px rgba(0, 0, 0, 0.5)'),
+  gold: shadow('#FF5A1F', { width: 0, height: 4 }, 0.4, 16, 8, '0px 4px 16px rgba(255, 90, 31, 0.4)'),
+  goldSm: shadow('#FF5A1F', { width: 0, height: 2 }, 0.2, 8, 4, '0px 2px 8px rgba(255, 90, 31, 0.2)'),
 } as const;
 
 // ─── Shadows (Light mode) ────────────────────
 export const ShadowLight = {
-  sm: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
-    boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.06)',
-  },
-  md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.08)',
-  },
-  lg: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 6,
-    boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)',
-  },
-  gold: {
-    shadowColor: '#FF5A1F',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
-    boxShadow: '0px 2px 12px rgba(255, 90, 31, 0.15)',
-  },
-  goldSm: {
-    shadowColor: '#FF5A1F',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 2,
-    boxShadow: '0px 1px 6px rgba(255, 90, 31, 0.1)',
-  },
+  sm: shadow('#000', { width: 0, height: 1 }, 0.06, 3, 1, '0px 1px 3px rgba(0, 0, 0, 0.06)'),
+  md: shadow('#000', { width: 0, height: 2 }, 0.08, 8, 3, '0px 2px 8px rgba(0, 0, 0, 0.08)'),
+  lg: shadow('#000', { width: 0, height: 4 }, 0.12, 16, 6, '0px 4px 16px rgba(0, 0, 0, 0.12)'),
+  gold: shadow('#FF5A1F', { width: 0, height: 2 }, 0.15, 12, 4, '0px 2px 12px rgba(255, 90, 31, 0.15)'),
+  goldSm: shadow('#FF5A1F', { width: 0, height: 1 }, 0.1, 6, 2, '0px 1px 6px rgba(255, 90, 31, 0.1)'),
 } as const;
 
 // ─── Competition Types ────────────────────────

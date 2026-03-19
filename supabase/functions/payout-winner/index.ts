@@ -29,8 +29,21 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   httpClient: Stripe.createFetchHttpClient(),
 });
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': Deno.env.get('APP_ORIGIN') ?? 'https://podiumapp.com',
+const ALLOWED_ORIGINS = [
+  'https://podiumapp.fit',
+  'https://podiumapp.com',
+];
+
+function getCorsOrigin(req: Request): string {
+  const origin = req.headers.get('origin') ?? '';
+  if (ALLOWED_ORIGINS.includes(origin) || origin.startsWith('http://localhost:')) {
+    return origin;
+  }
+  return Deno.env.get('APP_ORIGIN') ?? 'https://podiumapp.fit';
+}
+
+const defaultCorsHeaders = {
+  'Access-Control-Allow-Origin': 'https://podiumapp.fit',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-podium-internal',
 };
 
@@ -238,6 +251,7 @@ function sleep(ms: number) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 serve(async (req) => {
+  const corsHeaders = { ...defaultCorsHeaders, 'Access-Control-Allow-Origin': getCorsOrigin(req) };
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   // ── Auth ──────────────────────────────────────────────────────────────────
