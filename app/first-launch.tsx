@@ -15,7 +15,6 @@ import {
   StyleSheet,
   Animated,
   TouchableOpacity,
-  Dimensions,
   StatusBar,
   Platform,
 } from 'react-native';
@@ -27,7 +26,6 @@ import { supabase } from '@/lib/supabase';
 import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme';
 import type { Competition } from '@/lib/types';
 
-const { width, height } = Dimensions.get('window');
 const FIRST_LAUNCH_KEY = 'podium_first_launch_seen';
 
 // ---------------------------------------------------------------------------
@@ -243,6 +241,8 @@ export default function FirstLaunchScreen() {
           style={styles.joinButton}
           onPress={handleJoin}
           activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={competition ? `Join competition for $${(competition.entry_fee_cents / 100).toFixed(0)}` : 'Start competing'}
         >
           <Ionicons name="flash" size={20} color="#000" />
           <Text style={styles.joinButtonText}>
@@ -250,7 +250,12 @@ export default function FirstLaunchScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+        <TouchableOpacity
+          style={styles.skipButton}
+          onPress={handleSkip}
+          accessibilityRole="button"
+          accessibilityLabel="Skip and browse competitions"
+        >
           <Text style={styles.skipText}>Just browsing →</Text>
         </TouchableOpacity>
       </Animated.View>
@@ -274,17 +279,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: Spacing.xl,
+    overflow: 'hidden',
   },
   glow: {
     position: 'absolute',
-    top: height * 0.3,
-    left: width * 0.1,
-    width: width * 0.8,
+    top: '30%',
+    left: '10%',
+    width: '80%',
+    maxWidth: 500,
     height: 300,
     backgroundColor: Colors.primary,
     opacity: 0.07,
     borderRadius: 300,
-    transform: [{ scaleX: 2 }],
+    overflow: 'hidden',
+    alignSelf: 'center',
     // blur effect via shadow
     ...Shadow.lg,
   },
@@ -325,6 +333,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
+    maxWidth: 480,
     backgroundColor: '#141414',
     borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
@@ -450,6 +459,7 @@ const styles = StyleSheet.create({
   },
   ctaContainer: {
     width: '100%',
+    maxWidth: 480,
     gap: Spacing.md,
   },
   joinButton: {

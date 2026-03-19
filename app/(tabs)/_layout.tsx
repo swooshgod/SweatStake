@@ -18,6 +18,8 @@ function TabHeader() {
         onPress={toggleTheme}
         style={[styles.themeToggle, { backgroundColor: Colors.surfaceLight }]}
         activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       >
         <Ionicons
           name={isDark ? 'sunny' : 'moon'}

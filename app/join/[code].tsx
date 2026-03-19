@@ -31,7 +31,7 @@ import { competitionPrizeInCredits } from "@/lib/prizes";
 import { validatePromoCode, recordPromoRedemption, formatDiscount } from "@/lib/promos";
 import type { Competition } from "@/lib/types";
 import type { PaymentMethod } from "@/lib/payments";
-import { useStripe } from "@stripe/stripe-react-native";
+import { useStripe } from "@/lib/stripe-native";
 
 export default function JoinScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();

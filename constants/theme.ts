@@ -144,6 +144,7 @@ export const Shadow = {
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 2,
+    boxShadow: '0px 1px 4px rgba(0, 0, 0, 0.3)',
   },
   md: {
     shadowColor: '#000',
@@ -151,6 +152,7 @@ export const Shadow = {
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 5,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.4)',
   },
   lg: {
     shadowColor: '#000',
@@ -158,6 +160,7 @@ export const Shadow = {
     shadowOpacity: 0.5,
     shadowRadius: 24,
     elevation: 10,
+    boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.5)',
   },
   gold: {
     shadowColor: '#FF5A1F',
@@ -165,6 +168,7 @@ export const Shadow = {
     shadowOpacity: 0.4,
     shadowRadius: 16,
     elevation: 8,
+    boxShadow: '0px 4px 16px rgba(255, 90, 31, 0.4)',
   },
   goldSm: {
     shadowColor: '#FF5A1F',
@@ -172,6 +176,7 @@ export const Shadow = {
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
+    boxShadow: '0px 2px 8px rgba(255, 90, 31, 0.2)',
   },
 } as const;
 
@@ -183,6 +188,7 @@ export const ShadowLight = {
     shadowOpacity: 0.06,
     shadowRadius: 3,
     elevation: 1,
+    boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.06)',
   },
   md: {
     shadowColor: '#000',
@@ -190,6 +196,7 @@ export const ShadowLight = {
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.08)',
   },
   lg: {
     shadowColor: '#000',
@@ -197,6 +204,7 @@ export const ShadowLight = {
     shadowOpacity: 0.12,
     shadowRadius: 16,
     elevation: 6,
+    boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)',
   },
   gold: {
     shadowColor: '#FF5A1F',
@@ -204,6 +212,7 @@ export const ShadowLight = {
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 4,
+    boxShadow: '0px 2px 12px rgba(255, 90, 31, 0.15)',
   },
   goldSm: {
     shadowColor: '#FF5A1F',
@@ -211,6 +220,7 @@ export const ShadowLight = {
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 2,
+    boxShadow: '0px 1px 6px rgba(255, 90, 31, 0.1)',
   },
 } as const;
 

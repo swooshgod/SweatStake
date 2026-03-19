@@ -50,7 +50,7 @@ export default function LeaderboardRow({
           {isDisqualified ? (
             <Text style={styles.disqualifiedIcon}>🚫</Text>
           ) : medal ? (
-            <Text style={[styles.medal, rank === 1 && { textShadowColor: Colors.accentGold, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8 }]}>{medal}</Text>
+            <Text style={[styles.medal, rank === 1 && { textShadow: `0px 0px 8px ${Colors.accentGold}` }]}>{medal}</Text>
           ) : (
             <Text style={[styles.rankNumber, { color: Colors.textMuted }]}>{rank}</Text>
           )}

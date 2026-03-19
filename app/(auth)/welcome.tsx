@@ -143,6 +143,8 @@ export default function WelcomeScreen() {
           <TouchableOpacity
             style={styles.skipButton}
             onPress={() => router.replace('/(tabs)')}
+            accessibilityRole="button"
+            accessibilityLabel="Browse without signing in"
           >
             <Text style={styles.skipText}>Browse without signing in</Text>
           </TouchableOpacity>
@@ -265,18 +267,14 @@ const styles = StyleSheet.create({
     lineHeight: 50,
     letterSpacing: -1.5,
     marginBottom: 12,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8,
+    textShadow: '0px 2px 8px rgba(0,0,0,0.5)',
   },
   subline: {
     fontSize: FontSize.sm,
     color: 'rgba(255,255,255,0.85)',
     lineHeight: 20,
     fontWeight: '500',
-    textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+    textShadow: '0px 1px 4px rgba(0,0,0,0.8)',
   },
   pills: {
     flexDirection: 'row',
