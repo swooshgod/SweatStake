@@ -1,25 +1,28 @@
 {
   "date": "2026-03-19",
   "url": "http://localhost:8081",
-  "healthScore": 78,
-  "previousScore": 62,
+  "healthScore": 88,
+  "previousScore": 78,
   "issues": [
     { "id": "ISSUE-001", "title": "Web build crash from native-only Stripe import", "severity": "critical", "category": "functional", "status": "fixed" },
-    { "id": "ISSUE-002", "title": "CORS/network block on Supabase API calls", "severity": "high", "category": "functional", "status": "deferred-environment" },
+    { "id": "ISSUE-002", "title": "CORS/network block on Supabase API calls", "severity": "high", "category": "functional", "status": "mitigated" },
     { "id": "ISSUE-003", "title": "First-launch screen layout broken on desktop", "severity": "medium", "category": "visual", "status": "fixed" },
     { "id": "ISSUE-004", "title": "Auth header shows raw route group name", "severity": "medium", "category": "ux", "status": "fixed" },
     { "id": "ISSUE-005", "title": "Deprecated React Native Web style warnings", "severity": "low", "category": "console", "status": "fixed" },
     { "id": "ISSUE-006", "title": "Route warning for (auth)/welcome", "severity": "low", "category": "console", "status": "fixed" },
-    { "id": "ISSUE-007", "title": "Poor accessibility — minimal ARIA tree", "severity": "medium", "category": "accessibility", "status": "fixed" }
+    { "id": "ISSUE-007", "title": "Poor accessibility — minimal ARIA tree", "severity": "medium", "category": "accessibility", "status": "fixed" },
+    { "id": "ISSUE-008", "title": "shadow* deprecation warnings on web", "severity": "medium", "category": "console", "status": "fixed" },
+    { "id": "ISSUE-009", "title": "First-launch page blank/dark on web", "severity": "high", "category": "visual", "status": "fixed" },
+    { "id": "ISSUE-010", "title": "useNativeDriver warnings on web", "severity": "low", "category": "console", "status": "fixed" }
   ],
   "categoryScores": {
-    "console": 55,
+    "console": 75,
     "links": 100,
-    "visual": 90,
-    "functional": 75,
-    "ux": 85,
+    "visual": 95,
+    "functional": 80,
+    "ux": 90,
     "performance": 100,
-    "content": 92,
-    "accessibility": 70
+    "content": 95,
+    "accessibility": 80
   }
 }

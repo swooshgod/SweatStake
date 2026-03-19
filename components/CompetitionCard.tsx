@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableWithoutFeedback, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableWithoutFeedback, Animated, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, CompetitionTypes } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -42,13 +42,13 @@ export default function CompetitionCard({ competition, variant = 'full', viewerT
         toValue: 1,
         duration: 400,
         delay,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.timing(slideAnim, {
         toValue: 0,
         duration: 400,
         delay,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start();
   }, []);
@@ -61,12 +61,12 @@ export default function CompetitionCard({ competition, variant = 'full', viewerT
         Animated.timing(shimmerAnim, {
           toValue: 1,
           duration: 2000,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(shimmerAnim, {
           toValue: 0,
           duration: 2000,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ])
     );
@@ -77,7 +77,7 @@ export default function CompetitionCard({ competition, variant = 'full', viewerT
   const onPressIn = () => {
     Animated.spring(scaleAnim, {
       toValue: 0.97,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== 'web',
     }).start();
   };
 
@@ -85,7 +85,7 @@ export default function CompetitionCard({ competition, variant = 'full', viewerT
     Animated.spring(scaleAnim, {
       toValue: 1,
       friction: 3,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== 'web',
     }).start();
   };
 
