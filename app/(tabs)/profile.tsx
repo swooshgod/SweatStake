@@ -16,7 +16,7 @@ import { Spacing, BorderRadius, FontSize, Gradients } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/hooks/useAuth';
 import { isHealthKitAvailable, requestHealthKitPermissions } from '@/lib/healthkit';
-import { formatCents } from '@/lib/stripe';
+import { formatCents, formatDollars } from '@/lib/stripe';
 import { getCreditsBalance, getCreditsDisplay } from '@/lib/prizes';
 import * as ImagePicker from 'expo-image-picker';
 import { getProStatus, type ProStatus } from '@/lib/subscription';
@@ -275,7 +275,7 @@ export default function ProfileScreen() {
       )}
 
       {/* ─── Credits Banner ─── */}
-      {creditsBalance > 0 && (
+      {creditsBalance > 0 ? (
         <TouchableOpacity style={[styles.creditsBanner, dynamicStyles.creditsBanner]} activeOpacity={0.85}>
           <LinearGradient
             colors={[Colors.primaryDark, Colors.primary]}
@@ -293,6 +293,10 @@ export default function ProfileScreen() {
             </View>
           </LinearGradient>
         </TouchableOpacity>
+      ) : (
+        <View style={[styles.creditsZero, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+          <Text style={[styles.creditsZeroLabel, { color: Colors.textMuted }]}>Credits: 0 — earned from winnings</Text>
+        </View>
       )}
 
       {/* ─── Stats Row ─── */}
@@ -309,24 +313,43 @@ export default function ProfileScreen() {
         </View>
         <View style={[styles.statCard, dynamicStyles.statCard]}>
           <Text style={[styles.statValue, { color: Colors.success }]}>
-            {winRate !== null ? `${winRate}%` : '—'}
+            {winRate !== null ? `${winRate}%` : ''}
           </Text>
-          <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Win Rate</Text>
+          <Text style={[styles.statLabel, dynamicStyles.statLabel]}>
+            {winRate !== null ? 'Win Rate' : 'No competitions yet'}
+          </Text>
         </View>
       </View>
 
       {/* ─── Total Earnings ─── */}
-      {(profile.total_winnings ?? 0) > 0 && (
-        <View style={[styles.earningsCard, dynamicStyles.earningsCard]}>
-          <View>
-            <Text style={[styles.earningsLabel, dynamicStyles.earningsLabel]}>Total Earnings</Text>
-            <Text style={styles.earningsAmount}>
-              {formatCents((profile.total_winnings ?? 0) * 100)}
-            </Text>
-          </View>
-          <Ionicons name="trophy" size={32} color={Colors.primary} />
+      <View style={[styles.earningsCard, dynamicStyles.earningsCard]}>
+        <View>
+          <Text style={[styles.earningsLabel, dynamicStyles.earningsLabel]}>Total Winnings</Text>
+          <Text style={styles.earningsAmount}>
+            {formatDollars((profile.total_winnings ?? 0) * 100)}
+          </Text>
         </View>
-      )}
+        <Ionicons name="trophy" size={32} color={Colors.primary} />
+      </View>
+
+      {/* ─── Age Verification ─── */}
+      <View style={styles.menuSection}>
+        <Text style={[styles.menuSectionTitle, dynamicStyles.menuSectionTitle]}>Verification</Text>
+        <TouchableOpacity
+          style={[styles.menuItem, dynamicStyles.menuItem]}
+          activeOpacity={0.7}
+          onPress={() => router.push('/(onboarding)/age-verify')}
+        >
+          <View style={[styles.menuIconBg, { backgroundColor: '#22C55E18' }]}>
+            <Ionicons name="shield-checkmark" size={20} color={Colors.success} />
+          </View>
+          <View style={styles.menuItemContent}>
+            <Text style={[styles.menuItemTitle, dynamicStyles.menuItemTitle]}>Age Verification — required for paid competitions</Text>
+            <Text style={[styles.menuItemSubtitle, dynamicStyles.menuItemSubtitle]}>Takes 30 seconds</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+        </TouchableOpacity>
+      </View>
 
       {/* ─── Connected Apps ─── */}
       <View style={styles.menuSection}>
@@ -395,20 +418,6 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.menuItemContent}>
             <Text style={[styles.menuItemTitle, dynamicStyles.menuItemTitle]}>Notifications</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.menuItem, dynamicStyles.menuItem]}
-          activeOpacity={0.7}
-          onPress={() => router.push('/(onboarding)/age-verify')}
-        >
-          <View style={[styles.menuIconBg, { backgroundColor: '#22C55E18' }]}>
-            <Ionicons name="shield-checkmark" size={20} color={Colors.success} />
-          </View>
-          <View style={styles.menuItemContent}>
-            <Text style={[styles.menuItemTitle, dynamicStyles.menuItemTitle]}>Age Verification</Text>
-            <Text style={[styles.menuItemSubtitle, dynamicStyles.menuItemSubtitle]}>Required for paid competitions</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
         </TouchableOpacity>
@@ -612,6 +621,16 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontWeight: '700',
     color: '#000',
+  },
+  creditsZero: {
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.xl,
+  },
+  creditsZeroLabel: {
+    fontSize: FontSize.sm,
   },
   statsRow: {
     flexDirection: 'row',

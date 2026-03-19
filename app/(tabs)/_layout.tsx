@@ -1,12 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { FontSize, Spacing } from '@/constants/theme';
+import { FontSize, Spacing, BorderRadius } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/hooks/useAuth';
 
-function TabHeader() {
+function TabHeader({ showCreateButton }: { showCreateButton?: boolean }) {
   const { Colors, isDark, toggleTheme } = useTheme();
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
 
   return (
     <View style={[styles.header, { backgroundColor: Colors.background }]}>
@@ -14,19 +17,38 @@ function TabHeader() {
         <Text style={[styles.wordmark, { color: Colors.primary }]}>PODIUM</Text>
         <View style={[styles.wordmarkUnderline, { backgroundColor: Colors.primary }]} />
       </View>
-      <TouchableOpacity
-        onPress={toggleTheme}
-        style={[styles.themeToggle, { backgroundColor: Colors.surfaceLight }]}
-        activeOpacity={0.7}
-        accessibilityRole="button"
-        accessibilityLabel={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      >
-        <Ionicons
-          name={isDark ? 'sunny' : 'moon'}
-          size={18}
-          color={isDark ? Colors.accentGold : Colors.accentPurple}
-        />
-      </TouchableOpacity>
+      <View style={styles.headerRight}>
+        <TouchableOpacity
+          onPress={toggleTheme}
+          style={[styles.themeToggle, { backgroundColor: Colors.surfaceLight }]}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          <Ionicons
+            name={isDark ? 'sunny' : 'moon'}
+            size={18}
+            color={isDark ? Colors.accentGold : Colors.accentPurple}
+          />
+        </TouchableOpacity>
+        {showCreateButton && (
+          <TouchableOpacity
+            onPress={() => {
+              if (!isAuthenticated) {
+                router.push('/(auth)/welcome');
+                return;
+              }
+              router.push('/create');
+            }}
+            style={[styles.createButton, { backgroundColor: Colors.primary }]}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Create new competition"
+          >
+            <Ionicons name="add" size={20} color="#fff" />
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
@@ -60,7 +82,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          headerTitle: () => <TabHeader />,
+          headerTitle: () => <TabHeader showCreateButton />,
           title: 'Compete',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="trophy" size={size} color={color} />
@@ -105,12 +127,24 @@ const styles = StyleSheet.create({
     marginTop: 3,
     opacity: 0.6,
   },
-  themeToggle: {
+  headerRight: {
     position: 'absolute',
     right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  themeToggle: {
     width: 36,
     height: 36,
     borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  createButton: {
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
