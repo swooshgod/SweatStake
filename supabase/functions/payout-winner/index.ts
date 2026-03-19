@@ -1,6 +1,9 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import Stripe from 'https://esm.sh/stripe@13.11.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { secp256k1 } from 'https://esm.sh/@noble/curves@1.3.0/secp256k1';
+import { keccak_256 } from 'https://esm.sh/@noble/hashes@1.3.3/sha3';
+import { bytesToHex, hexToBytes } from 'https://esm.sh/@noble/hashes@1.3.3/utils';
 
 /**
  * payout-winner — triggered by auto-payout or manually by admin
@@ -103,7 +106,7 @@ async function sendTempoUSDC(params: {
   // Encode transferWithMemo(address,uint256,bytes32)
   // Function selector: keccak256("transferWithMemo(address,uint256,bytes32)")[0:4]
   // Precomputed: 0x...  — we'll use a helper
-  const selector = await computeSelector('transferWithMemo(address,uint256,bytes32)');
+  const selector = computeSelector('transferWithMemo(address,uint256,bytes32)');
 
   // ABI encode params
   const encoded = encodeABIParams([
@@ -115,7 +118,7 @@ async function sendTempoUSDC(params: {
   const calldata = selector + encoded;
 
   // Get nonce for escrow wallet
-  const escrowAddress = await privateKeyToAddress(escrowPrivateKey);
+  const escrowAddress = privateKeyToAddress(escrowPrivateKey);
   const nonce = await tempoRPC('eth_getTransactionCount', [escrowAddress, 'latest']);
   const gasPrice = await tempoRPC('eth_gasPrice', []);
 
@@ -130,7 +133,7 @@ async function sendTempoUSDC(params: {
     data: calldata,
   };
 
-  const signedTx = await signTransaction(tx, escrowPrivateKey);
+  const signedTx = signTransaction(tx, escrowPrivateKey);
   const txHash = await tempoRPC('eth_sendRawTransaction', [signedTx]);
 
   // Wait for receipt (~0.6s on Tempo)
@@ -163,19 +166,11 @@ async function tempoRPC(method: string, params: unknown[]): Promise<any> {
   return json.result;
 }
 
-// ── Crypto helpers (Deno-compatible, no ethers dependency) ──────────────────
-async function computeSelector(sig: string): Promise<string> {
-  const enc = new TextEncoder().encode(sig);
-  const hash = await crypto.subtle.digest('SHA-256', enc);
-  // Note: Ethereum uses keccak256, not SHA-256. In production, use a proper
-  // keccak256 implementation. For now we use the noble-hashes library via CDN.
-  // This is a placeholder — see integration note below.
-  return '0x' + Array.from(new Uint8Array(hash)).slice(0, 4).map(b => b.toString(16).padStart(2, '0')).join('');
+// ── Crypto helpers (Deno-compatible via @noble/curves + @noble/hashes) ──────
+function computeSelector(sig: string): string {
+  const hash = keccak_256(new TextEncoder().encode(sig));
+  return '0x' + bytesToHex(hash.slice(0, 4));
 }
-
-// Integration note: For production, use noble-hashes for keccak256:
-// import { keccak_256 } from 'https://esm.sh/@noble/hashes@1.3.3/sha3';
-// const selector = '0x' + Buffer.from(keccak_256(sig)).slice(0, 4).toString('hex');
 
 function encodeABIParams(params: Array<{ type: string; value: any }>): string {
   // Minimal ABI encoder for address, uint256, bytes32
@@ -193,40 +188,113 @@ function encodeABIParams(params: Array<{ type: string; value: any }>): string {
   }).join('');
 }
 
-async function privateKeyToAddress(_privateKey: string): Promise<string> {
-  // In production: derive address from private key using secp256k1
-  // import { secp256k1 } from 'https://esm.sh/@noble/curves@1.3.0/secp256k1';
-  // const pubKey = secp256k1.getPublicKey(privateKey.replace('0x',''), false);
-  // return ethers-style address derivation
-  // Placeholder — Claude Code should integrate @noble/curves for this
-  const addr = Deno.env.get('PODIUM_ESCROW_ADDRESS');
-  if (!addr) throw new Error('PODIUM_ESCROW_ADDRESS env var required for Tempo payouts');
-  return addr;
+function privateKeyToAddress(privateKey: string): string {
+  const keyBytes = hexToBytes(privateKey.replace('0x', ''));
+  // Get uncompressed public key (65 bytes: 0x04 || x || y), drop the 0x04 prefix
+  const pubKey = secp256k1.getPublicKey(keyBytes, false).slice(1);
+  const hash = keccak_256(pubKey);
+  // Ethereum address = last 20 bytes of keccak256(pubKey), checksummed
+  return checksumAddress('0x' + bytesToHex(hash.slice(12)));
 }
 
-async function signTransaction(_tx: object, _privateKey: string): Promise<string> {
-  // In production: RLP-encode + sign with secp256k1
-  // Use @noble/curves + @noble/hashes for pure Deno-compatible signing
-  // This is a known Deno edge function constraint — no Node.js crypto builtins
-  //
-  // Recommended: use viem's serializeTransaction + sign on a Node.js backend
-  // OR deploy payout-winner as a standard Node.js Supabase edge function
-  // with full viem + wagmi/tempo support:
-  //
-  // import { createWalletClient, http, parseUnits, stringToHex, pad } from 'viem';
-  // import { tempo } from 'viem/chains';
-  // import { privateKeyToAccount } from 'viem/accounts';
-  //
-  // const client = createWalletClient({ chain: tempo, transport: http() });
-  // const account = privateKeyToAccount(escrowPrivateKey);
-  // const hash = await client.writeContract({
-  //   account,
-  //   address: TEMPO_USDC_ADDRESS,
-  //   abi: TIP20_ABI,
-  //   functionName: 'transferWithMemo',
-  //   args: [toAddress, parseUnits(amountUSDC.toFixed(2), 6), pad(stringToHex(competitionId), { size: 32 })],
-  // });
-  throw new Error('signTransaction: implement with @noble/curves or migrate to Node.js edge function with viem');
+function checksumAddress(address: string): string {
+  const addr = address.toLowerCase().replace('0x', '');
+  const hash = bytesToHex(keccak_256(new TextEncoder().encode(addr)));
+  let result = '0x';
+  for (let i = 0; i < 40; i++) {
+    result += parseInt(hash[i], 16) >= 8 ? addr[i].toUpperCase() : addr[i];
+  }
+  return result;
+}
+
+// ── RLP encoding (minimal, supports EIP-155 legacy transactions) ────────────
+function rlpEncode(input: Uint8Array | Uint8Array[]): Uint8Array {
+  if (input instanceof Uint8Array) {
+    if (input.length === 1 && input[0] < 0x80) return input;
+    if (input.length <= 55) return concat([new Uint8Array([0x80 + input.length]), input]);
+    const lenBytes = bigIntToBytes(BigInt(input.length));
+    return concat([new Uint8Array([0xb7 + lenBytes.length]), lenBytes, input]);
+  }
+  // Array
+  const encoded = concat(input.map(item => rlpEncode(item)));
+  if (encoded.length <= 55) return concat([new Uint8Array([0xc0 + encoded.length]), encoded]);
+  const lenBytes = bigIntToBytes(BigInt(encoded.length));
+  return concat([new Uint8Array([0xf7 + lenBytes.length]), lenBytes, encoded]);
+}
+
+function bigIntToBytes(n: bigint): Uint8Array {
+  if (n === 0n) return new Uint8Array(0);
+  const hex = n.toString(16);
+  const padded = hex.length % 2 ? '0' + hex : hex;
+  return hexToBytes(padded);
+}
+
+function bigIntToMinBytes(n: bigint): Uint8Array {
+  if (n === 0n) return new Uint8Array(0);
+  return bigIntToBytes(n);
+}
+
+function concat(arrays: Uint8Array[]): Uint8Array {
+  const total = arrays.reduce((s, a) => s + a.length, 0);
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const a of arrays) { out.set(a, offset); offset += a.length; }
+  return out;
+}
+
+interface LegacyTx {
+  chainId: number;
+  nonce: number;
+  gasPrice: bigint;
+  gasLimit: bigint;
+  to: string;
+  value: bigint;
+  data: string;
+}
+
+function signTransaction(tx: LegacyTx, privateKey: string): string {
+  const keyBytes = hexToBytes(privateKey.replace('0x', ''));
+  const chainId = BigInt(tx.chainId);
+
+  // EIP-155: encode [nonce, gasPrice, gasLimit, to, value, data, chainId, 0, 0]
+  const rawFields: Uint8Array[] = [
+    bigIntToMinBytes(BigInt(tx.nonce)),
+    bigIntToMinBytes(tx.gasPrice),
+    bigIntToMinBytes(tx.gasLimit),
+    hexToBytes(tx.to.replace('0x', '')),
+    bigIntToMinBytes(tx.value),
+    hexToBytes(tx.data.replace('0x', '')),
+    bigIntToMinBytes(chainId),
+    new Uint8Array(0), // EIP-155 r placeholder
+    new Uint8Array(0), // EIP-155 s placeholder
+  ];
+
+  const encoded = rlpEncode(rawFields);
+  const msgHash = keccak_256(encoded);
+
+  // Sign with secp256k1
+  const sig = secp256k1.sign(msgHash, keyBytes);
+
+  // EIP-155 v value: recovery + chainId * 2 + 35
+  const v = BigInt(sig.recovery) + chainId * 2n + 35n;
+
+  // Encode signed transaction: [nonce, gasPrice, gasLimit, to, value, data, v, r, s]
+  const rBytes = bigIntToBytes(sig.r);
+  const sBytes = bigIntToBytes(sig.s);
+
+  const signedFields: Uint8Array[] = [
+    bigIntToMinBytes(BigInt(tx.nonce)),
+    bigIntToMinBytes(tx.gasPrice),
+    bigIntToMinBytes(tx.gasLimit),
+    hexToBytes(tx.to.replace('0x', '')),
+    bigIntToMinBytes(tx.value),
+    hexToBytes(tx.data.replace('0x', '')),
+    bigIntToMinBytes(v),
+    rBytes,
+    sBytes,
+  ];
+
+  return '0x' + bytesToHex(rlpEncode(signedFields));
 }
 
 function sleep(ms: number) {
