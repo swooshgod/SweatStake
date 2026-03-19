@@ -35,7 +35,7 @@ export type TierLockMode = 'none' | 'within_one' | 'same';
 export type FitnessTier = 'beginner' | 'active' | 'athlete' | 'elite';
 
 export type ScoringMode =
-  | 'relative_improvement'    // % above personal 7-day baseline
+  | 'personal_best'           // steps above personal 7-day baseline
   | 'raw_steps'               // total steps
   | 'raw_miles'               // total miles/distance (walk, run, swim, cycle)
   | 'raw_weight_loss_pct'     // % body weight lost (manual weigh-ins)
@@ -52,7 +52,7 @@ export interface ScoringModeConfig {
 }
 
 export const SCORING_MODES: ScoringModeConfig[] = [
-  { id: 'relative_improvement',  label: '% Improvement',    description: 'Compete on how much you improve above your personal baseline. Fair for all fitness levels.', unit: '%',       privateOnly: false },
+  { id: 'personal_best',          label: 'Personal Best',    description: 'Who improves the most above their own daily average? Fair for all fitness levels.', unit: 'steps',   privateOnly: false },
   { id: 'raw_steps',             label: 'Most Steps',       description: 'Total steps taken during the competition. Auto-tracked via iPhone or Apple Watch.',           unit: 'steps',   privateOnly: true },
   { id: 'raw_miles',             label: 'Distance Race',    description: 'Total distance — walking, running, swimming, or cycling. Auto-tracked via GPS.',               unit: 'miles',   privateOnly: true },
   { id: 'raw_weight_loss_pct',   label: 'Weight Loss %',   description: 'Most % of body weight lost. Manual weigh-ins. Fair across all body sizes.',                   unit: '%',       privateOnly: false },
@@ -93,10 +93,10 @@ export const COMPETITION_TEMPLATES: CompetitionTemplate[] = [
     icon: '💥',
   },
   {
-    id: 'improvement',
-    name: '% Improvement',
-    description: 'Biggest improvement above your baseline — auto-tracked',
-    metric: 'improvement',
+    id: 'personal_best',
+    name: 'Personal Best',
+    description: 'Who improves the most above their own daily average? Fair for all fitness levels.',
+    metric: 'personal_best',
     requiresWatch: false,
     icon: '📈',
   },

@@ -885,12 +885,12 @@ export interface BaselineReadiness {
   ready: boolean;
   daysOfData: number;
   message?: string;
-  canJoinImprovementCompetition: boolean;
+  canJoinPersonalBestCompetition: boolean;
 }
 
 /**
  * Check if the user has enough Apple Health history to participate
- * in a % Improvement competition fairly.
+ * in a Personal Best competition fairly.
  *
  * Requires at least 3 days of step data in the last 7 days.
  * Shows a friendly warning if not enough data exists yet.
@@ -900,7 +900,7 @@ export async function checkBaselineReadiness(): Promise<BaselineReadiness> {
     return {
       ready: false,
       daysOfData: 0,
-      canJoinImprovementCompetition: false,
+      canJoinPersonalBestCompetition: false,
       message: 'Apple Health is only available on iPhone.',
     };
   }
@@ -937,9 +937,9 @@ export async function checkBaselineReadiness(): Promise<BaselineReadiness> {
       return {
         ready: false,
         daysOfData,
-        canJoinImprovementCompetition: false,
+        canJoinPersonalBestCompetition: false,
         message: daysOfData === 0
-          ? `Your iPhone needs at least 3 days of step data to join a % Improvement competition fairly. Make sure Apple Health is tracking your steps and try again in a few days.`
+          ? `Your iPhone needs at least 3 days of step data to join a Personal Best competition fairly. Make sure Apple Health is tracking your steps and try again in a few days.`
           : `You have ${daysOfData} day${daysOfData === 1 ? '' : 's'} of activity data. We need at least 3 days to calculate your personal baseline fairly. Check back in ${daysNeeded} day${daysNeeded === 1 ? '' : 's'}!`,
       };
     }
@@ -947,7 +947,7 @@ export async function checkBaselineReadiness(): Promise<BaselineReadiness> {
     return {
       ready: true,
       daysOfData,
-      canJoinImprovementCompetition: true,
+      canJoinPersonalBestCompetition: true,
     };
   } catch (error) {
     console.warn('[Baseline] Check failed:', error);
@@ -955,35 +955,20 @@ export async function checkBaselineReadiness(): Promise<BaselineReadiness> {
     return {
       ready: true,
       daysOfData: 0,
-      canJoinImprovementCompetition: true,
+      canJoinPersonalBestCompetition: true,
       message: 'Could not verify activity history — proceeding anyway.',
     };
   }
 }
 
 /**
- * Calculate percentage improvement above baseline.
+ * Calculate Personal Best improvement score.
+ * Score = raw steps above your daily average. Positive = improvement. Negative = below baseline.
  */
 export function calculateImprovementScore(
   baseline: UserBaseline,
-  current: { steps: number; calories: number; workoutMinutes: number }
+  currentSteps: number
 ): number {
-  let totalImprovement = 0;
-  let metrics = 0;
-
-  if (baseline.avgDailySteps > 0) {
-    totalImprovement += ((current.steps - baseline.avgDailySteps) / baseline.avgDailySteps) * 100;
-    metrics++;
-  }
-  if (baseline.avgDailyCalories > 0) {
-    totalImprovement += ((current.calories - baseline.avgDailyCalories) / baseline.avgDailyCalories) * 100;
-    metrics++;
-  }
-  if (baseline.avgDailyWorkoutMinutes > 0) {
-    totalImprovement += ((current.workoutMinutes - baseline.avgDailyWorkoutMinutes) / baseline.avgDailyWorkoutMinutes) * 100;
-    metrics++;
-  }
-
-  if (metrics === 0) return 0;
-  return Math.round((totalImprovement / metrics) * 10) / 10;
+  if (baseline.avgDailySteps <= 0) return 0;
+  return Math.round(currentSteps - baseline.avgDailySteps);
 }

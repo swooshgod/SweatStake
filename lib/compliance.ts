@@ -83,8 +83,8 @@ under applicable state and federal law.
  * Skill-based = outcome determined by participant effort, not chance.
  */
 export function isSkillBasedCompetition(competition: CompetitionLike): boolean {
-  // % improvement scoring is always skill-based (effort-determined)
-  if (competition.scoring_mode === 'relative_improvement') return true;
+  // Personal Best scoring is always skill-based (effort-determined)
+  if (competition.scoring_mode === 'personal_best') return true;
 
   // Multi-category scoring (Full Challenge) is skill-based
   const categories = competition.scoring_template?.categories ?? [];

@@ -31,7 +31,7 @@ import { SCORING_MODES } from '@/lib/types';
 type Tab = 'leaderboard' | 'progress' | 'rules';
 
 const SCORING_MODE_COLORS: Partial<Record<ScoringMode, string>> = {
-  relative_improvement: '#3B82F6',
+  personal_best: '#3B82F6',
   raw_steps: '#8B5CF6',
   raw_miles: '#EC4899',
   raw_weight_loss_pct: '#EC4899',
@@ -113,10 +113,10 @@ export default function CompetitionDetailScreen() {
         }
       }
 
-      // 2. Baseline readiness check for % Improvement competitions
-      if (competition.scoring_mode === 'relative_improvement') {
+      // 2. Baseline readiness check for Personal Best competitions
+      if (competition.scoring_mode === 'personal_best') {
         const baseline = await checkBaselineReadiness();
-        if (!baseline.canJoinImprovementCompetition && baseline.message) {
+        if (!baseline.canJoinPersonalBestCompetition && baseline.message) {
           Alert.alert(
             '📊 Not Enough Activity Data',
             baseline.message + '\n\nYou can still join free competitions or private competitions with raw scoring.',
@@ -390,6 +390,11 @@ export default function CompetitionDetailScreen() {
             <Text style={[styles.typeLabel, { color: typeInfo.color }]}>{typeInfo.label}</Text>
           </View>
           <Text style={[styles.competitionName, { color: Colors.textPrimary }]}>{competition.name}</Text>
+          {competition.scoring_mode === 'personal_best' && (
+            <Text style={[styles.personalBestSubtitle, { color: Colors.textSecondary }]}>
+              Score = steps above your personal daily average
+            </Text>
+          )}
 
           {competition.description && (
             <Text style={[styles.description, { color: Colors.textSecondary }]}>{competition.description}</Text>
@@ -488,6 +493,7 @@ export default function CompetitionDetailScreen() {
                     isCurrentUser={p.user_id === profile?.id}
                     currentUserId={profile?.id}
                     competitionId={competition.id}
+                    scoringMode={competition.scoring_mode}
                   />
                 ))}
               </View>
@@ -598,7 +604,7 @@ export default function CompetitionDetailScreen() {
               <View style={[styles.ruleRow, { borderBottomColor: Colors.borderLight }]}>
                 <Text style={[styles.ruleLabel, { color: Colors.textSecondary }]}>Scoring</Text>
                 <Text style={[styles.ruleValue, { color: Colors.textPrimary }]}>
-                  {SCORING_MODES.find((m) => m.id === competition.scoring_mode)?.label ?? '% Improvement'}
+                  {SCORING_MODES.find((m) => m.id === competition.scoring_mode)?.label ?? 'Personal Best'}
                 </Text>
               </View>
               <View style={[styles.ruleRow, { borderBottomColor: Colors.borderLight }]}>
@@ -648,6 +654,7 @@ const styles = StyleSheet.create({
   typeEmoji: { fontSize: FontSize.sm, marginRight: Spacing.xs },
   typeLabel: { fontSize: FontSize.xs, fontWeight: '600' },
   competitionName: { fontSize: FontSize.xxl, fontWeight: '800', marginBottom: Spacing.sm },
+  personalBestSubtitle: { fontSize: FontSize.sm, marginBottom: Spacing.md },
   description: { fontSize: FontSize.md, lineHeight: 22, marginBottom: Spacing.lg },
   badge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.full, marginBottom: Spacing.md },
   badgeIcon: { fontSize: FontSize.xs },

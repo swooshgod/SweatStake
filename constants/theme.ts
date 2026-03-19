@@ -198,9 +198,9 @@ export const ScoringTemplates = {
       { name: 'Steps (5,000+)',  points: 1, auto_tracked: true },
     ],
   },
-  improvement: {
-    name: '% Improvement',
-    description: 'Biggest improvement above your personal 7-day baseline',
+  personal_best: {
+    name: 'Personal Best',
+    description: 'Who improves the most above their own daily average? Fair for all fitness levels.',
     categories: [
       { name: 'Steps vs Baseline',           points: 3, auto_tracked: true },
       { name: 'Distance vs Baseline',        points: 2, auto_tracked: true },

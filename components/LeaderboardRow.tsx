@@ -5,13 +5,14 @@ import { Spacing, BorderRadius, FontSize, Colors } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getTrustBadge } from '@/lib/trust';
 import ReportUserModal from '@/components/ReportUserModal';
-import type { Participant } from '@/lib/types';
+import type { Participant, ScoringMode } from '@/lib/types';
 
 interface Props {
   participant: Participant;
   isCurrentUser?: boolean;
   currentUserId?: string;
   competitionId?: string;
+  scoringMode?: ScoringMode;
 }
 
 const RANK_MEDALS: Record<number, string> = {
@@ -25,6 +26,7 @@ export default function LeaderboardRow({
   isCurrentUser,
   currentUserId,
   competitionId,
+  scoringMode,
 }: Props) {
   const { Colors } = useTheme();
   const rank = participant.rank ?? 0;
@@ -94,15 +96,35 @@ export default function LeaderboardRow({
         {/* Points + report button */}
         <View style={styles.rightSection}>
           <View style={styles.pointsContainer}>
-            <Text style={[
-              styles.points,
-              { color: Colors.textPrimary },
-              rank === 1 && !isDisqualified && { color: Colors.accentGold },
-              isDisqualified && { color: Colors.textMuted, fontSize: FontSize.md },
-            ]}>
-              {isDisqualified ? '—' : participant.total_points}
-            </Text>
-            {!isDisqualified && <Text style={[styles.pointsLabel, { color: Colors.textMuted }]}>pts</Text>}
+            {scoringMode === 'personal_best' && !isDisqualified ? (
+              <>
+                <Text style={[
+                  styles.points,
+                  participant.total_points >= 0
+                    ? { color: rank === 1 ? Colors.accentGold : Colors.textPrimary }
+                    : { color: Colors.textMuted },
+                ]}>
+                  {participant.total_points >= 0
+                    ? `+${participant.total_points.toLocaleString()}`
+                    : participant.total_points.toLocaleString()}
+                </Text>
+                <Text style={[styles.pointsLabel, { color: participant.total_points >= 0 ? Colors.textMuted : Colors.textMuted }]}>
+                  {participant.total_points >= 0 ? 'steps above avg' : 'steps below avg'}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text style={[
+                  styles.points,
+                  { color: Colors.textPrimary },
+                  rank === 1 && !isDisqualified && { color: Colors.accentGold },
+                  isDisqualified && { color: Colors.textMuted, fontSize: FontSize.md },
+                ]}>
+                  {isDisqualified ? '—' : participant.total_points}
+                </Text>
+                {!isDisqualified && <Text style={[styles.pointsLabel, { color: Colors.textMuted }]}>pts</Text>}
+              </>
+            )}
           </View>
 
           {/* Report button — only show for other users */}

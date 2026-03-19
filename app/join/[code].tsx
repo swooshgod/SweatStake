@@ -25,7 +25,7 @@ import { formatCents } from "@/lib/stripe";
 import { getEscrowAddress } from "@/lib/usdc";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
-import { checkAppleWatchPaired, checkBaselineReadiness } from "@/lib/healthkit";
+import { checkAppleWatchPaired, checkBaselineReadiness, getUserBaseline } from "@/lib/healthkit";
 import { checkComplianceForPaidCompetition } from "@/lib/compliance";
 import { competitionPrizeInCredits } from "@/lib/prizes";
 import { validatePromoCode, recordPromoRedemption, formatDiscount } from "@/lib/promos";
@@ -237,14 +237,14 @@ export default function JoinScreen() {
         }
       }
 
-      // Baseline readiness check for % Improvement competitions
-      if (competition.scoring_mode === 'relative_improvement') {
-        const baseline = await checkBaselineReadiness();
-        if (!baseline.canJoinImprovementCompetition && baseline.message) {
+      // Baseline readiness check for Personal Best competitions
+      if (competition.scoring_mode === 'personal_best') {
+        const baselineReadiness = await checkBaselineReadiness();
+        if (!baselineReadiness.canJoinPersonalBestCompetition && baselineReadiness.message) {
           const isPaid = effectiveEntryCents > 0;
           Alert.alert(
             '📊 Not Enough Activity Data',
-            baseline.message,
+            baselineReadiness.message,
             [
               { text: 'Got it', style: 'cancel' },
               ...(!isPaid ? [{ text: 'Join Anyway', onPress: async () => {
@@ -254,6 +254,23 @@ export default function JoinScreen() {
             ]
           );
           return;
+        }
+
+        // Show user their baseline when joining
+        const userBaseline = await getUserBaseline();
+        if (userBaseline) {
+          const avgSteps = userBaseline.avgDailySteps.toLocaleString();
+          const shouldProceed = await new Promise<boolean>((resolve) => {
+            Alert.alert(
+              '📈 Your Personal Baseline',
+              `Your daily average: ${avgSteps} steps. Beat that to score points.`,
+              [
+                { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+                { text: 'Join', onPress: () => resolve(true) },
+              ]
+            );
+          });
+          if (!shouldProceed) return;
         }
       }
 

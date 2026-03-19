@@ -30,7 +30,7 @@ const MIN_PARTICIPANTS = 3; // Competition won't activate below this
 
 const COMP_TYPES = [
   { id: 'step_race',      icon: '🏃', name: 'Step Race',       desc: 'Most steps wins — auto-tracked',          watch: false, type: 'running' as CompetitionType, scoringMode: 'raw_steps' as ScoringMode },
-  { id: 'improvement',   icon: '📈', name: '% Improvement',   desc: 'Biggest improvement above your baseline', watch: false, type: 'fitness' as CompetitionType, scoringMode: 'relative_improvement' as ScoringMode },
+  { id: 'personal_best', icon: '📈', name: 'Personal Best',   desc: 'Who improves the most above their own daily average? Fair for all fitness levels.', watch: false, type: 'fitness' as CompetitionType, scoringMode: 'personal_best' as ScoringMode },
   { id: 'weight_loss',   icon: '⚖️', name: 'Weight Loss %',   desc: 'Most % body weight lost — manual weigh-ins', watch: false, type: 'fitness' as CompetitionType, scoringMode: 'raw_weight_loss_pct' as ScoringMode },
   { id: 'distance',      icon: '🗺️', name: 'Distance Race',   desc: 'Most miles/km — auto-tracked via GPS',    watch: false, type: 'running' as CompetitionType, scoringMode: 'raw_miles' as ScoringMode },
   { id: 'full_challenge', icon: '🏆', name: 'Full Challenge',  desc: 'Steps + Distance + Improvement',          watch: false, type: 'fitness' as CompetitionType, scoringMode: 'raw_steps' as ScoringMode },
@@ -366,7 +366,7 @@ export default function CreateCompetitionScreen() {
                 ...prev,
                 isPublic: true,
                 isPrivate: false,
-                scoringMode: needsReset ? 'relative_improvement' : prev.scoringMode,
+                scoringMode: needsReset ? 'personal_best' : prev.scoringMode,
               };
             })}
           >
