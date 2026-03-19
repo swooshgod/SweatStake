@@ -224,7 +224,7 @@ export const ScoringTemplates = {
     ],
   },
   full_challenge: {
-    name: 'Active Minutes',
+    name: 'Full Challenge',
     description: 'Steps + Distance — all auto-tracked',
     categories: [
       { name: 'Steps (8,000+)',       points: 3, auto_tracked: true },

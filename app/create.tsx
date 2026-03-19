@@ -33,7 +33,8 @@ const COMP_TYPES = [
   { id: 'personal_best', icon: '📈', name: 'Personal Best',   desc: 'Who improves the most above their own daily average? Fair for all fitness levels.', watch: false, type: 'fitness' as CompetitionType, scoringMode: 'personal_best' as ScoringMode },
   { id: 'weight_loss',   icon: '⚖️', name: 'Weight Loss %',   desc: 'Most % body weight lost — manual weigh-ins', watch: false, type: 'fitness' as CompetitionType, scoringMode: 'raw_weight_loss_pct' as ScoringMode },
   { id: 'distance',      icon: '🗺️', name: 'Distance Race',   desc: 'Most miles/km — auto-tracked via GPS',    watch: false, type: 'running' as CompetitionType, scoringMode: 'raw_miles' as ScoringMode },
-  { id: 'full_challenge', icon: '🏆', name: 'Active Minutes',   desc: 'Steps + Distance + Improvement',          watch: false, type: 'fitness' as CompetitionType, scoringMode: 'raw_steps' as ScoringMode },
+  // Hidden until heart rate zone tracking (Zone 2/3) is implemented
+  // { id: 'full_challenge', icon: '🏆', name: 'Full Challenge',   desc: 'Steps + Distance + Improvement',          watch: false, type: 'fitness' as CompetitionType, scoringMode: 'raw_steps' as ScoringMode },
 ];
 
 const FEE_OPTIONS = [
