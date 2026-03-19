@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
-import { StripeProvider } from '@stripe/stripe-react-native';
+import { StripeProvider } from '@/lib/stripe-native';
 import { initRevenueCat } from '@/lib/subscription';
 
 const FIRST_LAUNCH_KEY = 'podium_first_launch_seen';

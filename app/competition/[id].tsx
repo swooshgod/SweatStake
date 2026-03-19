@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Spacing, BorderRadius, FontSize, CompetitionTypes } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { formatCents, formatPrizePool } from '@/lib/stripe';
-import { useStripe } from '@stripe/stripe-react-native';
+import { useStripe } from '@/lib/stripe-native';
 import { useAuth } from '@/hooks/useAuth';
 import { useCompetitionDetail } from '@/hooks/useCompetitions';
 import { supabase } from '@/lib/supabase';
