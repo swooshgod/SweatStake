@@ -184,7 +184,7 @@ export default function CompetitionCard({ competition, variant = 'full', viewerT
               <Text style={[styles.name, dynamicStyles.name]} numberOfLines={1}>{competition.name}</Text>
             </View>
             <Text style={[styles.meta, dynamicStyles.meta]}>
-              {participantCount} joined · {timeLabel}
+              {participantCount === 0 ? 'Be the first to join' : `${participantCount} joined`} · {timeLabel}
             </Text>
           </View>
           <View style={styles.potContainer}>

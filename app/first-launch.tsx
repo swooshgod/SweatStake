@@ -235,6 +235,13 @@ export default function FirstLaunchScreen() {
         </Animated.View>
       )}
 
+      {/* Tagline */}
+      {competition && (
+        <Animated.Text style={[styles.tagline, { opacity: cardOpacity }]}>
+          Pay in. Compete. Winner takes the pot.
+        </Animated.Text>
+      )}
+
       {/* CTA Buttons */}
       <Animated.View style={[styles.ctaContainer, { opacity: btnOpacity, transform: [{ scale: btnScale }] }]}>
         <TouchableOpacity
@@ -459,6 +466,14 @@ const styles = StyleSheet.create({
     color: '#555',
     textAlign: 'center',
     fontWeight: '500',
+  },
+  tagline: {
+    fontSize: FontSize.sm,
+    color: '#555',
+    textAlign: 'center',
+    fontWeight: '500',
+    marginBottom: Spacing.lg,
+    zIndex: 1,
   },
   ctaContainer: {
     width: '100%',

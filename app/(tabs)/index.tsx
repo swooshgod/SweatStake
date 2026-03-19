@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,14 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Spacing, BorderRadius, FontSize } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useMyCompetitions, usePublicCompetitions } from '@/hooks/useCompetitions';
 import CompetitionCard from '@/components/CompetitionCard';
+
+const HOW_IT_WORKS_KEY = 'podium_how_it_works_dismissed';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -33,6 +36,18 @@ export default function HomeScreen() {
   const { competitions: publicComps, loading: publicLoading, refetch: refetchPublic } = usePublicCompetitions();
 
   const [refreshing, setRefreshing] = React.useState(false);
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem(HOW_IT_WORKS_KEY).then((val) => {
+      if (!val) setShowHowItWorks(true);
+    });
+  }, []);
+
+  const dismissHowItWorks = async () => {
+    setShowHowItWorks(false);
+    await AsyncStorage.setItem(HOW_IT_WORKS_KEY, 'true');
+  };
 
   // Animated entrance
   const greetingFade = useRef(new Animated.Value(0)).current;
@@ -184,7 +199,27 @@ export default function HomeScreen() {
             <Text style={[styles.greetingName, { color: Colors.primary }]}>
               {profile.display_name}
             </Text>
+            <Text style={[styles.subtitle, { color: Colors.textMuted }]}>
+              Step more than everyone else. Best score wins the pot. 🏆
+            </Text>
           </Animated.View>
+        )}
+
+        {/* How Podium Works — one-time banner */}
+        {showHowItWorks && (
+          <View style={[styles.howItWorksCard, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+            <Text style={[styles.howItWorksTitle, { color: Colors.textPrimary }]}>How Podium Works</Text>
+            <Text style={[styles.howItWorksLine, { color: Colors.textSecondary }]}>🏃 Compete in step races, weight loss & distance challenges</Text>
+            <Text style={[styles.howItWorksLine, { color: Colors.textSecondary }]}>💰 Everyone pays into the pot — best score wins it all</Text>
+            <Text style={[styles.howItWorksLine, { color: Colors.textSecondary }]}>📱 Apple Health tracks your progress automatically</Text>
+            <TouchableOpacity
+              style={[styles.howItWorksDismiss, { backgroundColor: Colors.primary }]}
+              onPress={dismissHowItWorks}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.howItWorksDismissText}>Got it</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         {/* Conditional ordering: active comps first if user has them, otherwise live first */}
@@ -205,23 +240,6 @@ export default function HomeScreen() {
           </>
         )}
       </ScrollView>
-
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: Colors.primary }, Shadow.lg]}
-        activeOpacity={0.85}
-        onPress={() => {
-          if (!isAuthenticated) {
-            router.push('/(auth)/welcome');
-            return;
-          }
-          router.push('/create');
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="Create new competition"
-      >
-        <Ionicons name="add" size={28} color="#fff" />
-      </TouchableOpacity>
     </View>
   );
 }
@@ -305,14 +323,36 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: '700',
   },
-  fab: {
-    position: 'absolute',
-    bottom: 100,
-    right: Spacing.xl,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
+  subtitle: {
+    fontSize: FontSize.sm,
+    marginBottom: Spacing.lg,
+  },
+  howItWorksCard: {
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    padding: Spacing.lg,
+    marginBottom: Spacing.xl,
+    gap: Spacing.sm,
+  },
+  howItWorksTitle: {
+    fontSize: FontSize.md,
+    fontWeight: '800',
+    marginBottom: Spacing.xs,
+  },
+  howItWorksLine: {
+    fontSize: FontSize.sm,
+    lineHeight: 20,
+  },
+  howItWorksDismiss: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.lg,
+    marginTop: Spacing.sm,
+  },
+  howItWorksDismissText: {
+    color: '#fff',
+    fontSize: FontSize.sm,
+    fontWeight: '700',
   },
 });
