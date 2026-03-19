@@ -16,7 +16,7 @@ interface Props {
 }
 
 const SCORING_MODE_BADGES: Partial<Record<ScoringMode, { emoji: string; label: string; color: string }>> = {
-  relative_improvement: { emoji: '📈', label: '% Improvement', color: '#3B82F6' },
+  personal_best: { emoji: '📈', label: 'Personal Best', color: '#3B82F6' },
   raw_steps: { emoji: '👟', label: 'Most Steps', color: '#8B5CF6' },
   raw_miles: { emoji: '🏃', label: 'Most Miles', color: '#EC4899' },
   raw_weight_loss_pct: { emoji: '⚖️', label: 'Weight Loss %', color: '#EC4899' },
